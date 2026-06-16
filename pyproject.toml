@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chaoscrypt"
+version = "0.1.0"
+description = "Toolkit for chosen-plaintext cryptanalysis of permutation-diffusion (chaos) image ciphers, with a zero-knowledge Fiat-Shamir completeness module."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = ["cryptanalysis", "image-encryption", "chaos-cipher", "chosen-plaintext-attack", "zero-knowledge", "fiat-shamir"]
+dependencies = ["numpy>=1.24", "scipy>=1.10"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
