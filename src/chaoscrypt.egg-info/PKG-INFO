@@ -1,0 +1,76 @@
+Metadata-Version: 2.4
+Name: chaoscrypt
+Version: 0.1.0
+Summary: Toolkit for chosen-plaintext cryptanalysis of permutation-diffusion (chaos) image ciphers, with a zero-knowledge Fiat-Shamir completeness module.
+License: MIT
+Keywords: cryptanalysis,image-encryption,chaos-cipher,chosen-plaintext-attack,zero-knowledge,fiat-shamir
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy>=1.24
+Requires-Dist: scipy>=1.10
+Provides-Extra: dev
+Requires-Dist: pytest>=7; extra == "dev"
+Dynamic: license-file
+
+# chaoscrypt — cryptanalysis toolkit for permutation–diffusion image ciphers
+
+A small, dependency-light toolkit for the **chosen-plaintext "equivalent-key" cryptanalysis** of
+permutation–diffusion ("chaos-based") image-encryption schemes, plus a secondary module for auditing
+the **Fiat–Shamir completeness** of zero-knowledge Sigma-protocol implementations.
+
+It exists to support one concrete deliverable: a short IEEE-format conference paper that **breaks a
+specific *published* chaos image cipher** with a handful of chosen plaintexts. The toolkit provides the
+reusable building blocks (cipher models, the affine-structure diagnostic, equivalent-key recovery, and
+statistical distinguishers); the target cipher itself must come from the literature — see
+`docs/RESEARCH_NOTES.md`.
+
+## Why it works (one paragraph)
+Most chaos image ciphers are a permutation (confusion) followed by an XOR/modular diffusion keystream.
+When that keystream depends only on the key (not the plaintext), the whole cipher is an **affine map
+over GF(2)**: `E(a) ⊕ E(b) ⊕ E(0) = E(a ⊕ b)`. A fixed affine map is trivially invertible from a few
+chosen plaintexts — recover an *equivalent key* (the keystream and the permutation), then decrypt any
+ciphertext without the real key. More rounds do not help: a composition of affine maps is still affine.
+The only real defence is a keystream that depends on the plaintext (e.g. seeded from a cryptographic
+hash of the image); a *weak* dependence (e.g. the sum of the pixels mod 256) still falls.
+
+## Install
+```bash
+pip install -e .            # runtime
+pip install -e ".[dev]"     # + pytest
+pytest                      # confirm everything works
+```
+
+## Quick start
+```python
+import numpy as np
+from chaoscrypt.ciphers import PermDiffusionCipher, SEED_KEY_ONLY
+from chaoscrypt.attacks import affine_test, equivalent_key_cpa
+
+n = 64 * 64
+cipher = PermDiffusionCipher(key=0xC0FFEE, n=n, rounds=1, seed_mode=SEED_KEY_ONLY)
+enc = cipher.encrypt
+
+print("affine (vulnerable):", affine_test(enc, n))     # True for a key-only keystream
+
+decrypt, info = equivalent_key_cpa(enc, n)              # recover an equivalent key
+print("chosen plaintexts:", info["chosen_plaintexts"])  # a handful
+
+secret = np.random.default_rng(0).integers(0, 256, n, dtype=np.uint8)
+print("broken:", np.array_equal(decrypt(enc(secret)), secret))   # True, no key used
+```
+
+## Layout
+| Path | What it is |
+|---|---|
+| `src/chaoscrypt/ciphers.py` | Configurable permutation–diffusion cipher models (key-only / pixel-sum / plaintext-hash seeding). |
+| `src/chaoscrypt/attacks.py` | Affine diagnostic + equivalent-key chosen-plaintext attack. |
+| `src/chaoscrypt/distinguishers.py` | Chi-square keystream uniformity; NPCR / UACI. |
+| `src/chaoscrypt/zk/` | Secondary: Sigma protocols + Fiat–Shamir completeness checks (fallback project). |
+| `experiments/` | Runnable scripts reproducing each result. |
+| `docs/RESEARCH_NOTES.md` | Attack methodology, the vulnerability criterion, candidate published target ciphers (with citations), and the canonical literature to cite. |
+| `docs/CLAUDE_CODE_PROMPTS.md` | Step-by-step prompt sequence to drive the paper to completion in an agentic coding session. |
+
+## Scope note
+For analysing **published** academic ciphers and **your own** code only. Reproduce a target cipher from
+its paper, attack it, report the result; do not attack systems you are not authorised to test.
