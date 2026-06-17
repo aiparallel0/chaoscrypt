@@ -1,0 +1,15 @@
+{
+  "coverage_tau": 0.995,
+  "det_seen_DoS": 0.8696,
+  "det_unseen_DoS": 0.6147,
+  "conf_unseen_DoS": 0.9715,
+  "reject_unseen_DoS": 0.2918,
+  "det_seen_Probe": 0.7918,
+  "det_unseen_Probe": 0.4374,
+  "conf_unseen_Probe": 0.9715,
+  "reject_unseen_Probe": 0.3172,
+  "det_seen_R2L": 0.0586,
+  "det_unseen_R2L": 0.0035,
+  "conf_unseen_R2L": 0.9947,
+  "reject_unseen_R2L": 0.1737
+}
