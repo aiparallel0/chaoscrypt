@@ -259,6 +259,42 @@ across coverages---unlike NSL-KDD (Fig.~\ref{fig:rc}).}
 \label{fig:rccic}
 \end{figure}
 
+\subsection{Which uncertainty signal, and can we guarantee coverage?}
+Two questions sharpen the story: is maximum class probability (MSP) the right abstention signal, and can
+abstention carry a formal guarantee? For the first, we benchmark MSP against random-forest ensemble
+disagreement, Mahalanobis distance to class-conditional Gaussians, and $k$NN distance, on error ranking
+(AURC) and unknown-attack separation (Table~\ref{tab:signals}). Contrary to the deep-learning
+out-of-distribution literature, where richer signals dominate MSP under shift~\cite{ovadia2019,lee2018mahalanobis},
+on this tabular flow data they do not: ensemble disagreement tracks MSP almost exactly, Mahalanobis
+yields only a marginal AURC improvement (\PH{sig_mahalanobis_aurc} vs.\ \PH{sig_msp_aurc}) and is
+\emph{worse} at unknown detection, and $k$NN is worse on both. For tabular intrusion detection the cheap
+MSP signal suffices; the leverage is in the abstention framework, not exotic estimators.
+
+For the second, we wrap the detector in split conformal prediction~\cite{angelopoulos2023conformal},
+which gives distribution-free coverage under exchangeability. At target coverage $0.90$, the prediction
+sets cover the true label \PH{conf_cov_indist} of the time in-distribution---valid---but only
+\PH{conf_cov_shift} under the train--test shift. This is the conformal analogue of the calibration
+failure of Section~\ref{sec:cal}: the guarantee is exact under exchangeability and erodes precisely when
+the deployment distribution moves~\cite{tibshirani2019}. Restoring it needs shift-aware (weighted)
+conformal with estimable likelihood ratios---impractical for genuine zero-days, the honest caveat.
+
+\begin{table}[t]
+\centering
+\caption{Uncertainty signals on NSL-KDD: error ranking (AURC, lower better) and unknown-attack
+separation (AUROC, higher better). Max-softmax is a strong baseline for tabular IDS.}
+\label{tab:signals}
+\begin{tabular}{lcc}
+\toprule
+Signal & AURC & unknown-AUROC \\
+\midrule
+Max-softmax (MSP)         & \PH{sig_msp_aurc}             & \PH{sig_msp_unkauroc} \\
+RF ensemble disagreement  & \PH{sig_rf_disagreement_aurc} & \PH{sig_rf_disagreement_unkauroc} \\
+Mahalanobis distance      & \PH{sig_mahalanobis_aurc}     & \PH{sig_mahalanobis_unkauroc} \\
+$k$NN distance            & \PH{sig_knn_aurc}             & \PH{sig_knn_unkauroc} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Discussion and Limitations}
 Selective prediction is a cheap, model-agnostic safety layer: at the cost of deferring a minority of
 inputs it materially lowers the error among those acted upon, and it partially flags unknown attacks.
