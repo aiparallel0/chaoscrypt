@@ -12,6 +12,7 @@ Reproduction choices where the paper is ambiguous are documented inline. They do
 which only assumes plaintext-independence.
 """
 from __future__ import annotations
+import hashlib
 from typing import Callable, Dict, Tuple
 import numpy as np
 
@@ -61,19 +62,29 @@ def _fisher_yates(nblocks: int, rng: np.random.Generator) -> np.ndarray:
 class LLEOCipher:
     """Reproduction of the LLEO cipher. `encrypt`/`decrypt` operate on flat uint8 arrays of length M*N."""
 
-    def __init__(self, key: int, shape: Tuple[int, int], r: float = 3.99) -> None:
+    def __init__(self, key: int, shape: Tuple[int, int], r: float = 3.99,
+                 plaintext_seeded: bool = False) -> None:
         self.M, self.N = shape
         if self.M % BLOCKS or self.N % BLOCKS:
             raise ValueError("image dimensions must be divisible by 16")
         self.n = self.M * self.N
-        x0 = 0.1 + (key % 1000) / 1e4
-        log2d = _odd_units(logistic_keystream(x0, self.n, r)).reshape(self.M, self.N)
-        lor2d = _odd_units(lorenz_keystream(self.n, x0=0.05 + (key % 997) / 1e4)).reshape(self.M, self.N)
+        self.key, self.r, self.plaintext_seeded = int(key), r, plaintext_seeded
+        self._build(self.key)
+
+    def _build(self, seed: int, fast: bool = False) -> None:
+        """Build the substitution keystream K and the two block permutations from an integer seed."""
+        seed &= 0x7FFFFFFFFFFFFFFF
+        x0 = 0.1 + (seed % 1000) / 1e4
+        log2d = _odd_units(logistic_keystream(x0, self.n, self.r)).reshape(self.M, self.N)
+        if fast:  # defended (plaintext-seeded) control: logistic for both strips, skipping slow Lorenz
+            lor2d = _odd_units(logistic_keystream(0.3 + (seed % 997) / 1e4, self.n, self.r)).reshape(self.M, self.N)
+        else:
+            lor2d = _odd_units(lorenz_keystream(self.n, x0=0.05 + (seed % 997) / 1e4)).reshape(self.M, self.N)
         rows = self.M // BLOCKS
         block_of_row = (np.arange(self.M) // rows)[:, None]          # 0..15 per row
         self.K = np.where(block_of_row % 2 == 1, log2d, lor2d).astype(np.uint8)  # odd strips logistic
-        self.hperm = _fisher_yates(BLOCKS, np.random.default_rng(2 * key + 1))
-        self.vperm = _fisher_yates(BLOCKS, np.random.default_rng(3 * key + 7))
+        self.hperm = _fisher_yates(BLOCKS, np.random.default_rng((2 * seed + 1) & 0x7FFFFFFFFFFFFFFF))
+        self.vperm = _fisher_yates(BLOCKS, np.random.default_rng((3 * seed + 7) & 0x7FFFFFFFFFFFFFFF))
 
     @staticmethod
     def _gather_rowblocks(a: np.ndarray, perm: np.ndarray) -> np.ndarray:
@@ -87,6 +98,9 @@ class LLEOCipher:
 
     def encrypt(self, img: np.ndarray) -> np.ndarray:
         x = np.asarray(img, dtype=np.uint8).reshape(self.M, self.N)
+        if self.plaintext_seeded:   # DEFENDED variant: reseed all key material from SHA-256(image)
+            h = int.from_bytes(hashlib.sha256(x.tobytes()).digest()[:8], "big")
+            self._build(h ^ self.key, fast=True)
         sub = (x.astype(np.uint16) * self.K) % 256              # per-position multiply
         e1 = self._gather_rowblocks(sub.astype(np.uint8), self.hperm)   # horizontal block shuffle
         e2 = self._gather_colblocks(e1, self.vperm)                     # vertical block shuffle

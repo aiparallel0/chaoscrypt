@@ -15,8 +15,8 @@
 \title{An Equivalent-Key Chosen-Plaintext Break of a\\
 2025 Chaos-Based Image Cipher}
 
-\author{\IEEEauthorblockN{Author One, Author Two}
-\IEEEauthorblockA{Department / Affiliation \\ City, Country \\ \{a1, a2\}@example.edu}}
+\author{\IEEEauthorblockN{Anonymous (single author)}
+\IEEEauthorblockA{Affiliation withheld for review \\ \texttt{author@example.org}}}
 
 \maketitle
 
@@ -41,65 +41,119 @@ cryptanalysis, image encryption, chaotic cipher, chosen-plaintext attack, equiva
 \end{IEEEkeywords}
 
 \section{Introduction}
-Chaos-based image ciphers are published in large numbers, and a recurring lesson from the
-cryptanalysis literature is that many of them fall to the same structural attack: if the diffusion
-keystream does not depend on the plaintext, the cipher reduces to a fixed permutation--substitution
-map and an \emph{equivalent key} can be recovered from a handful of chosen
-plaintexts~\cite{li2019attacker,li2018entropy,arroyo2009,li2011optimal}. Standard statistical scores
-(entropy, correlation, NPCR/UACI) do not certify resistance to this attack, a point repeatedly made
-but repeatedly ignored~\cite{alvarez2006}.
+Chaos-based image ciphers appear in the literature at a high rate, and a recurring lesson from the
+cryptanalysis side is that a large fraction of them succumb to the same structural attack. Most follow
+a permutation--diffusion template: a confusion stage that rearranges pixels and a diffusion stage that
+masks pixel values with a chaotic keystream. When that keystream is a function of the secret key alone
+and not of the image, the entire cipher collapses to a \emph{fixed} permutation--substitution map,
+and an \emph{equivalent key}---a representation that decrypts every ciphertext under the same secret
+key---can be recovered from a handful of chosen
+plaintexts~\cite{li2019attacker,li2018entropy,arroyo2009,li2011optimal}. The defence is equally
+well known: the keystream must depend on the plaintext, and the cipher must actually
+diffuse~\cite{alvarez2006}.
 
-This paper applies that lesson to a 2025 scheme~\cite{jain2025lleo} (henceforth LLEO) built from the
-Lorenz~\cite{lorenz1963} and logistic maps with Fisher--Yates block shuffling. Our contributions are:
-(i) we identify that LLEO is entirely key-driven and therefore a fixed monomial map over
-$\mathbb{Z}_{256}$; (ii) we give an equivalent-key chosen-plaintext attack that recovers the full map
-in $1+\lceil\log_{256} MN\rceil$ chosen plaintexts and decrypts any image pixel-exactly without the
-key; and (iii) we show that LLEO's near-ideal entropy and reported NPCR coexist with \emph{zero}
-plaintext diffusion, so the claimed differential-attack resistance does not exist.
+A second, persistent problem is methodological. Authors validate schemes with statistical scores---%
+Shannon entropy, adjacent-pixel correlation, and the differential metrics NPCR and UACI---and treat
+near-ideal values as evidence of security. None of these scores measures resistance to a
+chosen-plaintext attack, and, as we show, all of them can be near-ideal for a cipher that is broken in
+seconds.
 
-\section{The target cipher}
-LLEO encrypts an $M\times N$ grayscale image in three key-driven steps. (1) \emph{Substitution.} The
-image is split into 16 horizontal strips; odd strips are combined with a keystream $k_{\mathrm{log}}$
-from the logistic map $x_{n+1}=rx_n(1-x_n)$ and even strips with a keystream $k_{\mathrm{lor}}$ from
-the Lorenz system, via an invertible per-position operation (the paper inverts it with a modular
-``conjugate''). (2) \emph{Permutation~1.} The 16 horizontal strips are reordered by a Fisher--Yates
-shuffle. (3) \emph{Permutation~2.} The result is split into 16 vertical strips and shuffled again. The
-four ``decryption keys'' are the two keystreams and the two shuffle index lists. Crucially, the
-keystreams are seeded from key-dependent initial conditions and the shuffles from the key; \emph{no
-quantity depends on the image}. The scheme is described as ``asymmetric,'' but the same data decrypts,
-so it is a symmetric cipher.
+This paper applies both lessons to a 2025 scheme~\cite{jain2025lleo} (which we abbreviate LLEO) built
+from the Lorenz~\cite{lorenz1963} and logistic maps with Fisher--Yates block shuffling. Our
+contributions are:
+\begin{itemize}
+\item We identify that LLEO is entirely key-driven and therefore a fixed monomial map over
+$\mathbb{Z}_{256}$ (Section~\ref{sec:target}--\ref{sec:crypt}).
+\item We give an equivalent-key chosen-plaintext attack that recovers the full map in
+$1+\lceil\log_{256} MN\rceil$ chosen plaintexts---\PH{cam_cpt} for a $512\times512$ image---and
+decrypts any image pixel-exactly without the key (Section~\ref{sec:crypt}).
+\item We reproduce LLEO, confirm it matches the paper's reported statistics, and then show those
+statistics coexist with \emph{zero} plaintext diffusion: the true one-pixel NPCR is
+\PH{cam_npcr1px}\,\%, not 99.6\,\% (Section~\ref{sec:results}).
+\end{itemize}
 
-\section{Cryptanalysis}
+\section{Related work}
+The equivalent-key methodology for permutation--diffusion ciphers is well established. Arroyo
+\emph{et al.}~\cite{arroyo2009} broke a ``total shuffling'' scheme by recovering its key-only
+keystream; Li \emph{et al.}~\cite{li2018entropy} recovered an equivalent key for an entropy-based
+cipher; and the survey of Li \emph{et al.}~\cite{li2019attacker} catalogues a year of such breaks,
+nearly all exploiting plaintext-independent diffusion. For the confusion stage alone, Li and
+Lo~\cite{li2011optimal} established the optimal number of known/chosen plaintexts needed to invert a
+permutation-only multimedia cipher, of order $\log_{L} (MN)$ for $L$ intensity levels---the same
+logarithmic regime our attack achieves. Alvarez and Li~\cite{alvarez2006} set out basic requirements
+for chaos-based cryptosystems, including plaintext-dependent keystreams and sensitivity to the
+plaintext; LLEO violates these. The differential metrics we scrutinise were standardised by Wu
+\emph{et al.}~\cite{wu2011npcr}, who also note that NPCR/UACI quantify sensitivity to a one-pixel
+plaintext change---precisely the quantity LLEO fails to deliver despite its reported value.
+
+\section{The target cipher}\label{sec:target}
+LLEO encrypts an $M\times N$ grayscale image $X$ in three key-driven steps.
+
+\emph{(1) Substitution.} $X$ is split into 16 horizontal strips. The eight odd strips are combined
+with a keystream $k_{\mathrm{log}}$ produced by the logistic map $x_{n+1}=r\,x_n(1-x_n)$, and the
+eight even strips with a keystream $k_{\mathrm{lor}}$ produced by the Lorenz system
+$\dot x=\sigma(y-x),\ \dot y=x(\rho-z)-y,\ \dot z=xy-\beta z$, through an invertible per-position
+operation; decryption uses the modular ``conjugate'' of the keystream, i.e.\ a multiplicative inverse.
+
+\emph{(2) Permutation 1.} The 16 horizontal strips are reordered by a Fisher--Yates shuffle.
+
+\emph{(3) Permutation 2.} The result is divided into 16 vertical strips and shuffled again, giving the
+ciphertext.
+
+The four ``decryption keys'' are the two keystreams ($d_1,d_2$) and the two shuffle index lists
+($d_3,d_4$). The chaotic initial conditions are derived from the secret key and the shuffles are
+seeded from it; \emph{no quantity depends on the image $X$}. Although the scheme is repeatedly called
+``asymmetric,'' the same four keys both encrypt and decrypt: it is a symmetric cipher.
+
+\section{Cryptanalysis}\label{sec:crypt}
 \subsection{Structural observation}
-Writing the image as a length-$n$ vector ($n=MN$), every LLEO step is linear over $\mathbb{Z}_{256}$
-and key-fixed: substitution multiplies coordinate $p$ by a unit $K[p]$, and the two block shuffles
-compose into a single position permutation $P$. Hence
-\begin{equation}
-C[j] \;=\; K[s(j)]\,\cdot\,X[s(j)] \pmod{256},\qquad s=P^{-1},
+Index the image as a length-$n$ vector, $n=MN$. Each LLEO step is linear over $\mathbb{Z}_{256}$ and
+fixed by the key: substitution multiplies coordinate $p$ by a fixed unit $K[p]$ (odd, hence invertible
+mod 256), and the two block shuffles compose into one position permutation $P$. Therefore
+\begin{equation}\label{eq:monomial}
+C[j] \;=\; K[s(j)]\cdot X[s(j)] \pmod{256},\qquad s=P^{-1},
 \end{equation}
-a fixed \emph{monomial} map: each ciphertext pixel is one plaintext pixel scaled by a fixed unit and
-relocated. There is no constant term ($E(\mathbf{0})=\mathbf{0}$) and, decisively, no dependence on
-$X$ beyond the single coordinate $s(j)$.
+a fixed \emph{monomial} map: every ciphertext pixel is a single plaintext pixel scaled by a fixed unit
+and relocated. Two consequences are immediate. There is no additive constant, since
+$E(\mathbf{0})=\mathbf{0}$. And there is no diffusion: $C[j]$ depends on exactly one input coordinate
+$s(j)$.
 
 \subsection{Equivalent-key recovery}
 Because $K$ and $s$ are fixed, two kinds of chosen plaintext suffice.
-\emph{(a) Multiplier.} Encrypting the all-ones image gives $C[j]=K[s(j)]\cdot 1=K[s(j)]$, i.e.\ the
-multiplier seen at every output position, in one query.
-\emph{(b) Permutation.} Encrypting the plaintext whose pixel $i$ holds the $t$-th base-256 digit of
-$i$ gives $C[j]=K[s(j)]\cdot \mathrm{digit}_t(s(j))$; dividing by the known multiplier yields
-$\mathrm{digit}_t(s(j))$, so $\lceil\log_{256} n\rceil$ such queries reconstruct $s$.
-The recovered $(s,K)$ form an equivalent key; any ciphertext is inverted by
-$X[s(j)] = K[s(j)]^{-1} C[j]$. The cost is $1+\lceil\log_{256} n\rceil$ chosen plaintexts---%
-\PH{cam_cpt} for a $512\times512$ image---independent of the key length the scheme advertises.
 
-\section{Experimental results}
-We reconstructed LLEO from its description and ran it on four standard $512\times512$ images.
+\emph{(a) Multiplier, one query.} Encrypting the all-ones image $\mathbf{1}$ gives, by
+\eqref{eq:monomial}, $C[j]=K[s(j)]\cdot 1=K[s(j)]$: the exact multiplier acting at every output
+position.
+
+\emph{(b) Permutation, $\lceil\log_{256} n\rceil$ queries.} Let $P_t$ be the plaintext whose pixel $i$
+holds the $t$-th base-256 digit of its index $i$. Then $C[j]=K[s(j)]\cdot \mathrm{digit}_t(s(j))$;
+multiplying by the already-known $K[s(j)]^{-1}$ yields $\mathrm{digit}_t(s(j))$. Collecting all
+$\lceil\log_{256} n\rceil$ digits reconstructs $s(j)$ for every $j$, hence the full permutation.
+
+The recovered pair $(s,K)$ is an equivalent key; any ciphertext is inverted by
+$X[s(j)] = K[s(j)]^{-1}\,C[j]$. The total cost is
+\begin{equation}
+1+\big\lceil\log_{256} n\big\rceil \text{ chosen plaintexts},
+\end{equation}
+i.e.\ \PH{cam_cpt} for a $512\times512$ image, independent of the nominal key length.
+
+\subsection{Why extra structure does not help}
+A composition of fixed key-only maps is again a fixed key-only map, so adding rounds, more chaotic
+maps, or further block shuffles leaves \eqref{eq:monomial} intact (only $K$ and $s$ change) and the
+same attack applies unchanged. The attack is also a \emph{known}-plaintext attack when the available
+plaintexts happen to span the index digits; chosen plaintexts only make the queries explicit and
+minimal. The single property that would defeat it is a keystream that depends on $X$.
+
+\section{Experimental results}\label{sec:results}
+We reconstructed LLEO from its description (reimplemented from scratch, no code reused) and ran it on
+four standard $512\times512$ images.
 
 \subsection{Reproduction}
 Table~\ref{tab:repro} shows the reconstruction reproduces LLEO's claimed statistics: cipher entropy
-approaches the ideal 8 (Cameraman \PH{cam_ent_cipher}, up from \PH{cam_ent_plain}) and adjacent-pixel
-correlation drops to near zero (\PH{cam_corr_cipher}). Fig.~\ref{fig:hist} and
-Fig.~\ref{fig:corr} show the flat cipher histogram and the destroyed correlation.
+approaches the ideal 8 (Cameraman \PH{cam_ent_cipher}, up from the plaintext's \PH{cam_ent_plain}) and
+adjacent-pixel correlation drops to near zero (\PH{cam_corr_cipher}). Fig.~\ref{fig:hist} shows the
+flat cipher histogram and Fig.~\ref{fig:corr} the destroyed correlation. By the usual yardsticks the
+cipher looks strong.
 
 \begin{table}[t]
 \centering
@@ -119,8 +173,8 @@ Brick     & \PH{brk_ent_plain} & \PH{brk_ent_cipher} & \PH{brk_corr_cipher} & \P
 \end{table}
 
 \subsection{The break}
-The attack of Section~III recovers the equivalent key in \PH{cam_cpt} chosen plaintexts and decrypts a
-fresh ciphertext pixel-exactly in \PH{cam_attack_s}\,s (Cameraman), using no key.
+The attack of Section~\ref{sec:crypt} recovers the equivalent key in \PH{cam_cpt} chosen plaintexts and
+decrypts a fresh ciphertext pixel-exactly in \PH{cam_attack_s}\,s (Cameraman), using no key.
 Fig.~\ref{fig:break} shows the original, the LLEO ciphertext, and the key-free recovery, which is
 identical to the original.
 
@@ -132,14 +186,32 @@ identical to the original.
 \end{figure}
 
 \subsection{The differential metric is illusory}
-LLEO reports NPCR $\approx$99.6\,\% as evidence of differential-attack resistance. But LLEO applies no
-diffusion: each ciphertext pixel is a function of a single plaintext pixel, so flipping one plaintext
-pixel changes exactly one ciphertext pixel. The true one-pixel NPCR is therefore $100/MN =
-\PH{cam_npcr1px}\,\%$ (UACI \PH{cam_uaci1px}\,\%), not 99.6\,\%. The reported figure instead reflects
-the difference between \emph{unrelated} images, which for LLEO is \PH{npcr_unrelated}\,\%---a quantity
-every cipher achieves and which says nothing about chosen-plaintext security. Finally, the underlying
-chaotic keystreams are themselves non-uniform: a chi-square test rejects uniformity for the logistic
-keystream ($\chi^2=\PH{chi2_logistic}$, $p=\PH{p_logistic}$).
+LLEO reports NPCR $\approx$99.6\,\% as evidence of differential-attack resistance. But by
+\eqref{eq:monomial} flipping one plaintext pixel changes exactly one ciphertext pixel, so the true
+one-pixel NPCR is $100/MN=\PH{cam_npcr1px}\,\%$ (UACI \PH{cam_uaci1px}\,\%)---five orders of magnitude
+below the reported value. The 99.6\,\% figure instead measures the difference between \emph{unrelated}
+images, which for LLEO is \PH{npcr_unrelated}\,\%; this is achieved by any cipher with a near-uniform
+output and says nothing about chosen-plaintext security. Table~\ref{tab:claims} contrasts each claimed
+property with what the cipher actually provides. Finally, the chaotic keystreams are themselves
+non-uniform: a chi-square test rejects uniformity for the logistic keystream
+($\chi^2=\PH{chi2_logistic}$, $p=\PH{p_logistic}$).
+
+\begin{table}[t]
+\centering
+\caption{Claimed vs.\ actual security of LLEO.}
+\label{tab:claims}
+\begin{tabular}{lcc}
+\toprule
+Property & Reported & Actual \\
+\midrule
+Entropy (Cameraman)        & $\approx$7.997 & \PH{cam_ent_cipher} (genuine) \\
+NPCR (1-pixel change)      & $\approx$99.6\,\% & \PH{cam_npcr1px}\,\% \\
+Differential resistance    & yes & no (no diffusion) \\
+Chosen-plaintext security  & implied & broken in \PH{cam_cpt} queries \\
+Key type                   & ``asymmetric'' & symmetric \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure}[t]
 \centering
@@ -157,26 +229,33 @@ keystream ($\chi^2=\PH{chi2_logistic}$, $p=\PH{p_logistic}$).
 
 \section{Discussion}
 LLEO illustrates two persistent failure modes. First, \emph{good statistics are not security}: a flat
-histogram, near-ideal entropy, and a large inter-image NPCR are all satisfied by our fixed
-key-independent-of-plaintext map, which we nonetheless break in \PH{cam_cpt} queries. Second,
-\emph{naming is not architecture}: calling a symmetric construction ``asymmetric'' does not add
-security. The standard remedies are well known~\cite{alvarez2006,li2019attacker}: make the keystream
-depend on the plaintext (e.g.\ seed the chaotic initial conditions from a cryptographic hash of the
-image), and add genuine diffusion so that one plaintext change propagates across the ciphertext. With
-a plaintext-dependent keystream the all-ones and digit probes no longer reveal a reusable equivalent
-key, and the attack of Section~III fails.
+histogram, near-ideal entropy, near-zero correlation, and a large inter-image NPCR are all satisfied
+by our fixed, key-only map, which we nonetheless break in \PH{cam_cpt} queries. The community
+guidance to test plaintext sensitivity directly~\cite{alvarez2006,wu2011npcr} is exactly what would
+have caught this. Second, \emph{naming is not architecture}: labelling a symmetric construction
+``asymmetric'' adds no security.
+
+The remedies are standard. (i) Make the keystream depend on the plaintext---e.g.\ derive the chaotic
+initial conditions from a cryptographic hash (SHA-256) of the image, so that a different plaintext
+yields an unrelated keystream and the all-ones/digit probes no longer reveal a reusable equivalent
+key. (ii) Add genuine diffusion, e.g.\ a chaining rule $C[i]=f(X[i],k[i],C[i-1])$, so that one
+plaintext change propagates and the true NPCR approaches its ideal. With either defence in place the
+map of \eqref{eq:monomial} is no longer fixed across images and the attack of Section~\ref{sec:crypt}
+fails. We verified this directly: the identical attack recovers \PH{keyonly_match_pct}\,\% of pixels
+against the key-only cipher but only \PH{defended_match_pct}\,\% (chance level) once the keystream is
+seeded from a SHA-256 hash of the image.
 
 \section{Conclusion}
 A 2025 chaos-based image cipher is completely broken by an equivalent-key chosen-plaintext attack in
 \PH{cam_cpt} chosen plaintexts and a fraction of a second, despite near-ideal entropy and a reported
 NPCR of $\approx$99.6\,\%. The break follows directly from the cipher being key-only; its differential
 metric, measured correctly, is \PH{cam_npcr1px}\,\%. We recommend plaintext-dependent keystreams and
-real diffusion, and that statistical scores be reported alongside, not in place of, a chosen-plaintext
-security argument.
+real diffusion, and that statistical scores accompany---rather than replace---an explicit
+chosen-plaintext security argument.
 
 \section*{Acknowledgment}
-The authors used a large language model (Anthropic Claude) to assist with code, reproduction, and
-editing. All claims were verified by the authors; the AI system is not an author. Generative-AI use is
+The author used a large language model (Anthropic Claude) to assist with code, reproduction, and
+editing. All claims were verified by the author; the AI system is not an author. Generative-AI use is
 disclosed per IEEE policy.
 
 \bibliographystyle{IEEEtran}

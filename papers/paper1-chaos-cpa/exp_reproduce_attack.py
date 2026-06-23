@@ -80,6 +80,20 @@ def main() -> None:
     chi_lor, p_lor = chi_square_uniformity(lorenz_keystream(200_000))
     flat["chi2_logistic"] = round(chi_log, 1); flat["p_logistic"] = float(f"{p_log:.1e}")
     flat["chi2_lorenz"] = round(chi_lor, 1); flat["p_lorenz"] = float(f"{p_lor:.1e}")
+
+    # Positive control: the recommended fix (seed the keystream from SHA-256 of the image) defeats
+    # the very same attack. Key-only -> fully recovered; plaintext-hash-seeded -> chance level.
+    from skimage.transform import resize as _resize
+    pc = _resize(IMAGES["cam"], (256, 256), preserve_range=True).astype(np.uint8).reshape(-1)
+    cko = LLEOCipher(KEY, (256, 256))
+    dko, _ = break_lleo(cko.encrypt, (256, 256))
+    cdef = LLEOCipher(KEY, (256, 256), plaintext_seeded=True)
+    ddef, _ = break_lleo(cdef.encrypt, (256, 256))
+    flat["keyonly_match_pct"] = round(100 * float(np.mean(dko(cko.encrypt(pc)) == pc)), 4)
+    flat["defended_match_pct"] = round(100 * float(np.mean(ddef(cdef.encrypt(pc)) == pc)), 4)
+    print(f"positive control: key-only recovered {flat['keyonly_match_pct']}% vs "
+          f"hash-seeded {flat['defended_match_pct']}% (chance)")
+
     (RES / "repro_attack.json").write_text(json.dumps(flat, indent=2))
 
     # Figure 1: original / encrypted / recovered (Cameraman)
