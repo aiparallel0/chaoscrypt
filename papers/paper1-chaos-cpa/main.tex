@@ -1,4 +1,4 @@
-\documentclass[conference]{IEEEtran}
+\documentclass[conference,a4paper]{IEEEtran}
 \IEEEoverridecommandlockouts
 \usepackage{cite}
 \usepackage{amsmath,amssymb}
@@ -25,6 +25,8 @@
 \IEEEauthorblockA{Affiliation withheld for review \\ \texttt{author@example.org}}}
 
 \maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
 
 \begin{abstract}
 We cryptanalyse a recently published image-encryption scheme that combines Lorenz/logistic chaotic
@@ -205,17 +207,12 @@ $X[s(j)] = K[s(j)]^{-1}\,C[j]$. The total cost is
 \end{equation}
 i.e.\ \PH{cam_cpt} for a $512\times512$ image, independent of the nominal key length.
 
-Concretely, for a $512\times512$ image ($n=262144$) the attack issues four queries: the all-ones image
-and three index-digit images carrying the low, middle, and high base-256 digits of each pixel index.
-Suppose output position $j$ returns $C^{\mathbf 1}[j]=200$ on the all-ones query (so the multiplier
-acting there is $200$, with inverse $200^{-1}\!\!\pmod{256}$ undefined only if $200$ were even---our
-multipliers are forced odd) and returns $C^{(0)}[j],C^{(1)}[j],C^{(2)}[j]$ on the three digit queries;
-then $\mathrm{digit}_t = C^{(t)}[j]\cdot 200^{-1}\bmod 256$ and the source index is
-$s(j)=\sum_t \mathrm{digit}_t\,256^{t}$. Repeating for all $j$ recovers the whole map in one pass
-(Algorithm~\ref{alg:attack}). Table~\ref{tab:complexity} states the resulting complexity and compares it
-to the optimal permutation-only bound of Li and Lo~\cite{li2011optimal}: our query count is
-order-optimal, and the cost is independent of the cipher's nominal key length, so the advertised
-keyspace is irrelevant---the equivalent key bypasses key recovery entirely~\cite{Jolfaei2016permutation}.
+Concretely, a $512\times512$ image needs four queries---one all-ones image and three index-digit
+images---after which Algorithm~\ref{alg:attack} returns the full map in a single pass.
+Table~\ref{tab:complexity} states the complexity and compares it to the optimal permutation-only bound
+of Li and Lo~\cite{li2011optimal}: our query count is order-optimal and the cost is independent of the
+cipher's nominal key length, so the advertised keyspace is irrelevant---the equivalent key bypasses key
+recovery entirely~\cite{Jolfaei2016permutation}.
 
 \begin{algorithm}[t]
 \caption{Equivalent-key recovery for LLEO}
@@ -240,7 +237,7 @@ keyspace is irrelevant---the equivalent key bypasses key recovery entirely~\cite
  & This attack & Optimal perm.-only~\cite{li2011optimal} \\
 \midrule
 Data (chosen plaintexts) & $1+\lceil\log_{256} n\rceil$ & $\lceil\log_{L} n\rceil$ \\
-Time  & $O(n)$ & $O(n\lceil\log_{L} n\rceil)$ \\
+Time  & $O(n\lceil\log_{256} n\rceil)$ & $O(n\lceil\log_{L} n\rceil)$ \\
 Memory & $O(n)$ & $O(n)$ \\
 \bottomrule
 \end{tabular}
@@ -283,7 +280,9 @@ Brick     & \PH{brk_ent_plain} & \PH{brk_ent_cipher} & \PH{brk_corr_cipher} & \P
 
 \subsection{The break}
 The attack of Section~\ref{sec:crypt} recovers the equivalent key in \PH{cam_cpt} chosen plaintexts and
-decrypts a fresh ciphertext pixel-exactly in \PH{cam_attack_s}\,s (Cameraman), using no key.
+decrypts a fresh ciphertext pixel-exactly in \PH{cam_attack_s}\,s (Cameraman), using no
+key.\footnote{Wall-clock, single core. The $512^2$ entry in Table~\ref{tab:scale} (\PH{scale512_s}\,s,
+a random image) differs only by run-to-run variation.}
 Fig.~\ref{fig:break} shows the original, the LLEO ciphertext, and the key-free recovery, which is
 identical to the original.
 
@@ -326,7 +325,7 @@ images, which for LLEO is \PH{npcr_unrelated}\,\%; this is achieved by any ciphe
 output and says nothing about chosen-plaintext security. Table~\ref{tab:claims} contrasts each claimed
 property with what the cipher actually provides. Finally, the chaotic keystreams are themselves
 non-uniform: a chi-square test rejects uniformity for the logistic keystream
-($\chi^2=\PH{chi2_logistic}$, $p=\PH{p_logistic}$).
+($\chi^2=\PH{chi2_logistic}$, $p<10^{-300}$, numerically zero).
 
 \begin{table}[t]
 \centering
@@ -366,7 +365,9 @@ $C[i]=X_{\pi}[i]\oplus k[i]\oplus C[i-1]$---representative of a large published 
 LLEO's multiplicative monomial form. With a key-only keystream this map is affine over
 $\mathrm{GF}(2)$ (the identity $E(a)\oplus E(b)\oplus E(\mathbf 0)=E(a\oplus b)$ holds at one
 \emph{and} three rounds in our checks), and the equivalent-key CPA recovers it exactly in
-\PH{gen_cpt} chosen plaintexts. The identical procedure fails against a plaintext-hash-seeded version
+\PH{gen_cpt} chosen plaintexts (here at $128\times128$: one all-zeros query plus
+$\lceil\log_{256}n\rceil{=}2$ digit probes; the count follows the same $1+\lceil\log_{256}n\rceil$ rule,
+so a $512\times512$ instance would need four). The identical procedure fails against a plaintext-hash-seeded version
 of the \emph{same} structure, reinforcing that what matters is the keystream's dependence on the
 image---not the algebra or the round count.
 
