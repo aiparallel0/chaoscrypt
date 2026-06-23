@@ -1,0 +1,14 @@
+{
+  "xfer_n_common": 27,
+  "xfer_n_test": 120000,
+  "xfer_attack_rate": 0.279,
+  "xfer_in2017_acc": 0.96,
+  "xfer_in2017_aurc": 0.0044,
+  "xfer_acc": 0.675,
+  "xfer_ece": 0.2628,
+  "xfer_aurc": 0.2577,
+  "xfer_risk_full": 0.3248,
+  "xfer_risk80": 0.2689,
+  "xfer_infil_detect": 0.131,
+  "xfer_infil_reject": 0.233
+}

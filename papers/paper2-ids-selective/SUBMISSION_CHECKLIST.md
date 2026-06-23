@@ -24,6 +24,7 @@
 | Benign-only novelty remedy for the R2L/U2R blind spot | `papers/paper2-ids-selective/exp_novelty.py` |
 | LOFO open-set incl. U2R | `papers/paper2-ids-selective/exp_openset.py` |
 | CIC-IDS-2017 second dataset + cross-day drift | `papers/paper2-ids-selective/exp_cicids.py` (`src/ids_selective/cicids.py`) |
+| Cross-corpus transfer CIC-2017 -> CSE-CIC-IDS-2018 (shared features) | `papers/paper2-ids-selective/exp_transfer.py` |
 | Figures (risk–coverage, reliability, ECE-shift, open-set) | `exp_main.py`, `exp_openset.py` |
 | Data loader, leakage-safe pipeline, metrics | `src/ids_selective/{data,pipeline,metrics}.py` |
 

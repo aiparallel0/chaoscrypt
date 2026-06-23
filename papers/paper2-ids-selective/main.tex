@@ -276,6 +276,17 @@ across coverages---unlike NSL-KDD (Fig.~\ref{fig:rc}).}
 \label{fig:rccic}
 \end{figure}
 
+\textbf{Cross-corpus transfer.} The strongest external-validity test trains on CIC-2017 and tests on
+CSE-CIC-IDS-2018 (benign + Infiltration), a different network and year, using the \PH{xfer_n_common}
+CICFlowMeter features whose names match exactly across the two releases. The mechanisms reappear but
+degrade honestly under the real domain shift: accuracy falls from \PH{xfer_in2017_acc} (within-2017,
+same features) to \PH{xfer_acc}, calibration collapses (ECE \PH{xfer_ece}), and the confidence signal
+weakens (AURC \PH{xfer_aurc} vs.\ \PH{xfer_in2017_aurc}), so abstention recovers far less than
+within-corpus (selective risk \PH{xfer_risk_full}$\to$\PH{xfer_risk80} at 80\% coverage). Infiltration,
+an unknown and benign-mimicking attack, is the cross-corpus blind spot: detected at only
+\PH{xfer_infil_detect} and rejected by abstention at \PH{xfer_infil_reject}. Cross-corpus generalization
+is thus partial---the qualitative phenomena transfer, the quantitative guarantees do not.
+
 \subsection{Which uncertainty signal, and can we guarantee coverage?}
 Two questions sharpen the story: is maximum class probability (MSP) the right abstention signal, and can
 abstention carry a formal guarantee? For the first, we benchmark MSP against random-forest ensemble
@@ -350,23 +361,20 @@ as deployment-time guarantees. Third, and most important operationally, abstenti
 unknowns that \emph{look} anomalous; attacks that mimic benign traffic (R2L here) are missed
 confidently and silently.
 
-\emph{Operational recipe.} These results suggest a concrete deployment pattern. Pick a model whose
-confidence is informative---identified by a low AURC on validation data (here a tree ensemble, not the
-linear model); choose an operating coverage from the risk--coverage curve to meet a target precision on
-accepted alerts; route the abstained minority to a secondary control (a human analyst or an anomaly
-detector); and, because calibration does not survive shift, monitor the abstention rate over time as a
-cheap, label-free drift signal instead of trusting the raw probabilities---a lightweight complement to
-dedicated drift detectors~\cite{jordaney2017transcend,yang2021cade}. The reject option should be paired with a
-complementary detector aimed at benign-looking intrusions (R2L/U2R), which abstention alone will not
-catch.
+\emph{Operational recipe.} Deploy a model whose confidence is informative (low validation AURC---a tree
+ensemble here, not the linear model); set the operating coverage from the risk--coverage curve to meet a
+target precision; route the abstained minority to a secondary control; monitor the abstention rate as a
+cheap, label-free drift signal~\cite{jordaney2017transcend,yang2021cade}; and pair abstention with the
+benign-only novelty stage above for the benign-mimicking attacks it cannot catch.
 
 \emph{Limitations.} NSL-KDD is dated and its features hand-crafted, so absolute numbers will differ on
 modern corpora; the mechanisms we isolate---over-confidence under shift, model-dependent confidence
 quality, and the benign-mimicry blind spot---are not specific to it. We study binary detection with a
 single abstention signal (maximum class probability); richer signals and the multi-class
-attack-typing setting are natural extensions. We evaluate CIC-IDS-2017 with a cross-day split; a
-\emph{full} time-ordered evaluation (and the label-corrected CIC-IDS-2017~\cite{engelen2021troubleshooting}
-and standardized NetFlow-v2 corpora for true cross-network transfer) remains future work.
+attack-typing setting are natural extensions. We evaluate a cross-day split and a cross-corpus transfer
+(CIC-2017$\to$2018) on shared features; a full time-ordered evaluation, the label-corrected
+CIC-2017~\cite{engelen2021troubleshooting}, and standardized NetFlow-v2 multi-network transfer (a common
+schema avoiding our 27-feature restriction) remain future work.
 
 \section{Conclusion}
 On a hard benchmark (NSL-KDD) off-the-shelf intrusion detectors are over-confident and post-hoc
