@@ -1,11 +1,9 @@
-"""Paper 2, external validity: cross-corpus transfer CIC-IDS-2017 -> CSE-CIC-IDS-2018.
+"""Paper 2, external validity: cross-corpus transfer CIC-IDS-2017 -> CSE-CIC-IDS-2018, multi-seed.
 
-A stronger genuine-unknown test than cross-day: train on CIC-2017 (DDoS/PortScan/Web + benign), test on
-CIC-2018 (a different network/year) whose Thursday-01-03 traffic is Infiltration + benign -- an attack
-type ABSENT from training. The two releases renamed many CICFlowMeter columns, so we use the features
-whose names match exactly across both (a documented, conservative choice) and ask whether the paper's
-mechanisms survive a real domain change: does accuracy/calibration degrade, does max-softmax stay a
-strong signal, and does abstention flag the cross-corpus unknown attack?
+Train on CIC-2017 (DDoS/PortScan/Web + benign), test on CIC-2018 (Thursday-01-03 = Infiltration +
+benign), a different network/year, using the features whose CICFlowMeter names match exactly across the
+two releases. Over K seeds we resample the 2017 training subset and the model seed; we report means and
+a max 95% CI half-width. The 2018 test partition is held fixed.
 """
 from __future__ import annotations
 import json
@@ -18,10 +16,12 @@ from sklearn.preprocessing import StandardScaler
 
 from ids_selective.cicids import load_day, FRIDAY, THURSDAY
 from ids_selective.metrics import ece, risk_coverage, risk_at_coverage
+from ids_selective.ci import ci
 
 HERE = Path(__file__).parent
 RES = HERE / "results"
 CIC2018 = HERE / "data/cicids2018/Thursday-01-03-2018.csv"
+K = 5
 
 
 def load_2018(path, subsample=120000, seed=42):
@@ -37,45 +37,45 @@ def load_2018(path, subsample=120000, seed=42):
 
 
 def main() -> None:
-    tr, feats17 = load_day(FRIDAY + THURSDAY, subsample=150000)
+    tr, feats17 = load_day(FRIDAY + THURSDAY, subsample=200000)
     te = load_2018(CIC2018)
-    common = [c for c in feats17 if c in set(te.columns)]   # exact-name shared CICFlowMeter features
-    Xtr, ytr = tr[common].to_numpy(), tr["y"].to_numpy()
-    Xte, yte = te[common].to_numpy(), te["y"].to_numpy()
-    sc = StandardScaler().fit(Xtr)
-    Xtr, Xte = sc.transform(Xtr), sc.transform(Xte)
+    common = [c for c in feats17 if c in set(te.columns)]
+    Xtr_all, ytr_all = tr[common].to_numpy(), tr["y"].to_numpy()
+    Xte0, yte = te[common].to_numpy(), te["y"].to_numpy()
+    atk = yte == 1
+
+    acc, ece_, aurc, rfull, r80, idet, irej, in_acc, in_aurc = ([] for _ in range(9))
+    for seed in range(K):
+        rng = np.random.default_rng(seed)
+        idx = rng.choice(len(Xtr_all), min(150000, len(Xtr_all)), replace=False)
+        Xtr, ytr = Xtr_all[idx], ytr_all[idx]
+        sc = StandardScaler().fit(Xtr)
+        Xtr_s, Xte = sc.transform(Xtr), sc.transform(Xte0)
+        # within-2017 baseline (same features)
+        Xa, Xb, ya, yb = train_test_split(Xtr_s, ytr, test_size=0.3, random_state=seed, stratify=ytr)
+        rf0 = RandomForestClassifier(n_estimators=150, n_jobs=-1, random_state=seed).fit(Xa, ya)
+        p0 = rf0.predict_proba(Xb); c0 = (p0.argmax(1) == yb).astype(float)
+        in_acc.append(float(c0.mean())); in_aurc.append(float(risk_coverage(p0.max(1), c0)[2]))
+        # transfer
+        rf = RandomForestClassifier(n_estimators=150, n_jobs=-1, random_state=seed).fit(Xtr_s, ytr)
+        p = rf.predict_proba(Xte); conf, pred = p.max(1), p.argmax(1); cor = (pred == yte).astype(float)
+        tau = np.quantile(conf, 0.20)
+        acc.append(float(cor.mean())); ece_.append(float(ece(conf, cor)))
+        aurc.append(float(risk_coverage(conf, cor)[2])); rfull.append(float(1 - cor.mean()))
+        r80.append(float(risk_at_coverage(conf, cor, 0.8)))
+        idet.append(float((pred[atk] == 1).mean())); irej.append(float((conf[atk] < tau).mean()))
+        print(f"seed {seed} done")
 
     flat = {"xfer_n_common": len(common), "xfer_n_test": int(len(yte)),
             "xfer_attack_rate": round(float(yte.mean()), 3)}
-
-    # within-2017 baseline on the same features (degradation context)
-    Xa, Xb, ya, yb = train_test_split(Xtr, ytr, test_size=0.3, random_state=0, stratify=ytr)
-    rf0 = RandomForestClassifier(n_estimators=150, n_jobs=-1, random_state=0).fit(Xa, ya)
-    p0 = rf0.predict_proba(Xb); c0 = (p0.argmax(1) == yb).astype(float)
-    flat["xfer_in2017_acc"] = round(float(c0.mean()), 3)
-    flat["xfer_in2017_aurc"] = round(float(risk_coverage(p0.max(1), c0)[2]), 4)
-
-    # transfer: train all 2017, test 2018
-    rf = RandomForestClassifier(n_estimators=150, n_jobs=-1, random_state=0).fit(Xtr, ytr)
-    p = rf.predict_proba(Xte); conf, pred = p.max(1), p.argmax(1); cor = (pred == yte).astype(float)
-    atk = yte == 1
-    tau = np.quantile(conf, 0.20)                          # 80% coverage
-    flat.update({
-        "xfer_acc": round(float(cor.mean()), 3),
-        "xfer_ece": round(float(ece(conf, cor)), 4),
-        "xfer_aurc": round(float(risk_coverage(conf, cor)[2]), 4),
-        "xfer_risk_full": round(float(1 - cor.mean()), 4),
-        "xfer_risk80": round(float(risk_at_coverage(conf, cor, 0.8)), 4),
-        "xfer_infil_detect": round(float((pred[atk] == 1).mean()), 3),
-        "xfer_infil_reject": round(float((conf[atk] < tau).mean()), 3),
-    })
-    print(f"common features: {len(common)} | test n={len(yte)} attack-rate={flat['xfer_attack_rate']}")
-    print(f"within-2017 acc={flat['xfer_in2017_acc']} AURC={flat['xfer_in2017_aurc']}")
-    print(f"transfer acc={flat['xfer_acc']} ECE={flat['xfer_ece']} AURC={flat['xfer_aurc']} "
-          f"risk {flat['xfer_risk_full']}->{flat['xfer_risk80']}@80%")
-    print(f"Infiltration: detection={flat['xfer_infil_detect']} abstention-rejects={flat['xfer_infil_reject']}")
-    RES.mkdir(exist_ok=True)
-    (RES / "transfer.json").write_text(json.dumps(flat, indent=2))
+    hws = []
+    for key, store in (("xfer_in2017_acc", in_acc), ("xfer_in2017_aurc", in_aurc), ("xfer_acc", acc),
+                       ("xfer_ece", ece_), ("xfer_aurc", aurc), ("xfer_risk_full", rfull),
+                       ("xfer_risk80", r80), ("xfer_infil_detect", idet), ("xfer_infil_reject", irej)):
+        m, h = ci(store); flat[key] = round(m, 4 if "aurc" in key or "ece" in key else 3); hws.append(h)
+    flat["xfer_maxhw"] = round(max(hws), 4)
+    RES.mkdir(exist_ok=True); (RES / "transfer.json").write_text(json.dumps(flat, indent=2))
+    print(flat)
 
 
 if __name__ == "__main__":

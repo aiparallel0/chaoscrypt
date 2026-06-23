@@ -27,14 +27,14 @@ for Machine-Learning Network Intrusion Detection}
 Machine-learning intrusion detectors are routinely deployed with a single hard decision and no
 notion of when their output should be trusted. We show, on the public NSL-KDD benchmark, that three
 standard detectors (logistic regression, a random forest, and gradient boosting) are markedly
-over-confident: expected calibration error reaches \PH{logreg_ece_raw}, and the strongest model still
-attains an error rate of \PH{histgb_risk_full} on a test set whose attack mix it was trained on. We
+over-confident: expected calibration error reaches ${\approx}0.21$, and the strongest model still
+attains an error rate of ${\approx}0.20$ on a test set whose attack mix it was trained on. We
 then study two remedies. First, post-hoc Platt scaling fitted on in-distribution data fails to repair
 calibration once the test distribution shifts, leaving error essentially unchanged. Second, selective
 prediction---allowing the detector to abstain on its least-confident inputs---reduces selective risk
-from \PH{histgb_risk_full} to \PH{histgb_risk80} at \mbox{80\%} coverage, but only for models whose
+from ${\approx}0.20$ to ${\approx}0.11$ at \mbox{80\%} coverage, but only for models whose
 confidence is informative; logistic regression's confidence is nearly useless for ranking errors
-(area under the risk--coverage curve \PH{logreg_aurc} versus \PH{histgb_aurc}). Finally, using a
+(area under the risk--coverage curve ${\approx}0.23$ versus ${\approx}0.05$). Finally, using a
 controlled family-holdout protocol we quantify behaviour on \emph{unknown} attacks: detection of a
 held-out family collapses (e.g.\ DoS from \PH{det_seen_DoS} to \PH{det_unseen_DoS}), and abstention
 rejects only part of these unknowns---and almost none when the attack mimics benign traffic (R2L). On a
@@ -125,10 +125,11 @@ training set.
 the test set by confidence and accepting the most-confident fraction $c$ yields the selective risk
 $r(c)$; we report the area under $r(c)$ (AURC) and $r(0.8)$.
 
-\textbf{Open-set protocol.} To probe genuinely unknown attacks under control, we remove one attack
-family entirely from training (keeping benign traffic and the other families), retrain, and measure
-detection and confidence on that family's test records. We also report, at a global threshold giving
-80\% coverage, the fraction of unknown-family records that abstention rejects.
+\textbf{Open-set protocol (LOFO).} To probe genuinely unknown attacks under control, our
+leave-one-family-out protocol removes one attack family entirely from training (keeping benign traffic
+and the other families), retrains, and measures detection and confidence on that family's test records.
+We also report, at a global threshold giving 80\% coverage, the fraction of unknown-family records that
+abstention rejects. Reported metrics are means over multiple seeds with 95\% confidence intervals.
 
 \section{Results}
 \subsection{Detectors are over-confident}\label{sec:cal}
@@ -212,7 +213,8 @@ below is the same protocol on a second corpus, with the Web family held out.
 \centering
 \caption{Leave-one-family-out (LOFO) open set on NSL-KDD: detection when a family is seen in training
 vs.\ held out (unknown), and the fraction of unknown-family records abstention rejects at 80\% coverage.
-U2R is rare ($n{=}52/67$), hence high variance.}
+Means over $K{=}10$ seeds; 95\% CI half-width $\le\PH{openset_maxhw}$. U2R is rare ($n{=}52/67$), hence
+high variance.}
 \label{tab:openset}
 \begin{tabular}{lccc}
 \toprule
@@ -252,7 +254,8 @@ is statistically distinguishable from benign traffic.
 
 \begin{table}[t]
 \centering
-\caption{CIC-IDS-2017: replication (random split) and cross-day drift (train Friday, test Thursday).}
+\caption{CIC-IDS-2017: replication (random split) and cross-day drift (train Friday, test Thursday).
+Means over $K{=}5$ seeds; 95\% CI half-width $\le\PH{cic_maxhw}$.}
 \label{tab:cic}
 \begin{tabular}{lcccc}
 \toprule
@@ -285,7 +288,8 @@ weakens (AURC \PH{xfer_aurc} vs.\ \PH{xfer_in2017_aurc}), so abstention recovers
 within-corpus (selective risk \PH{xfer_risk_full}$\to$\PH{xfer_risk80} at 80\% coverage). Infiltration,
 an unknown and benign-mimicking attack, is the cross-corpus blind spot: detected at only
 \PH{xfer_infil_detect} and rejected by abstention at \PH{xfer_infil_reject}. Cross-corpus generalization
-is thus partial---the qualitative phenomena transfer, the quantitative guarantees do not.
+is thus partial---the qualitative phenomena transfer, the quantitative guarantees do not (means over
+$K{=}5$ seeds; 95\% CI half-width $\le\PH{xfer_maxhw}$).
 
 \subsection{Which uncertainty signal, and can we guarantee coverage?}
 Two questions sharpen the story: is maximum class probability (MSP) the right abstention signal, and can
@@ -347,7 +351,7 @@ different failure modes (confident errors vs.\ benign-mimicking attacks).
 \includegraphics[width=0.8\columnwidth]{figures/novelty_auroc.pdf}
 \caption{Benign-only novelty detection (trained on benign records only): AUROC separating each attack
 family from benign. DoS/Probe are easy; R2L/U2R---the abstention blind spot---are only partially
-recoverable, R2L the hardest.}
+recoverable, R2L the hardest. Bars are means over $K{=}8$ seeds; error bars are 95\% CIs.}
 \label{fig:novelty}
 \end{figure}
 
