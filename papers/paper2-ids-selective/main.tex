@@ -27,8 +27,9 @@ for Machine-Learning Network Intrusion Detection}
 Machine-learning intrusion detectors are routinely deployed with a single hard decision and no
 notion of when their output should be trusted. We show, on the public NSL-KDD benchmark, that three
 standard detectors (logistic regression, a random forest, and gradient boosting) are markedly
-over-confident: expected calibration error reaches ${\approx}0.21$, and the strongest model still
-attains an error rate of ${\approx}0.20$ on a test set whose attack mix it was trained on. We
+over-confident: expected calibration error reaches ${\approx}0.22$, and the strongest model still
+attains an error rate of ${\approx}0.20$ on the standard benchmark test set, which contains attack
+types absent from training. We
 then study two remedies. First, post-hoc Platt scaling fitted on in-distribution data fails to repair
 calibration once the test distribution shifts, leaving error essentially unchanged. Second, selective
 prediction---allowing the detector to abstain on its least-confident inputs---reduces selective risk
@@ -136,9 +137,8 @@ abstention rejects. Reported metrics are means over multiple seeds with 95\% con
 Table~\ref{tab:main} reports accuracy and calibration. On the test set all three models are markedly
 over-confident, with ECE from $\approx$0.16 (random forest) to $\approx$0.22 (logistic regression).
 Crucially this is induced by distribution shift, not intrinsic: on a held-out
-\emph{in-distribution} split the same models are nearly perfectly calibrated (random-forest ECE
-\PH{rf_ece_val_raw}, gradient-boosting \PH{histgb_ece_val_raw}), and Platt scaling keeps them there
-(\PH{rf_ece_val_cal}). It is only on the shifted test set---which introduces novel attacks---that ECE
+\emph{in-distribution} split the same models are nearly perfectly calibrated (ECE $\lesssim 0.003$),
+and Platt scaling keeps them there. It is only on the shifted test set---which introduces novel attacks---that ECE
 inflates (Fig.~\ref{fig:eceshift}), and there post-hoc Platt scaling fit on source data cannot remove
 it---ECE stays essentially unchanged for gradient boosting and is slightly worse for the random forest.
 Calibrating to the source distribution does not certify
@@ -197,7 +197,7 @@ We formalize the unknown-attack test as a \emph{leave-one-family-out} (LOFO) pro
 family $F$, remove all of $F$ from training (keeping benign traffic and the other families), retrain,
 and measure detection and abstention on $F$'s test records---a controlled, causal version of the
 genuine-unknown setting, which we release as reusable code. On NSL-KDD's built-in novel attacks the
-random forest flags \PH{rf_det_known} of \emph{known} attacks but only \PH{rf_det_novel} of novel ones;
+random forest flags ${\approx}0.77$ of \emph{known} attacks but only ${\approx}0.23$ of novel ones;
 LOFO (Table~\ref{tab:openset}, Fig.~\ref{fig:open}) confirms this causally: detection of DoS falls from
 \PH{det_seen_DoS} to \PH{det_unseen_DoS} when DoS is unknown, and Probe from \PH{det_seen_Probe} to
 \PH{det_unseen_Probe}, with abstention rejecting \PH{reject_unseen_DoS} and \PH{reject_unseen_Probe} at
@@ -339,8 +339,9 @@ one-class novelty detector, distinct from the two-class Mahalanobis used above f
 an Isolation Forest~\cite{liu2008isolation} and a one-class SVM~\cite{scholkopf2001oneclass} on benign
 records only. At a 10\% benign false-positive budget the Isolation Forest recovers
 \PH{nov_if_rec_U2R_fp10} of U2R and \PH{nov_if_rec_R2L_fp10} of R2L (the one-class SVM
-\PH{nov_ocsvm_rec_U2R_fp10} and \PH{nov_ocsvm_rec_R2L_fp10})---against abstention's
-$\approx\PH{reject_unseen_R2L}$ for unknown R2L, a clear if partial gain. The AUROC ceilings
+\PH{nov_ocsvm_rec_U2R_fp10} and \PH{nov_ocsvm_rec_R2L_fp10}; means over $K{=}8$ seeds, 95\% CI
+half-width $\le\PH{nov_maxhw}$)---against abstention's $\approx\PH{reject_unseen_R2L}$ for unknown R2L,
+a clear if partial gain. The AUROC ceilings
 (Fig.~\ref{fig:novelty}: R2L \PH{nov_if_auroc_R2L}, U2R \PH{nov_if_auroc_U2R}) show the limit is real but
 not absolute: R2L is hardest because its support most overlaps benign, so no benign-only detector fully
 recovers it, yet a novelty stage is a cheap, measured complement---abstention and novelty catch

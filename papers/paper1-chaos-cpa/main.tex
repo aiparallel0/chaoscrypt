@@ -173,10 +173,13 @@ $s(j)$.
 
 \begin{proposition}\label{prop:monomial}
 If a permutation--diffusion cipher's keystream and permutations depend only on the key, it realises a
-fixed map of the form \eqref{eq:monomial} with each $K[p]$ a unit in $\mathbb{Z}_{256}$ and $s$ a fixed
-permutation; composing any number of such rounds yields a map of the same form. The multiplier at every
-output position is then read from one all-ones query, and $s$ from $\lceil\log_{256}n\rceil$ index-digit
-queries.
+fixed \emph{affine} map of the plaintext: the monomial \eqref{eq:monomial} with each $K[p]$ a unit in
+$\mathbb{Z}_{256}$ when the substitution is a modular multiply, or an affine map $C=Mx\oplus b$ over
+$\mathrm{GF}(2)$ (with $b=E(\mathbf{0})$ possibly nonzero) when the substitution is XOR-based; composing
+any number of such rounds yields a map of the same form. In either case it is recovered from
+$1+\lceil\log_{256}n\rceil$ chosen plaintexts: one all-ones (resp.\ all-zeros) query fixes the
+substitution at every output position, and $\lceil\log_{256}n\rceil$ index-digit queries fix the
+permutation $s$.
 \end{proposition}
 \begin{proof}[Proof sketch]
 Each stage---multiplication by the key-derived $K$ and the two block shuffles---is a fixed function of
@@ -185,7 +188,10 @@ $\mathbb{Z}_{256}$ this is the monomial \eqref{eq:monomial}. The keystream is fo
 unit and $x\mapsto K[p]\,x$ is a bijection with inverse $K[p]^{-1}$. Querying $X=\mathbf{1}$ gives
 $C[j]=K[s(j)]$; querying the $t$-th base-256 digit of the index gives
 $C[j]=K[s(j)]\,\mathrm{digit}_t(s(j))$, and dividing by the recovered $K[s(j)]$ yields
-$\mathrm{digit}_t(s(j))$; collecting all digits reconstructs $s$.
+$\mathrm{digit}_t(s(j))$; collecting all digits reconstructs $s$. If instead the substitution is XOR
+with a key-only keystream, the same argument over $\mathrm{GF}(2)$ gives an affine map $C=Mx\oplus b$
+with $b=E(\mathbf{0})$: the all-zeros query returns $b$ and the index-digit queries return $s$, exactly
+as in the CBC-like XOR cipher we break in Section~\ref{sec:crypt}.
 \end{proof}
 
 \subsection{Equivalent-key recovery}
@@ -220,7 +226,7 @@ recovery entirely~\cite{Jolfaei2016permutation}.
 \begin{algorithmic}[1]
 \State $\hat{K} \gets \mathrm{Enc}(\mathbf{1})$ \Comment{$\hat{K}[j]=K[s(j)]$: multiplier at output $j$}
 \For{$t \gets 0$ \textbf{to} $\lceil\log_{256} n\rceil-1$}
-  \State $C \gets \mathrm{Enc}(\text{digit}_t \text{ of each pixel index})$
+  \State $C \gets \mathrm{Enc}(P_t)$ \Comment{$P_t[i]={}$ the $t$-th base-256 digit of index $i$}
   \State $d_t[j] \gets C[j]\cdot \hat{K}[j]^{-1} \bmod 256$ \textbf{for all} $j$
 \EndFor
 \State $s[j] \gets \sum_t d_t[j]\,256^{t}$ \Comment{source index for each output $j$}
