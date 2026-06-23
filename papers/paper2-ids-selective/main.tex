@@ -88,6 +88,15 @@ under distribution shift---were argued early \cite{sommer2010outside} and remain
 hazard \cite{arp2022dodos}. We do not propose a new detector; we ask whether existing ones know when
 they are wrong.
 
+\textbf{Unknown attacks and shift.} The failure of closed-world classifiers on inputs unlike their
+training data motivates out-of-distribution and open-set detection, for which the maximum softmax
+probability is the standard baseline \cite{hendrycks2017baseline}. NSL-KDD operationalises this within
+a security benchmark: its test split deliberately contains attack types absent from
+training~\cite{tavallaee2009nsl}, so measuring behaviour on them needs no synthetic construction. Our
+family-holdout protocol complements that built-in novelty with a controlled version that makes the
+``unknown'' condition causal. We deliberately reuse only off-the-shelf scores and standard metrics so
+that the conclusions concern the \emph{evaluation} of detectors, not a new detector design.
+
 \section{Methodology}
 \textbf{Data.} NSL-KDD \cite{tavallaee2009nsl} provides \PH{n_train} training and \PH{n_test} test
 records with 41 features (three categorical) and a binary normal/attack label; each attack maps to one
@@ -114,12 +123,17 @@ detection and confidence on that family's test records. We also report, at a glo
 
 \section{Results}
 \subsection{Detectors are over-confident}\label{sec:cal}
-Table~\ref{tab:main} reports accuracy and calibration. All three models are over-confident: ECE ranges
-from \PH{rf_ece_raw} (random forest) to \PH{logreg_ece_raw} (logistic regression). Platt scaling, fit
-on in-distribution held-out data, does not help on the shifted test set---ECE is essentially unchanged
-for gradient boosting (\PH{histgb_ece_raw} to \PH{histgb_ece_cal}) and slightly worse for the random
-forest (\PH{rf_ece_raw} to \PH{rf_ece_cal}). Calibrating to the source distribution does not certify
-probabilities once the deployed distribution moves, as Fig.~\ref{fig:rel} illustrates.
+Table~\ref{tab:main} reports accuracy and calibration. On the test set all three models are markedly
+over-confident, with ECE from \PH{rf_ece_raw} (random forest) to \PH{logreg_ece_raw} (logistic
+regression). Crucially this is induced by distribution shift, not intrinsic: on a held-out
+\emph{in-distribution} split the same models are nearly perfectly calibrated (random-forest ECE
+\PH{rf_ece_val_raw}, gradient-boosting \PH{histgb_ece_val_raw}), and Platt scaling keeps them there
+(\PH{rf_ece_val_cal}). It is only on the shifted test set---which introduces novel attacks---that ECE
+inflates (Fig.~\ref{fig:eceshift}), and there post-hoc Platt scaling fit on source data cannot remove it: essentially unchanged
+for gradient boosting (\PH{histgb_ece_raw}$\to$\PH{histgb_ece_cal}) and slightly worse for the random
+forest (\PH{rf_ece_raw}$\to$\PH{rf_ece_cal}). Calibrating to the source distribution does not certify
+probabilities once the deployed distribution moves (Fig.~\ref{fig:rel}); this is the core reason we
+turn to abstention, which needs only a usable confidence \emph{ranking}, not calibrated probabilities.
 
 \begin{table}[t]
 \centering
@@ -159,6 +173,14 @@ confidence signal, which here depends strongly on the model family.
 \label{fig:rel}
 \end{figure}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\columnwidth]{figures/ece_shift.pdf}
+\caption{Calibration error in-distribution vs.\ on the shifted test set. Models calibrated at training
+become badly miscalibrated under the test-time shift introduced by novel attacks.}
+\label{fig:eceshift}
+\end{figure}
+
 \subsection{Unknown attacks: collapse and partial cover}\label{sec:openset}
 On the built-in novel attacks, detection drops sharply: the random forest flags \PH{rf_det_known} of
 \emph{known} attacks but only \PH{rf_det_novel} of novel ones. The controlled family-holdout
@@ -169,6 +191,22 @@ at 80\% coverage---useful but partial. The R2L family is the sharp limit: detect
 \PH{det_seen_R2L} even when \emph{seen}, falling to \PH{det_unseen_R2L} when unknown, and abstention
 flags just \PH{reject_unseen_R2L} of it. Because R2L traffic statistically resembles benign sessions,
 the detector is confidently wrong, and a confidence-based reject option cannot save it.
+
+\begin{table}[t]
+\centering
+\caption{Open-set family holdout: detection rate when a family is seen in training vs.\ held out
+(unknown), and the fraction of unknown-family records that abstention rejects at 80\% coverage.}
+\label{tab:openset}
+\begin{tabular}{lccc}
+\toprule
+Family & det.\ (seen) & det.\ (unknown) & rejected by abstention \\
+\midrule
+DoS   & \PH{det_seen_DoS}   & \PH{det_unseen_DoS}   & \PH{reject_unseen_DoS} \\
+Probe & \PH{det_seen_Probe} & \PH{det_unseen_Probe} & \PH{reject_unseen_Probe} \\
+R2L   & \PH{det_seen_R2L}   & \PH{det_unseen_R2L}   & \PH{reject_unseen_R2L} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure}[t]
 \centering
@@ -185,8 +223,23 @@ signal, which is good for tree ensembles and poor for the linear model. Second, 
 on source data does not survive distribution shift, so calibrated probabilities should not be trusted
 as deployment-time guarantees. Third, and most important operationally, abstention only catches
 unknowns that \emph{look} anomalous; attacks that mimic benign traffic (R2L here) are missed
-confidently and silently. NSL-KDD is dated and its feature set hand-crafted; confirming these effects
-on a modern flow-based corpus is the natural next step.
+confidently and silently.
+
+\emph{Operational recipe.} These results suggest a concrete deployment pattern. Pick a model whose
+confidence is informative---identified by a low AURC on validation data (here a tree ensemble, not the
+linear model); choose an operating coverage from the risk--coverage curve to meet a target precision on
+accepted alerts; route the abstained minority to a secondary control (a human analyst or an anomaly
+detector); and, because calibration does not survive shift, monitor the abstention rate over time as a
+cheap drift signal instead of trusting the raw probabilities. The reject option should be paired with a
+complementary detector aimed at benign-looking intrusions (R2L/U2R), which abstention alone will not
+catch.
+
+\emph{Limitations.} NSL-KDD is dated and its features hand-crafted, so absolute numbers will differ on
+modern corpora; the mechanisms we isolate---over-confidence under shift, model-dependent confidence
+quality, and the benign-mimicry blind spot---are not specific to it. We study binary detection with a
+single abstention signal (maximum class probability); richer signals and the multi-class
+attack-typing setting are natural extensions. Confirming the findings on a modern flow-based corpus
+such as CIC-IDS-2017 with temporally correct splits is the clear next step.
 
 \section{Conclusion}
 On a standard benchmark, off-the-shelf intrusion detectors are over-confident, post-hoc calibration

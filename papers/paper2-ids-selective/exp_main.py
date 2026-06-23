@@ -45,8 +45,11 @@ def main() -> None:
     is_novel = ds.test["label"].isin(novel).to_numpy()
     is_known_atk = ((ds.test["y"] == 1).to_numpy()) & (~is_novel)
 
-    Xfit, Xcal, yfit, ycal = train_test_split(
+    # fit (60%) / calibrate (20%) / in-distribution validation (20%) split of TRAIN
+    Xtr2, Xval, ytr2, yval = train_test_split(
         Xtr, ytr, test_size=0.2, random_state=RNG, stratify=ytr)
+    Xfit, Xcal, yfit, ycal = train_test_split(
+        Xtr2, ytr2, test_size=0.25, random_state=RNG, stratify=ytr2)
 
     models = {
         "logreg": LogisticRegression(max_iter=300),
@@ -55,7 +58,7 @@ def main() -> None:
     }
     flat: dict = {"n_train": int(len(ytr)), "n_test": int(len(yte)),
                   "n_novel_types": len(novel), "n_novel_rows": int(is_novel.sum())}
-    curves, rf_arrays = {}, {}
+    curves, rf_arrays, ece_store = {}, {}, {}
 
     for name, base in models.items():
         base.fit(Xfit, yfit)
@@ -70,6 +73,11 @@ def main() -> None:
         pcal = cal.predict_proba(Xte)
         conf_c, pred_c = pcal.max(1), pcal.argmax(1)
         e_cal = ece(conf_c, (pred_c == yte).astype(float))
+        # in-distribution calibration: ECE on a held-out TRAIN split (same distribution as fit)
+        pv = base.predict_proba(Xval)
+        ev_raw = ece(pv.max(1), (pv.argmax(1) == yval).astype(float))
+        pvc = cal.predict_proba(Xval)
+        ev_cal = ece(pvc.max(1), (pvc.argmax(1) == yval).astype(float))
         det_known = (pred[is_known_atk] == 1).mean()
         det_novel = (pred[is_novel] == 1).mean()
         flat.update({
@@ -81,8 +89,11 @@ def main() -> None:
             f"{name}_risk80": round(float(r80), 4),
             f"{name}_det_known": round(float(det_known), 4),
             f"{name}_det_novel": round(float(det_novel), 4),
+            f"{name}_ece_val_raw": round(float(ev_raw), 4),
+            f"{name}_ece_val_cal": round(float(ev_cal), 4),
         })
         curves[name] = (cov, risks)
+        ece_store[name] = (float(ev_raw), float(e_raw))
         if name == "rf":
             rf_arrays = dict(conf=conf, correct=correct, conf_c=conf_c,
                              correct_c=(pred_c == yte).astype(float))
@@ -110,7 +121,17 @@ def main() -> None:
     plt.xlabel("confidence"); plt.ylabel("accuracy"); plt.legend(fontsize=7)
     plt.grid(alpha=.3); plt.tight_layout()
     plt.savefig(FIG / "reliability_rf.pdf"); plt.close()
-    print(f"wrote {RES/'main.json'} and 2 figures")
+
+    # Fig 3: ECE in-distribution vs shifted test, per model -- the calibration-under-shift finding
+    names = list(ece_store)
+    x = np.arange(len(names))
+    plt.figure(figsize=(3.4, 2.4))
+    plt.bar(x - 0.2, [ece_store[n][0] for n in names], 0.4, label="in-distribution")
+    plt.bar(x + 0.2, [ece_store[n][1] for n in names], 0.4, label="shifted test")
+    plt.xticks(x, names); plt.ylabel("ECE"); plt.legend(fontsize=7)
+    plt.grid(axis="y", alpha=.3); plt.tight_layout()
+    plt.savefig(FIG / "ece_shift.pdf"); plt.close()
+    print(f"wrote {RES/'main.json'} and 3 figures")
 
 
 if __name__ == "__main__":
