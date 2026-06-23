@@ -6,6 +6,8 @@
 \usepackage{booktabs}
 \usepackage{url}
 \usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
 
 % Placeholders (PH of a key) are replaced by scripts/fill_tex.py from results/*.json.
 \newcommand{\PH}[1]{\textcolor{red}{\texttt{#1}}}
@@ -115,6 +117,28 @@ The four ``decryption keys'' are the two keystreams ($d_1,d_2$) and the two shuf
 ($d_3,d_4$). The chaotic initial conditions are derived from the secret key and the shuffles are
 seeded from it; \emph{no quantity depends on the image $X$}. Although the scheme is repeatedly called
 ``asymmetric,'' the same four keys both encrypt and decrypt: it is a symmetric cipher.
+
+\begin{figure}[t]
+\centering
+\footnotesize
+\begin{tikzpicture}[>=Stealth,
+  box/.style={draw, rounded corners, minimum height=5.5mm, inner xsep=3pt}, node distance=4mm]
+  \node[box] (x) {$X$};
+  \node[box, right=of x] (k) {$\times K$};
+  \node[box, right=of k] (h) {FY rows};
+  \node[box, right=of h] (v) {FY cols};
+  \node[box, right=of v] (c) {$C$};
+  \foreach \a/\b in {x/k,k/h,h/v,v/c} \draw[->] (\a)--(\b);
+  \node[box, below=7mm of h, text width=0.84\columnwidth, align=center, fill=black!5] (atk)
+    {attack: $\mathbf{1}\!\to\!K$; \ $\lceil\log_{256}n\rceil$ digit probes $\to s$; \ then
+     $X[s(j)]=K[s(j)]^{-1}C[j]$};
+  \draw[->, dashed] (c) |- (atk);
+\end{tikzpicture}
+\caption{LLEO encryption (top): key-only multiplicative substitution $\times K$, then two
+Fisher--Yates block shuffles. The equivalent-key attack (bottom) recovers the multiplier $K$ and source
+map $s$ from a few chosen plaintexts and inverts the cipher without the key.}
+\label{fig:schema}
+\end{figure}
 
 \section{Cryptanalysis}\label{sec:crypt}
 \subsection{Structural observation}
@@ -267,6 +291,17 @@ Key type                   & ``asymmetric'' & symmetric \\
 \caption{Adjacent-pixel correlation, plain vs.\ cipher (Cameraman).}
 \label{fig:corr}
 \end{figure}
+
+\subsection{The attack is not specific to LLEO}
+The same principle breaks any key-only permutation--diffusion cipher. As a second, structurally
+distinct example we take the canonical construction with a CBC-like XOR diffusion chain,
+$C[i]=X_{\pi}[i]\oplus k[i]\oplus C[i-1]$---representative of a large published family and unlike
+LLEO's multiplicative monomial form. With a key-only keystream this map is affine over
+$\mathrm{GF}(2)$ (the identity $E(a)\oplus E(b)\oplus E(\mathbf 0)=E(a\oplus b)$ holds at one
+\emph{and} three rounds in our checks), and the equivalent-key CPA recovers it exactly in
+\PH{gen_cpt} chosen plaintexts. The identical procedure fails against a plaintext-hash-seeded version
+of the \emph{same} structure, reinforcing that what matters is the keystream's dependence on the
+image---not the algebra or the round count.
 
 \section{Discussion}
 LLEO illustrates two persistent failure modes. First, \emph{good statistics are not security}: a flat
