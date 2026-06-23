@@ -74,7 +74,11 @@ detection collapses on held-out families while abstention provides only partial 
 none for attacks that resemble benign traffic (Section~\ref{sec:openset}).
 \end{itemize}
 Throughout we follow the evaluation guidance of Arp \emph{et al.}\ \cite{arp2022dodos}: the calibrator
-is fit only on held-out training data, and no test information leaks into model selection.
+is fit only on held-out training data, and no test information leaks into model selection. Unless stated
+otherwise, NSL-KDD test metrics are reported as the mean over $K{=}15$ seeds---resampling both the
+fit/calibration split and model randomness---with 95\% confidence intervals (the canonical test
+partition is held fixed, so these intervals reflect train/model variance); equivalence is assessed with
+the \emph{paired} per-seed difference and its CI rather than overlapping marginal intervals.
 
 \section{Related Work}
 \textbf{Calibration.} Modern classifiers often output probabilities that do not match empirical
@@ -129,40 +133,41 @@ detection and confidence on that family's test records. We also report, at a glo
 \section{Results}
 \subsection{Detectors are over-confident}\label{sec:cal}
 Table~\ref{tab:main} reports accuracy and calibration. On the test set all three models are markedly
-over-confident, with ECE from \PH{rf_ece_raw} (random forest) to \PH{logreg_ece_raw} (logistic
-regression). Crucially this is induced by distribution shift, not intrinsic: on a held-out
+over-confident, with ECE from $\approx$0.16 (random forest) to $\approx$0.22 (logistic regression).
+Crucially this is induced by distribution shift, not intrinsic: on a held-out
 \emph{in-distribution} split the same models are nearly perfectly calibrated (random-forest ECE
 \PH{rf_ece_val_raw}, gradient-boosting \PH{histgb_ece_val_raw}), and Platt scaling keeps them there
 (\PH{rf_ece_val_cal}). It is only on the shifted test set---which introduces novel attacks---that ECE
-inflates (Fig.~\ref{fig:eceshift}), and there post-hoc Platt scaling fit on source data cannot remove it: essentially unchanged
-for gradient boosting (\PH{histgb_ece_raw}$\to$\PH{histgb_ece_cal}) and slightly worse for the random
-forest (\PH{rf_ece_raw}$\to$\PH{rf_ece_cal}). Calibrating to the source distribution does not certify
+inflates (Fig.~\ref{fig:eceshift}), and there post-hoc Platt scaling fit on source data cannot remove
+it---ECE stays essentially unchanged for gradient boosting and is slightly worse for the random forest.
+Calibrating to the source distribution does not certify
 probabilities once the deployed distribution moves (Fig.~\ref{fig:rel}); this is the core reason we
 turn to abstention, which needs only a usable confidence \emph{ranking}, not calibrated probabilities.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
-\caption{Accuracy, calibration error (raw / after Platt scaling), and selective-prediction quality on
-the NSL-KDD test set. Lower ECE and AURC are better.}
+\caption{NSL-KDD test metrics: mean $\pm$ 95\% CI over $K{=}15$ seeds (resampling the
+fit/calibration split and model randomness). Lower ECE and AURC are better.}
 \label{tab:main}
-\begin{tabular}{lccccc}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lcccc}
 \toprule
-Model & Acc. & ECE$_\text{raw}$ & ECE$_\text{Platt}$ & AURC & $r(0.8)$ \\
+Model & Acc. & ECE & AURC & $r(0.8)$ \\
 \midrule
-Logistic reg.   & \PH{logreg_acc} & \PH{logreg_ece_raw} & \PH{logreg_ece_cal} & \PH{logreg_aurc} & \PH{logreg_risk80} \\
-Random forest   & \PH{rf_acc}     & \PH{rf_ece_raw}     & \PH{rf_ece_cal}     & \PH{rf_aurc}     & \PH{rf_risk80} \\
-Hist.\ grad.\ boost. & \PH{histgb_acc} & \PH{histgb_ece_raw} & \PH{histgb_ece_cal} & \PH{histgb_aurc} & \PH{histgb_risk80} \\
+Logistic reg.        & \PH{ms_logreg_acc} & \PH{ms_logreg_ece} & \PH{ms_logreg_aurc} & \PH{ms_logreg_risk80} \\
+Random forest        & \PH{ms_rf_acc}     & \PH{ms_rf_ece}     & \PH{ms_rf_aurc}     & \PH{ms_rf_risk80} \\
+Hist.\ grad.\ boost. & \PH{ms_histgb_acc} & \PH{ms_histgb_ece} & \PH{ms_histgb_aurc} & \PH{ms_histgb_risk80} \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Abstention helps---if confidence is informative}\label{sec:sp}
 Fig.~\ref{fig:rc} shows risk--coverage curves. For gradient boosting, abstaining on the least-confident
-20\% of inputs lowers selective risk from \PH{histgb_risk_full} to \PH{histgb_risk80}; the random forest
-behaves similarly (AURC \PH{rf_aurc}). Logistic regression is the cautionary case: its confidence
-barely ranks its errors (AURC \PH{logreg_aurc}), so abstention buys little (\PH{logreg_risk_full} to
-\PH{logreg_risk80}). The lesson is that selective prediction is only as good as the underlying
-confidence signal, which here depends strongly on the model family.
+20\% of inputs lowers selective risk to \PH{ms_histgb_risk80} (AURC \PH{ms_histgb_aurc}); the random
+forest is similar (AURC \PH{ms_rf_aurc}). Logistic regression is the cautionary case: its confidence
+barely ranks its errors (AURC \PH{ms_logreg_aurc}), so abstention buys little (\PH{ms_logreg_risk80}).
+The lesson is that selective prediction is only as good as the underlying confidence signal, which here
+depends strongly on the model family.
 
 \begin{figure}[t]
 \centering
@@ -186,21 +191,28 @@ become badly miscalibrated under the test-time shift introduced by novel attacks
 \label{fig:eceshift}
 \end{figure}
 
-\subsection{Unknown attacks: collapse and partial cover}\label{sec:openset}
-On the built-in novel attacks, detection drops sharply: the random forest flags \PH{rf_det_known} of
-\emph{known} attacks but only \PH{rf_det_novel} of novel ones. The controlled family-holdout
-(Fig.~\ref{fig:open}) confirms this causally: detection of DoS falls from \PH{det_seen_DoS} to
-\PH{det_unseen_DoS} when DoS is unknown, and Probe from \PH{det_seen_Probe} to \PH{det_unseen_Probe}.
-Abstention rejects \PH{reject_unseen_DoS} of unknown DoS and \PH{reject_unseen_Probe} of unknown Probe
-at 80\% coverage---useful but partial. The R2L family is the sharp limit: detected at only
-\PH{det_seen_R2L} even when \emph{seen}, falling to \PH{det_unseen_R2L} when unknown, and abstention
-flags just \PH{reject_unseen_R2L} of it. Because R2L traffic statistically resembles benign sessions,
-the detector is confidently wrong, and a confidence-based reject option cannot save it.
+\subsection{Leave-one-family-out (LOFO) open-set evaluation}\label{sec:openset}
+We formalize the unknown-attack test as a \emph{leave-one-family-out} (LOFO) protocol: for each attack
+family $F$, remove all of $F$ from training (keeping benign traffic and the other families), retrain,
+and measure detection and abstention on $F$'s test records---a controlled, causal version of the
+genuine-unknown setting, which we release as reusable code. On NSL-KDD's built-in novel attacks the
+random forest flags \PH{rf_det_known} of \emph{known} attacks but only \PH{rf_det_novel} of novel ones;
+LOFO (Table~\ref{tab:openset}, Fig.~\ref{fig:open}) confirms this causally: detection of DoS falls from
+\PH{det_seen_DoS} to \PH{det_unseen_DoS} when DoS is unknown, and Probe from \PH{det_seen_Probe} to
+\PH{det_unseen_Probe}, with abstention rejecting \PH{reject_unseen_DoS} and \PH{reject_unseen_Probe} at
+80\% coverage. The rare U2R family (train $n{=}52$, test $n{=}67$---a high-variance estimate) behaves
+like the anomalous families: abstention still flags \PH{reject_unseen_U2R} of unknown U2R. R2L is the
+sharp exception---detected at only \PH{det_seen_R2L} even when \emph{seen}, \PH{det_unseen_R2L} when
+unknown, with abstention flagging just \PH{reject_unseen_R2L}. Because R2L traffic statistically
+resembles benign sessions the detector is confidently wrong, so the blind spot is specifically
+\emph{benign-mimicking} attacks, not unknown attacks in general. The CIC-IDS-2017 cross-day experiment
+below is the same protocol on a second corpus, with the Web family held out.
 
 \begin{table}[t]
 \centering
-\caption{Open-set family holdout: detection rate when a family is seen in training vs.\ held out
-(unknown), and the fraction of unknown-family records that abstention rejects at 80\% coverage.}
+\caption{Leave-one-family-out (LOFO) open set on NSL-KDD: detection when a family is seen in training
+vs.\ held out (unknown), and the fraction of unknown-family records abstention rejects at 80\% coverage.
+U2R is rare ($n{=}52/67$), hence high variance.}
 \label{tab:openset}
 \begin{tabular}{lccc}
 \toprule
@@ -209,6 +221,7 @@ Family & det.\ (seen) & det.\ (unknown) & rejected by abstention \\
 DoS   & \PH{det_seen_DoS}   & \PH{det_unseen_DoS}   & \PH{reject_unseen_DoS} \\
 Probe & \PH{det_seen_Probe} & \PH{det_unseen_Probe} & \PH{reject_unseen_Probe} \\
 R2L   & \PH{det_seen_R2L}   & \PH{det_unseen_R2L}   & \PH{reject_unseen_R2L} \\
+U2R   & \PH{det_seen_U2R}   & \PH{det_unseen_U2R}   & \PH{reject_unseen_U2R} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -267,37 +280,65 @@ across coverages---unlike NSL-KDD (Fig.~\ref{fig:rc}).}
 Two questions sharpen the story: is maximum class probability (MSP) the right abstention signal, and can
 abstention carry a formal guarantee? For the first, we benchmark MSP against random-forest ensemble
 disagreement, Mahalanobis distance to class-conditional Gaussians, and $k$NN distance, on error ranking
-(AURC) and unknown-attack separation (Table~\ref{tab:signals}). Contrary to the deep-learning
-out-of-distribution literature, where richer signals dominate MSP under shift~\cite{ovadia2019,lee2018mahalanobis},
-on this tabular flow data they do not: ensemble disagreement tracks MSP almost exactly, Mahalanobis
-yields only a marginal AURC improvement (\PH{sig_mahalanobis_aurc} vs.\ \PH{sig_msp_aurc}) and is
-\emph{worse} at unknown detection, and $k$NN is worse on both. For tabular intrusion detection the cheap
-MSP signal suffices; the leverage is in the abstention framework, not exotic estimators.
+(AURC) and unknown-attack separation (Table~\ref{tab:signals}). The appropriate statistic for a
+no-difference claim is the \emph{paired} per-seed $\Delta\text{AURC}=\text{signal}-\text{MSP}$, and it
+shows that no signal dominates. Ensemble disagreement is statistically indistinguishable from MSP
+(paired $\Delta$AURC \PH{ms_dmsp_rf_disagreement}; CI includes 0). Mahalanobis is marginally but
+significantly \emph{better} at error ranking (\PH{ms_dmsp_mahalanobis}) yet significantly \emph{worse}
+at unknown-attack detection (AUROC \PH{ms_sig_mahalanobis_unk} vs.\ MSP's \PH{ms_sig_msp_unk}); $k$NN is
+worse on both (\PH{ms_dmsp_knn}). So contrary to the deep-learning out-of-distribution literature,
+where richer signals dominate under shift~\cite{ovadia2019,lee2018mahalanobis}, on tabular flow data the
+cheap max-softmax is a strong, well-rounded default---the leverage is in the abstention framework, not
+the estimator.
 
 For the second, we wrap the detector in split conformal prediction~\cite{angelopoulos2023conformal},
 which gives distribution-free coverage under exchangeability. At target coverage $0.90$, the prediction
-sets cover the true label \PH{conf_cov_indist} of the time in-distribution---valid---but only
-\PH{conf_cov_shift} under the train--test shift. This is the conformal analogue of the calibration
+sets attain empirical coverage \PH{ms_conf_indist} in-distribution---valid---but only
+\PH{ms_conf_shift} under the train--test shift. This is the conformal analogue of the calibration
 failure of Section~\ref{sec:cal}: the guarantee is exact under exchangeability and erodes precisely when
 the deployment distribution moves~\cite{tibshirani2019}. Restoring it needs shift-aware (weighted)
 conformal with estimable likelihood ratios---impractical for genuine zero-days, the honest caveat.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
-\caption{Uncertainty signals on NSL-KDD: error ranking (AURC, lower better) and unknown-attack
-separation (AUROC, higher better). Max-softmax is a strong baseline for tabular IDS.}
+\caption{Uncertainty signals on NSL-KDD (mean $\pm$ 95\% CI over $K{=}15$ seeds). AURC lower is better,
+unknown-AUROC higher; $\Delta$AURC is the paired per-seed difference vs.\ MSP (negative ${=}$ better; a
+CI spanning 0 means no detectable difference).}
 \label{tab:signals}
-\begin{tabular}{lcc}
+\begin{tabular}{lccc}
 \toprule
-Signal & AURC & unknown-AUROC \\
+Signal & AURC & unknown-AUROC & $\Delta$AURC vs.\ MSP \\
 \midrule
-Max-softmax (MSP)         & \PH{sig_msp_aurc}             & \PH{sig_msp_unkauroc} \\
-RF ensemble disagreement  & \PH{sig_rf_disagreement_aurc} & \PH{sig_rf_disagreement_unkauroc} \\
-Mahalanobis distance      & \PH{sig_mahalanobis_aurc}     & \PH{sig_mahalanobis_unkauroc} \\
-$k$NN distance            & \PH{sig_knn_aurc}             & \PH{sig_knn_unkauroc} \\
+Max-softmax (MSP)         & \PH{ms_sig_msp_aurc}             & \PH{ms_sig_msp_unk}             & --- \\
+RF ensemble disagreement  & \PH{ms_sig_rf_disagreement_aurc} & \PH{ms_sig_rf_disagreement_unk} & \PH{ms_dmsp_rf_disagreement} \\
+Mahalanobis distance      & \PH{ms_sig_mahalanobis_aurc}     & \PH{ms_sig_mahalanobis_unk}     & \PH{ms_dmsp_mahalanobis} \\
+$k$NN distance            & \PH{ms_sig_knn_aurc}             & \PH{ms_sig_knn_unk}             & \PH{ms_dmsp_knn} \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
+
+\subsection{A benign-only novelty stage partially closes the blind spot}
+Confidence-based abstention barely flags R2L (Section~\ref{sec:openset}) because such attacks lie on the
+benign feature manifold. The apt detector for that regime is a \emph{benign-only} density model---a
+one-class novelty detector, distinct from the two-class Mahalanobis used above for error ranking. We fit
+an Isolation Forest~\cite{liu2008isolation} and a one-class SVM~\cite{scholkopf2001oneclass} on benign
+records only. At a 10\% benign false-positive budget the Isolation Forest recovers
+\PH{nov_if_rec_U2R_fp10} of U2R and \PH{nov_if_rec_R2L_fp10} of R2L (the one-class SVM
+\PH{nov_ocsvm_rec_U2R_fp10} and \PH{nov_ocsvm_rec_R2L_fp10})---against abstention's
+$\approx\PH{reject_unseen_R2L}$ for unknown R2L, a clear if partial gain. The AUROC ceilings
+(Fig.~\ref{fig:novelty}: R2L \PH{nov_if_auroc_R2L}, U2R \PH{nov_if_auroc_U2R}) show the limit is real but
+not absolute: R2L is hardest because its support most overlaps benign, so no benign-only detector fully
+recovers it, yet a novelty stage is a cheap, measured complement---abstention and novelty catch
+different failure modes (confident errors vs.\ benign-mimicking attacks).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.8\columnwidth]{figures/novelty_auroc.pdf}
+\caption{Benign-only novelty detection (trained on benign records only): AUROC separating each attack
+family from benign. DoS/Probe are easy; R2L/U2R---the abstention blind spot---are only partially
+recoverable, R2L the hardest.}
+\label{fig:novelty}
+\end{figure}
 
 \section{Discussion and Limitations}
 Selective prediction is a cheap, model-agnostic safety layer: at the cost of deferring a minority of
@@ -323,8 +364,9 @@ catch.
 modern corpora; the mechanisms we isolate---over-confidence under shift, model-dependent confidence
 quality, and the benign-mimicry blind spot---are not specific to it. We study binary detection with a
 single abstention signal (maximum class probability); richer signals and the multi-class
-attack-typing setting are natural extensions. Confirming the findings on a modern flow-based corpus
-such as CIC-IDS-2017 with temporally correct splits is the clear next step.
+attack-typing setting are natural extensions. We evaluate CIC-IDS-2017 with a cross-day split; a
+\emph{full} time-ordered evaluation (and the label-corrected CIC-IDS-2017~\cite{engelen2021troubleshooting}
+and standardized NetFlow-v2 corpora for true cross-network transfer) remains future work.
 
 \section{Conclusion}
 On a hard benchmark (NSL-KDD) off-the-shelf intrusion detectors are over-confident and post-hoc

@@ -11,5 +11,9 @@
   "det_seen_R2L": 0.0586,
   "det_unseen_R2L": 0.0035,
   "conf_unseen_R2L": 0.9947,
-  "reject_unseen_R2L": 0.1737
+  "reject_unseen_R2L": 0.1737,
+  "det_seen_U2R": 0.1791,
+  "det_unseen_U2R": 0.0299,
+  "conf_unseen_U2R": 0.9343,
+  "reject_unseen_U2R": 0.6716
 }

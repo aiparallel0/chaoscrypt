@@ -20,7 +20,7 @@ from ids_selective.pipeline import encode, family_holdout_mask
 
 HERE = Path(__file__).parent
 RES, FIG = HERE / "results", HERE / "figures"
-FAMILIES = ["DoS", "Probe", "R2L"]  # U2R too rare in test (67) for a stable estimate
+FAMILIES = ["DoS", "Probe", "R2L", "U2R"]  # U2R is rare (train 52 / test 67): high-variance estimate
 
 
 def fit_predict(train_df, test_df):
