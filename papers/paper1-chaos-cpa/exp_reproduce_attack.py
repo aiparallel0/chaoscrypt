@@ -96,13 +96,21 @@ def main() -> None:
 
     (RES / "repro_attack.json").write_text(json.dumps(flat, indent=2))
 
-    # Figure 1: original / encrypted / recovered (Cameraman)
-    img, E2d, rec2d = store["cam"]
-    fig, ax = plt.subplots(1, 3, figsize=(5.2, 1.95))
-    for a, im, ttl in zip(ax, [img, E2d, rec2d],
-                          ["original", "encrypted", "recovered (no key)"]):
-        a.imshow(im, cmap="gray", vmin=0, vmax=255); a.set_title(ttl, fontsize=8); a.axis("off")
-    plt.tight_layout(); plt.savefig(FIG / "break_cameraman.pdf"); plt.close()
+    # Figure 1: full-width montage -- rows {original, encrypted, recovered} x four images
+    cols4 = ["cam", "moon", "grv", "brk"]
+    labels = {"cam": "Cameraman", "moon": "Moon", "grv": "Gravel", "brk": "Brick"}
+    rows = ["original", "encrypted", "recovered (no key)"]
+    fig, ax = plt.subplots(3, 4, figsize=(8.6, 6.7))
+    for c, nm in enumerate(cols4):
+        for r, im in enumerate(store[nm]):  # (original, encrypted, recovered)
+            ax[r, c].imshow(im, cmap="gray", vmin=0, vmax=255)
+            ax[r, c].set_xticks([]); ax[r, c].set_yticks([])
+            if r == 0:
+                ax[r, c].set_title(labels[nm], fontsize=13)
+    for r, lab in enumerate(rows):
+        ax[r, 0].set_ylabel(lab, fontsize=13)
+    plt.tight_layout(); plt.savefig(FIG / "break_grid.pdf"); plt.close()
+    img, E2d, rec2d = store["cam"]  # Cameraman, for the histogram/correlation figures below
 
     # Figure 2: cipher histogram vs uniform (Cameraman)
     plt.figure(figsize=(3.4, 2.4))

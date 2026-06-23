@@ -221,12 +221,13 @@ decrypts a fresh ciphertext pixel-exactly in \PH{cam_attack_s}\,s (Cameraman), u
 Fig.~\ref{fig:break} shows the original, the LLEO ciphertext, and the key-free recovery, which is
 identical to the original.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=0.98\columnwidth]{figures/break_cameraman.pdf}
-\caption{Original, LLEO ciphertext, and the key-free recovery from \PH{cam_cpt} chosen plaintexts.}
+\includegraphics[width=0.92\textwidth]{figures/break_grid.pdf}
+\caption{LLEO original, ciphertext, and key-free recovery for four standard $512\times512$ images. Each
+recovery uses only \PH{cam_cpt} chosen plaintexts and no key, and is bit-identical to the original.}
 \label{fig:break}
-\end{figure}
+\end{figure*}
 
 \subsection{Cost scales logarithmically}
 Because the attack needs only $1+\lceil\log_{256} MN\rceil$ chosen plaintexts, its cost is nearly flat
