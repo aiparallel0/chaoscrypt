@@ -23,6 +23,7 @@
 | Chi-square keystream non-uniformity | `exp_reproduce_attack.py` |
 | Positive control: hash-seeded variant resists (100% vs 0.25%) | `exp_reproduce_attack.py` |
 | Attack cost vs image size (logarithmic, sub-second) | `papers/paper1-chaos-cpa/exp_scaling.py` |
+| Generality: break of a 2nd (CBC-XOR) cipher; hash-seeded resists | `papers/paper1-chaos-cpa/exp_generality.py` |
 | Cipher round-trip + break (pinned) | `tests/test_targets.py` (`pytest`) |
 
 All results are seed-fixed. Numbers flow into `main.tex` only via `results/*.json` +

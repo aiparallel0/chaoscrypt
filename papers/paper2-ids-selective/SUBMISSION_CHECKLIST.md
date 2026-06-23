@@ -19,6 +19,8 @@
 | In-distribution ECE ≈0.001–0.003 vs shifted ≈0.17–0.19 | `exp_main.py` |
 | Detection known vs novel attacks; risk–coverage curves | `exp_main.py` |
 | Open-set family holdout (detection collapse, abstention reject) | `papers/paper2-ids-selective/exp_openset.py` |
+| Uncertainty-signal benchmark (MSP vs disagreement/Mahalanobis/kNN) + conformal coverage | `papers/paper2-ids-selective/exp_signals.py` |
+| CIC-IDS-2017 second dataset + cross-day drift | `papers/paper2-ids-selective/exp_cicids.py` (`src/ids_selective/cicids.py`) |
 | Figures (risk–coverage, reliability, ECE-shift, open-set) | `exp_main.py`, `exp_openset.py` |
 | Data loader, leakage-safe pipeline, metrics | `src/ids_selective/{data,pipeline,metrics}.py` |
 

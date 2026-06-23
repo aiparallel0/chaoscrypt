@@ -224,7 +224,9 @@ using three days (DDoS, PortScan, and Web attacks). The picture is instructively
 (Table~\ref{tab:cic}). Within a random split the task is far easier than NSL-KDD---gradient boosting
 reaches accuracy \PH{cic_histgb_acc} at ECE \PH{cic_histgb_ece}---so over-confidence is \emph{not} a
 problem here: calibration quality is a property of how hard and how shifted the task is, not an
-intrinsic flaw of the models. The value of abstention, however, persists under drift. Training on
+intrinsic flaw of the models. The value of abstention, however, persists under drift. We evaluate it
+with a cross-day split---training and testing on different days rather than a random mix---which avoids
+the optimistic temporal bias a random split would introduce~\cite{pendlebury2019tesseract}. Training on
 Friday (DDoS, PortScan) and testing on Thursday---whose Web-attack family is unknown and whose benign
 traffic has drifted---detection of Web falls from \PH{cic_web_seen} (seen) to \PH{cic_web_unseen}
 (unknown); a confidence threshold at 80\% coverage then rejects \PH{cic_drift_reject_web} of those
@@ -310,7 +312,8 @@ confidence is informative---identified by a low AURC on validation data (here a 
 linear model); choose an operating coverage from the risk--coverage curve to meet a target precision on
 accepted alerts; route the abstained minority to a secondary control (a human analyst or an anomaly
 detector); and, because calibration does not survive shift, monitor the abstention rate over time as a
-cheap drift signal instead of trusting the raw probabilities. The reject option should be paired with a
+cheap, label-free drift signal instead of trusting the raw probabilities---a lightweight complement to
+dedicated drift detectors~\cite{jordaney2017transcend,yang2021cade}. The reject option should be paired with a
 complementary detector aimed at benign-looking intrusions (R2L/U2R), which abstention alone will not
 catch.
 
