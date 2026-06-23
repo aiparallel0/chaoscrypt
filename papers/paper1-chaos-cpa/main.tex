@@ -86,6 +86,17 @@ plaintext; LLEO violates these. The differential metrics we scrutinise were stan
 \emph{et al.}~\cite{wu2011npcr}, who also note that NPCR/UACI quantify sensitivity to a one-pixel
 plaintext change---precisely the quantity LLEO fails to deliver despite its reported value.
 
+The pattern these works expose is structural rather than incidental. A permutation--diffusion cipher
+whose confusion and diffusion are both fixed by the key is, as a function of the plaintext, an affine
+or monomial map; composing more such stages yields another map of the same form, so neither extra
+rounds nor extra chaotic maps add security against an attacker who can query the
+encryption~\cite{li2019attacker,li2011optimal}. The decisive design choice is therefore binary: does
+any key material depend on the image? Schemes that answer ``no''---including LLEO, and the block- and
+shuffling-based constructions analysed in~\cite{arroyo2009,li2018entropy}---are broken by recovering an
+equivalent key, while schemes that bind the keystream to a per-image value (a hash, or a feedback
+chain) resist it. Our analysis of LLEO is a direct instance of this dichotomy, and our positive
+control (Section~\ref{sec:results}) demonstrates both sides of it on the same construction.
+
 \section{The target cipher}\label{sec:target}
 LLEO encrypts an $M\times N$ grayscale image $X$ in three key-driven steps.
 
@@ -137,6 +148,14 @@ $X[s(j)] = K[s(j)]^{-1}\,C[j]$. The total cost is
 \end{equation}
 i.e.\ \PH{cam_cpt} for a $512\times512$ image, independent of the nominal key length.
 
+Concretely, for a $512\times512$ image ($n=262144$) the attack issues four queries: the all-ones image
+and three index-digit images carrying the low, middle, and high base-256 digits of each pixel index.
+Suppose output position $j$ returns $C^{\mathbf 1}[j]=200$ on the all-ones query (so the multiplier
+acting there is $200$, with inverse $200^{-1}\!\!\pmod{256}$ undefined only if $200$ were even---our
+multipliers are forced odd) and returns $C^{(0)}[j],C^{(1)}[j],C^{(2)}[j]$ on the three digit queries;
+then $\mathrm{digit}_t = C^{(t)}[j]\cdot 200^{-1}\bmod 256$ and the source index is
+$s(j)=\sum_t \mathrm{digit}_t\,256^{t}$. Repeating for all $j$ recovers the whole map in one pass.
+
 \subsection{Why extra structure does not help}
 A composition of fixed key-only maps is again a fixed key-only map, so adding rounds, more chaotic
 maps, or further block shuffles leaves \eqref{eq:monomial} intact (only $K$ and $s$ change) and the
@@ -184,6 +203,28 @@ identical to the original.
 \caption{Original, LLEO ciphertext, and the key-free recovery from \PH{cam_cpt} chosen plaintexts.}
 \label{fig:break}
 \end{figure}
+
+\subsection{Cost scales logarithmically}
+Because the attack needs only $1+\lceil\log_{256} MN\rceil$ chosen plaintexts, its cost is nearly flat
+as the image grows (Table~\ref{tab:scale}): \PH{scale128_cpt} plaintexts at $128^2$,
+\PH{scale512_cpt} at $512^2$, and still \PH{scale1024_cpt} at $1024^2$, each recovered exactly in well
+under a second. The key length the scheme advertises does not enter this cost.
+
+\begin{table}[t]
+\centering
+\caption{Attack cost vs.\ image size (random plaintext, single core).}
+\label{tab:scale}
+\begin{tabular}{lccc}
+\toprule
+Size & chosen PT & time (s) & recovered \\
+\midrule
+$128\times128$   & \PH{scale128_cpt}  & \PH{scale128_s}  & exact \\
+$256\times256$   & \PH{scale256_cpt}  & \PH{scale256_s}  & exact \\
+$512\times512$   & \PH{scale512_cpt}  & \PH{scale512_s}  & exact \\
+$1024\times1024$ & \PH{scale1024_cpt} & \PH{scale1024_s} & exact \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{The differential metric is illusory}
 LLEO reports NPCR $\approx$99.6\,\% as evidence of differential-attack resistance. But by

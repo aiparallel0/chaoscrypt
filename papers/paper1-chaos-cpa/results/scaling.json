@@ -1,0 +1,14 @@
+{
+  "scale128_cpt": 3,
+  "scale128_s": 0.003,
+  "scale128_ok": 1,
+  "scale256_cpt": 3,
+  "scale256_s": 0.009,
+  "scale256_ok": 1,
+  "scale512_cpt": 4,
+  "scale512_s": 0.037,
+  "scale512_ok": 1,
+  "scale1024_cpt": 4,
+  "scale1024_s": 0.254,
+  "scale1024_ok": 1
+}
