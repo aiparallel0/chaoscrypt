@@ -35,7 +35,10 @@ confidence is informative; logistic regression's confidence is nearly useless fo
 (area under the risk--coverage curve \PH{logreg_aurc} versus \PH{histgb_aurc}). Finally, using a
 controlled family-holdout protocol we quantify behaviour on \emph{unknown} attacks: detection of a
 held-out family collapses (e.g.\ DoS from \PH{det_seen_DoS} to \PH{det_unseen_DoS}), and abstention
-rejects only part of these unknowns---and almost none when the attack mimics benign traffic (R2L). We
+rejects only part of these unknowns---and almost none when the attack mimics benign traffic (R2L). On a
+second, modern corpus (CIC-IDS-2017) the within-distribution task is easy and well calibrated, yet
+under cross-day drift an unknown attack family is still missed and abstention rejects
+\PH{cic_drift_reject_web} of it---so over-confidence is task-dependent while abstention generalises. We
 conclude that selective prediction is a cheap, model-agnostic safety layer for ML intrusion detection,
 with clearly characterised limits.
 \end{abstract}
@@ -215,6 +218,47 @@ R2L   & \PH{det_seen_R2L}   & \PH{det_unseen_R2L}   & \PH{reject_unseen_R2L} \\
 \label{fig:open}
 \end{figure}
 
+\subsection{Second dataset: CIC-IDS-2017 and cross-day drift}
+To test generality we repeat the study on CIC-IDS-2017, a modern flow-based corpus (78 features),
+using three days (DDoS, PortScan, and Web attacks). The picture is instructively different
+(Table~\ref{tab:cic}). Within a random split the task is far easier than NSL-KDD---gradient boosting
+reaches accuracy \PH{cic_histgb_acc} at ECE \PH{cic_histgb_ece}---so over-confidence is \emph{not} a
+problem here: calibration quality is a property of how hard and how shifted the task is, not an
+intrinsic flaw of the models. The value of abstention, however, persists under drift. Training on
+Friday (DDoS, PortScan) and testing on Thursday---whose Web-attack family is unknown and whose benign
+traffic has drifted---detection of Web falls from \PH{cic_web_seen} (seen) to \PH{cic_web_unseen}
+(unknown); a confidence threshold at 80\% coverage then rejects \PH{cic_drift_reject_web} of those
+unknown-Web records, far more than the analogous NSL-KDD case because Web flows, unlike R2L, do not
+mimic benign traffic. The contrast across the two corpora is the substantive point: the calibration
+failure is task-dependent, while selective prediction is broadly useful---most when the unknown attack
+is statistically distinguishable from benign traffic.
+
+\begin{table}[t]
+\centering
+\caption{CIC-IDS-2017: replication (random split) and cross-day drift (train Friday, test Thursday).}
+\label{tab:cic}
+\begin{tabular}{lcccc}
+\toprule
+Model & Acc. & ECE & AURC & $r(0.8)$ \\
+\midrule
+Logistic reg.        & \PH{cic_logreg_acc} & \PH{cic_logreg_ece} & \PH{cic_logreg_aurc} & \PH{cic_logreg_risk80} \\
+Random forest        & \PH{cic_rf_acc}     & \PH{cic_rf_ece}     & \PH{cic_rf_aurc}     & \PH{cic_rf_risk80} \\
+Hist.\ grad.\ boost. & \PH{cic_histgb_acc} & \PH{cic_histgb_ece} & \PH{cic_histgb_aurc} & \PH{cic_histgb_risk80} \\
+\midrule
+\multicolumn{5}{l}{\footnotesize Cross-day: Web detection \PH{cic_web_seen}$\to$\PH{cic_web_unseen} (unknown);} \\
+\multicolumn{5}{l}{\footnotesize abstention rejects \PH{cic_drift_reject_web} of unknown Web at 80\% coverage.} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\columnwidth]{figures/risk_coverage_cic.pdf}
+\caption{Risk--coverage on CIC-IDS-2017 (within-distribution split): the task is easy, so risk is low
+across coverages---unlike NSL-KDD (Fig.~\ref{fig:rc}).}
+\label{fig:rccic}
+\end{figure}
+
 \section{Discussion and Limitations}
 Selective prediction is a cheap, model-agnostic safety layer: at the cost of deferring a minority of
 inputs it materially lowers the error among those acted upon, and it partially flags unknown attacks.
@@ -242,11 +286,12 @@ attack-typing setting are natural extensions. Confirming the findings on a moder
 such as CIC-IDS-2017 with temporally correct splits is the clear next step.
 
 \section{Conclusion}
-On a standard benchmark, off-the-shelf intrusion detectors are over-confident, post-hoc calibration
-does not transfer under shift, and a simple reject option lowers selective risk and partially flags
-unknown attacks---except those that resemble normal traffic. Selective prediction is worth adding to
-ML intrusion detection, provided its confidence signal and its blind spots are measured rather than
-assumed.
+On a hard benchmark (NSL-KDD) off-the-shelf intrusion detectors are over-confident and post-hoc
+calibration does not transfer under shift; on an easier modern corpus (CIC-IDS-2017) they are
+well-calibrated, so the need for calibration is task-dependent. Across both, a simple reject option
+lowers selective risk and flags unknown attacks---strongly when those attacks are distinguishable from
+benign traffic, weakly when they mimic it. Selective prediction is worth adding to ML intrusion
+detection, provided its confidence signal and its blind spots are measured rather than assumed.
 
 \section*{Acknowledgment}
 The authors used a large language model (Anthropic Claude) to assist with code scaffolding, editing,
