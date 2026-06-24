@@ -6,6 +6,8 @@
 \usepackage{booktabs}
 \usepackage{url}
 \usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
 
 % Placeholders (PH of a key) are replaced by scripts/fill_tex.py from results/*.json.
 % The definition lets the unfilled source still compile (shows the key in red).
@@ -24,26 +26,23 @@ for Machine-Learning Network Intrusion Detection}
 \pagestyle{empty}
 
 \begin{abstract}
-Machine-learning intrusion detectors are routinely deployed with a single hard decision and no
-notion of when their output should be trusted. We show, on the public NSL-KDD benchmark, that three
-standard detectors (logistic regression, a random forest, and gradient boosting) are markedly
-over-confident: expected calibration error reaches ${\approx}0.22$, and the strongest model still
-attains an error rate of ${\approx}0.20$ on the standard benchmark test set, which contains attack
-types absent from training. We
-then study two remedies. First, post-hoc Platt scaling fitted on in-distribution data fails to repair
-calibration once the test distribution shifts, leaving error essentially unchanged. Second, selective
-prediction---allowing the detector to abstain on its least-confident inputs---reduces selective risk
-from ${\approx}0.20$ to ${\approx}0.11$ at \mbox{80\%} coverage, but only for models whose
-confidence is informative; logistic regression's confidence is nearly useless for ranking errors
-(area under the risk--coverage curve ${\approx}0.23$ versus ${\approx}0.05$). Finally, using a
-controlled family-holdout protocol we quantify behaviour on \emph{unknown} attacks: detection of a
-held-out family collapses (e.g.\ DoS from \PH{det_seen_DoS} to \PH{det_unseen_DoS}), and abstention
-rejects only part of these unknowns---and almost none when the attack mimics benign traffic (R2L). On a
-second, modern corpus (CIC-IDS-2017) the within-distribution task is easy and well calibrated, yet
-under cross-day drift an unknown attack family is still missed and abstention rejects
-\PH{cic_drift_reject_web} of it---so over-confidence is task-dependent while abstention generalises. We
-conclude that selective prediction is a cheap, model-agnostic safety layer for ML intrusion detection,
-with clearly characterised limits.
+A machine-learning intrusion detector that emits one hard label gives no signal of when to trust it and
+fails silently on attacks absent from training. We ask whether off-the-shelf detectors know when they
+are wrong---we propose no new detector. Under a controlled \emph{leave-one-family-out} (LOFO) protocol on
+the public NSL-KDD benchmark, detection of a held-out attack family collapses (e.g.\ DoS from
+\PH{det_seen_DoS} to \PH{det_unseen_DoS}); a confidence-based reject option recovers only part of the
+gap, and almost none when the attack mimics benign traffic (R2L), which a benign-only novelty detector
+also cannot cleanly separate---a \emph{structural} blind spot, not a tuning issue. The calibration
+measurements support this picture: the three standard detectors are markedly over-confident under the
+benchmark's train--test shift (expected calibration error up to ${\approx}0.22$), post-hoc Platt scaling
+fitted on source data does not transfer, and split-conformal coverage falls from \PH{ms_conf_indist} to
+\PH{ms_conf_shift}. Selective prediction nonetheless cuts selective risk from ${\approx}0.20$ to
+${\approx}0.11$ at \mbox{80\%} coverage---but only for models whose confidence ranks errors (tree
+ensembles, not logistic regression: area under the risk--coverage curve ${\approx}0.05$ versus
+${\approx}0.23$). On a second, modern corpus (CIC-IDS-2017/2018) the within-distribution task is easy and
+well calibrated, yet an unknown family is still missed under cross-day and cross-corpus drift---so
+over-confidence is task-dependent while the abstention blind spot is not. Selective prediction is a
+cheap, model-agnostic safety layer for ML intrusion detection, with clearly characterised limits.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -51,28 +50,51 @@ intrusion detection, selective prediction, calibration, uncertainty, open-set re
 \end{IEEEkeywords}
 
 \section{Introduction}
+\begin{figure}[t]
+\centering
+\footnotesize
+\begin{tikzpicture}[>=Stealth, node distance=3mm,
+  box/.style={draw, rounded corners, minimum height=5mm, inner xsep=3pt, align=center}]
+  \node[box] (f) {flow};
+  \node[box, right=of f] (d) {detector};
+  \node[box, right=of d] (p) {confidence\\$p{=}\max\hat{p}$};
+  \node[box, right=of p] (t) {$p{\ge}\tau$?};
+  \node[box, right=of t, fill=black!5] (a) {accept};
+  \node[box, below=4mm of t, fill=black!5, align=center] (r) {abstain $\to$\\analyst / novelty};
+  \foreach \x/\y in {f/d,d/p,p/t} \draw[->] (\x)--(\y);
+  \draw[->] (t)--node[above,font=\scriptsize]{yes} (a);
+  \draw[->] (t)--node[right,font=\scriptsize]{no} (r);
+\end{tikzpicture}
+\caption{The selective-prediction (reject-option) wrapper we evaluate: accept the detector's label when
+its confidence $p$ clears a threshold $\tau$, otherwise abstain and defer to an analyst or a benign-only
+novelty stage. We ask whether $p$ is trustworthy---and what becomes of attacks that look benign.}
+\label{fig:pipeline}
+\end{figure}
 A network intrusion detector that emits only ``attack'' or ``benign'' gives an operator no way to tell
 a confident verdict from a guess. In practice this matters twice over: alerts compete for scarce
 analyst attention, and genuinely novel attacks---absent from any training corpus---are exactly the
 cases a static classifier is least equipped to label. A detector that could say ``I am not sure'' on
-these inputs, and defer them to a human or a secondary control, would be more useful than one forced
-to commit.
+these inputs, and defer them to a human or a secondary control (Fig.~\ref{fig:pipeline}), would be more
+useful than one forced to commit.
 
-This paper asks a narrow, practical question: do off-the-shelf machine-learning intrusion detectors
-produce confidence scores that are trustworthy enough to drive such an abstention policy, and what do
-they do when faced with attacks they have never seen? We answer empirically on NSL-KDD
-\cite{tavallaee2009nsl}, a public benchmark whose published test split deliberately contains attack
-types absent from training. Our contributions are:
+This paper asks a narrow, practical question: do off-the-shelf machine-learning intrusion detectors know
+when they are wrong---producing confidence scores trustworthy enough to drive an abstention policy, and
+behaving safely on attacks they have never seen? \emph{We propose no new detector; we evaluate existing
+ones.} We answer empirically on NSL-KDD \cite{tavallaee2009nsl}, whose published test split deliberately
+contains attack types absent from training, and confirm the phenomena on a modern flow corpus
+(CIC-IDS-2017/2018) under cross-day and cross-corpus drift (Section~\ref{sec:cic}). Our contributions are:
 \begin{itemize}
-\item We measure the calibration of three standard detectors and show all are over-confident
-(Section~\ref{sec:cal}), and that post-hoc Platt scaling \cite{platt1999probabilistic} fitted on
-in-distribution data does \emph{not} transfer to the shifted test set.
-\item We evaluate selective prediction \cite{elyaniv2010selective,geifman2017selective} and show
-abstention cuts selective risk substantially, but that its usefulness is model-dependent: tree
-ensembles rank their errors well, a linear model does not (Section~\ref{sec:sp}).
-\item We introduce a controlled family-holdout protocol for the \emph{unknown-attack} regime and show
-detection collapses on held-out families while abstention provides only partial cover---and almost
-none for attacks that resemble benign traffic (Section~\ref{sec:openset}).
+\item We introduce a controlled \emph{leave-one-family-out} (LOFO) open-set protocol---released as
+anonymized, reusable code (open-licensed at camera-ready)---and show that detection of a held-out attack
+family collapses, that a confidence reject option covers only part of the gap, and that attacks mimicking
+benign traffic (R2L) form a \emph{structural} blind spot, missed by abstention and by a benign-only
+novelty stage alike (Section~\ref{sec:openset}).
+\item We show selective prediction \cite{elyaniv2010selective,geifman2017selective} cuts selective risk
+substantially, but only for models whose confidence ranks their errors---tree ensembles, not the linear
+model---and that split-conformal coverage erodes under the same shift (Section~\ref{sec:sp}).
+\item As the mechanism behind both, we measure that the three standard detectors are over-confident under
+distribution shift and that post-hoc Platt scaling \cite{platt1999probabilistic} fitted on source data
+does \emph{not} transfer (Section~\ref{sec:cal}).
 \end{itemize}
 Throughout we follow the evaluation guidance of Arp \emph{et al.}\ \cite{arp2022dodos}: the calibrator
 is fit only on held-out training data, and no test information leaks into model selection. Unless stated
@@ -134,8 +156,8 @@ abstention rejects. Reported metrics are means over multiple seeds with 95\% con
 
 \section{Results}
 \subsection{Detectors are over-confident}\label{sec:cal}
-Table~\ref{tab:main} reports accuracy and calibration. On the test set all three models are markedly
-over-confident, with ECE from $\approx$0.16 (random forest) to $\approx$0.22 (logistic regression).
+All three detectors are markedly over-confident on the benchmark's shifted test set, with ECE from
+$\approx$0.16 (random forest) to $\approx$0.22 (logistic regression) (Table~\ref{tab:main}).
 Crucially this is induced by distribution shift, not intrinsic: on a held-out
 \emph{in-distribution} split the same models are nearly perfectly calibrated (ECE $\lesssim 0.003$),
 and Platt scaling keeps them there. It is only on the shifted test set---which introduces novel attacks---that ECE
@@ -163,7 +185,8 @@ Hist.\ grad.\ boost. & \PH{ms_histgb_acc} & \PH{ms_histgb_ece} & \PH{ms_histgb_a
 \end{table*}
 
 \subsection{Abstention helps---if confidence is informative}\label{sec:sp}
-Fig.~\ref{fig:rc} shows risk--coverage curves. For gradient boosting, abstaining on the least-confident
+Abstaining on the least-confident inputs lowers selective risk---but only when the model's confidence
+ranks its errors (Fig.~\ref{fig:rc}). For gradient boosting, rejecting the least-confident
 20\% of inputs lowers selective risk to \PH{ms_histgb_risk80} (AURC \PH{ms_histgb_aurc}); the random
 forest is similar (AURC \PH{ms_rf_aurc}). Logistic regression is the cautionary case: its confidence
 barely ranks its errors (AURC \PH{ms_logreg_aurc}), so abstention buys little (\PH{ms_logreg_risk80}).
@@ -198,10 +221,11 @@ miscalibrated.}
 \end{figure}
 
 \subsection{Leave-one-family-out (LOFO) open-set evaluation}\label{sec:openset}
-We formalize the unknown-attack test as a \emph{leave-one-family-out} (LOFO) protocol: for each attack
-family $F$, remove all of $F$ from training (keeping benign traffic and the other families), retrain,
-and measure detection and abstention on $F$'s test records---a controlled, causal version of the
-genuine-unknown setting, which we release as reusable code. On NSL-KDD's built-in novel attacks the
+Detection of an attack family collapses once that family is unknown at training time, and a confidence
+reject option only partly compensates. We establish this causally with a \emph{leave-one-family-out}
+(LOFO) protocol: for each attack family $F$, remove all of $F$ from training (keeping benign traffic and
+the other families), retrain, and measure detection and abstention on $F$'s test records---released as
+anonymized, reusable code for review (open-licensed at camera-ready). On NSL-KDD's built-in novel attacks the
 random forest flags ${\approx}0.77$ of \emph{known} attacks but only ${\approx}0.23$ of novel ones;
 LOFO (Table~\ref{tab:openset}, Fig.~\ref{fig:open}) confirms this causally: detection of DoS falls from
 \PH{det_seen_DoS} to \PH{det_unseen_DoS} when DoS is unknown, and Probe from \PH{det_seen_Probe} to
@@ -211,8 +235,9 @@ like the anomalous families: abstention still flags \PH{reject_unseen_U2R} of un
 sharp exception---detected at only \PH{det_seen_R2L} even when \emph{seen}, \PH{det_unseen_R2L} when
 unknown, with abstention flagging just \PH{reject_unseen_R2L}. Because R2L traffic statistically
 resembles benign sessions the detector is confidently wrong, so the blind spot is specifically
-\emph{benign-mimicking} attacks, not unknown attacks in general. The CIC-IDS-2017 cross-day experiment
-below is the same protocol on a second corpus, with the Web family held out.
+\emph{benign-mimicking} attacks, not unknown attacks in general---R2L sits inside the benign cloud for
+two independent benign-only detectors alike (Fig.~\ref{fig:manifold}). The CIC-IDS-2017 cross-day
+experiment below is the same protocol on a second corpus, with the Web family held out.
 
 \begin{table}[t]
 \centering
@@ -242,8 +267,22 @@ seen---it mimics benign traffic, so there is little detection to lose.}
 \label{fig:open}
 \end{figure}
 
-\subsection{Second dataset: CIC-IDS-2017 and cross-day drift}
-To test generality we repeat the study on CIC-IDS-2017, a modern flow-based corpus (78 features),
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.94\textwidth]{figures/benign_manifold.pdf}
+\caption{Why R2L is the blind spot. \textbf{(a)} The joint novelty space: each NSL-KDD test record placed
+by how anomalous the two benign-only detectors find it, z-scored so benign sits near the origin (dashed
+box $=$ central 95\% of benign). \textbf{(b)} A ridgeline of the per-family Isolation-Forest anomaly. Both
+panels show R2L's distribution sitting on top of benign's---overlapping support---while DoS, Probe, and
+U2R separate, so neither abstention nor a benign-only novelty detector can cleanly flag the
+benign-mimicking R2L.}
+\label{fig:manifold}
+\end{figure*}
+
+\subsection{Calibration is task-dependent; the blind spot is not (CIC-IDS-2017)}\label{sec:cic}
+On an easier modern corpus the over-confidence disappears, yet an unknown family is still missed under
+drift---calibration is a property of the task, the abstention blind spot is not. We repeat the study on
+CIC-IDS-2017, a modern flow-based corpus (78 features),
 using three days (DDoS, PortScan, and Web attacks). The picture is instructively different
 (Table~\ref{tab:cic}). Within a random split the task is far easier than NSL-KDD---gradient boosting
 reaches accuracy \PH{cic_histgb_acc} at ECE \PH{cic_histgb_ece}---so over-confidence is \emph{not} a
@@ -345,17 +384,6 @@ a clear if partial gain. The AUROC ceilings
 not absolute: R2L is hardest because its support most overlaps benign, so no benign-only detector fully
 recovers it, yet a novelty stage is a cheap, measured complement---abstention and novelty catch
 different failure modes (confident errors vs.\ benign-mimicking attacks).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.82\columnwidth]{figures/benign_manifold.pdf}
-\caption{Why R2L is the blind spot. Each NSL-KDD test record is placed by how anomalous the two
-benign-only detectors find it, z-scored so benign sits near the origin (dashed box $=$ central 95\% of
-benign; top/right curves are the per-family marginal densities on each axis). DoS, Probe, and U2R
-separate from benign on at least one axis; R2L falls \emph{inside} the benign envelope---it mimics normal
-traffic, so neither abstention nor a benign-only novelty detector can cleanly flag it.}
-\label{fig:manifold}
-\end{figure}
 
 \begin{figure}[t]
 \centering

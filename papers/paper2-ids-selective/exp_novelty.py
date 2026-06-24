@@ -100,37 +100,39 @@ def main() -> None:
         idx = np.where(mask)[0]
         return rng0.choice(idx, min(k, len(idx)), replace=False) if len(idx) else idx
 
-    # A joint plot: the (IF, OCSVM) scatter with per-family marginal densities on the top and right
-    # axes -- a beeswarm/ridgeline reading of the same data that makes the per-axis overlap explicit.
+    # Wide two-panel "benign manifold" (a figure* spanning both columns): (a) the (IF, OCSVM) joint
+    # novelty space, (b) a ridgeline of per-family IF anomaly. Both show R2L's distribution sitting on
+    # top of benign's -- overlapping support -- while DoS/Probe/U2R separate.
     from scipy.stats import gaussian_kde
-    groups = [("benign", ps.C["grey"], bmask), ("DoS", ps.C["blue"], fam_te == "DoS"),
-              ("Probe", ps.C["green"], fam_te == "Probe"), ("U2R", ps.C["purple"], fam_te == "U2R"),
-              ("R2L", ps.C["vermillion"], fam_te == "R2L")]
+    fcol = {"benign": ps.C["grey"], "DoS": ps.C["blue"], "Probe": ps.C["green"],
+            "U2R": ps.C["purple"], "R2L": ps.C["vermillion"]}
+    masks = {"benign": bmask, "DoS": fam_te == "DoS", "Probe": fam_te == "Probe",
+             "U2R": fam_te == "U2R", "R2L": fam_te == "R2L"}
+    fig = plt.figure(figsize=(7.1, 2.9))
+    gs = fig.add_gridspec(1, 2, width_ratios=(1.1, 1), wspace=0.22)
+    axj = fig.add_subplot(gs[0, 0]); axd = fig.add_subplot(gs[0, 1])
     xlim = np.percentile(zif, [0.5, 99]); ylim = np.percentile(zoc, [0.5, 99])
-    xg = np.linspace(*xlim, 200); yg = np.linspace(*ylim, 200)
-    fig = plt.figure(figsize=(3.5, 3.3))
-    gs = fig.add_gridspec(2, 2, width_ratios=(4, 1), height_ratios=(1, 4), wspace=0.04, hspace=0.04)
-    ax = fig.add_subplot(gs[1, 0])
-    axt = fig.add_subplot(gs[0, 0], sharex=ax); axr = fig.add_subplot(gs[1, 1], sharey=ax)
-    for name, col, mask in groups:
-        idx = _samp(mask, 4000 if name == "benign" else 1200)
-        ax.scatter(zif[idx], zoc[idx], s=5 if name == "benign" else 9, color=col,
-                   alpha=0.25 if name == "benign" else 0.55, linewidths=0, label=name, rasterized=True)
-        if mask.sum() > 5:
-            axt.plot(xg, gaussian_kde(zif[mask])(xg), color=col, lw=1.3)
-            axr.plot(gaussian_kde(zoc[mask])(yg), yg, color=col, lw=1.3)
+    for name in ("benign", "DoS", "Probe", "U2R", "R2L"):
+        idx = _samp(masks[name], 4000 if name == "benign" else 1200)
+        axj.scatter(zif[idx], zoc[idx], s=5 if name == "benign" else 9, color=fcol[name],
+                    alpha=0.25 if name == "benign" else 0.6, linewidths=0, label=name, rasterized=True)
     bx = np.percentile(zif[bmask], [2.5, 97.5]); by = np.percentile(zoc[bmask], [2.5, 97.5])
-    ax.add_patch(plt.Rectangle((bx[0], by[0]), bx[1] - bx[0], by[1] - by[0], fill=False,
-                               ls="--", ec=ps.C["black"], lw=1.0, zorder=4))
-    ax.text(bx[1], by[0], " benign\n envelope", fontsize=6.5, va="bottom", ha="left", zorder=5)
-    ax.set_xlim(*xlim); ax.set_ylim(*ylim)
-    ax.set_xlabel("Isolation-Forest anomaly (benign SDs)")
-    ax.set_ylabel("One-Class-SVM anomaly (benign SDs)")
-    for m in (axt, axr):
-        m.axis("off")
-    ax.legend(loc="upper left", framealpha=0.85, handletextpad=0.2, borderpad=0.3,
-              labelspacing=0.25, markerscale=1.4, fontsize=6.5)
-    fig.savefig(FIG / "benign_manifold.pdf"); plt.close(fig)
+    axj.add_patch(plt.Rectangle((bx[0], by[0]), bx[1] - bx[0], by[1] - by[0], fill=False,
+                                ls="--", ec=ps.C["black"], lw=1.0, zorder=4))
+    axj.text(bx[1], by[0], " benign\n envelope", fontsize=6.5, va="bottom", ha="left", zorder=5)
+    axj.set_xlim(*xlim); axj.set_ylim(*ylim)
+    axj.set_xlabel("Isolation-Forest anomaly (benign SDs)")
+    axj.set_ylabel("One-Class-SVM anomaly (benign SDs)")
+    axj.legend(loc="upper left", framealpha=0.85, handletextpad=0.2, borderpad=0.3,
+               labelspacing=0.25, markerscale=1.4, fontsize=6.5)
+    axj.set_title("(a) joint novelty space", fontsize=8)
+    order = sorted(masks, key=lambda n: np.median(zif[masks[n]]))
+    xg = np.linspace(*np.percentile(zif, [0.5, 99.5]), 300)
+    ps.ridgeline(axd, [(xg, gaussian_kde(zif[masks[n]])(xg)) for n in order], order,
+                 colors=[fcol[n] for n in order], overlap=0.85)
+    axd.set_xlim(xg[0], xg[-1]); axd.set_xlabel("Isolation-Forest anomaly (benign SDs)")
+    axd.set_title("(b) per-family anomaly (ridgeline)", fontsize=8)
+    fig.savefig(FIG / "benign_manifold.pdf", bbox_inches="tight"); plt.close(fig)
     print("novelty means + max CI half-width", flat["nov_maxhw"])
 
 
