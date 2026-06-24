@@ -104,33 +104,58 @@ def main() -> None:
     (RES / "main.json").write_text(json.dumps(flat, indent=2))
 
     FIG.mkdir(exist_ok=True)
-    # Fig 1: risk-coverage
-    plt.figure(figsize=(3.4, 2.6))
+    from ids_selective import plotstyle as ps
+    ps.use()
+    disp = {"logreg": "Logistic reg.", "rf": "Random forest", "histgb": "Hist-GB"}
+    mcol = {"logreg": ps.C["blue"], "rf": ps.C["green"], "histgb": ps.C["orange"]}
+
+    # Fig 1: risk-coverage with the 80%-coverage operating point ringed on each curve. The gap between
+    # the flat linear model (uninformative confidence) and the falling tree ensembles is the point.
+    fig, ax = ps.fig(3.3, 2.5)
     for name, (cov, risks) in curves.items():
-        plt.plot(cov, risks, label=name, lw=1.4)
-    plt.xlabel("coverage"); plt.ylabel("selective risk (error)")
-    plt.legend(fontsize=7); plt.grid(alpha=.3); plt.tight_layout()
-    plt.savefig(FIG / "risk_coverage.pdf"); plt.close()
+        ax.plot(cov, risks, label=disp[name], color=mcol[name])
+        ax.scatter(0.8, float(np.interp(0.8, cov, risks)), s=34, facecolor="white",
+                   edgecolor=mcol[name], linewidth=1.4, zorder=5)
+    ax.axvline(0.8, color=ps.C["grey"], ls=":", lw=1.0, zorder=0)
+    ax.text(0.79, ax.get_ylim()[1] * 0.98, "accept top 80%", rotation=90, va="top", ha="right",
+            fontsize=6.5, color=ps.C["grey"])
+    ax.set_xlabel("coverage (fraction accepted)"); ax.set_ylabel("selective risk (error)")
+    ax.set_xlim(0, 1); ax.set_ylim(bottom=0); ax.legend(loc="upper center")
+    fig.tight_layout(); fig.savefig(FIG / "risk_coverage.pdf"); plt.close(fig)
 
-    # Fig 2: RF reliability raw vs calibrated
-    plt.figure(figsize=(3.4, 2.6))
-    plt.plot([0, 1], [0, 1], "k--", lw=.8, label="perfect")
-    for key, lab in [("", "raw"), ("_c", "calibrated")]:
-        xs, ys = reliability(rf_arrays[f"conf{key}"], rf_arrays[f"correct{key}"])
-        plt.plot(xs, ys, marker="o", ms=3, lw=1.2, label=f"RF {lab}")
-    plt.xlabel("confidence"); plt.ylabel("accuracy"); plt.legend(fontsize=7)
-    plt.grid(alpha=.3); plt.tight_layout()
-    plt.savefig(FIG / "reliability_rf.pdf"); plt.close()
+    # Fig 2: RF reliability raw vs Platt-scaled on the shifted test set; the shaded wedge below the
+    # diagonal is the over-confidence (accuracy < confidence) that source-fit calibration cannot remove.
+    fig, ax = ps.fig(3.3, 2.5)
+    ax.plot([0, 1], [0, 1], color=ps.C["black"], ls="--", lw=0.9, label="perfect calibration")
+    xs_r, ys_r = reliability(rf_arrays["conf"], rf_arrays["correct"])
+    xs_c, ys_c = reliability(rf_arrays["conf_c"], rf_arrays["correct_c"])
+    ax.fill_between(xs_r, ys_r, xs_r, where=(ys_r < xs_r), interpolate=True,
+                    color=ps.C["vermillion"], alpha=0.18, label="over-confidence")
+    ax.plot(xs_r, ys_r, marker="o", ms=3.5, color=ps.C["vermillion"], label="RF raw")
+    ax.plot(xs_c, ys_c, marker="s", ms=3.5, color=ps.C["blue"], label="RF Platt-scaled")
+    ax.set_xlabel("confidence"); ax.set_ylabel("accuracy")
+    ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.legend(loc="upper left")
+    fig.tight_layout(); fig.savefig(FIG / "reliability_rf.pdf"); plt.close(fig)
 
-    # Fig 3: ECE in-distribution vs shifted test, per model -- the calibration-under-shift finding
-    names = list(ece_store)
-    x = np.arange(len(names))
-    plt.figure(figsize=(3.4, 2.4))
-    plt.bar(x - 0.2, [ece_store[n][0] for n in names], 0.4, label="in-distribution")
-    plt.bar(x + 0.2, [ece_store[n][1] for n in names], 0.4, label="shifted test")
-    plt.xticks(x, names); plt.ylabel("ECE"); plt.legend(fontsize=7)
-    plt.grid(axis="y", alpha=.3); plt.tight_layout()
-    plt.savefig(FIG / "ece_shift.pdf"); plt.close()
+    # Fig 3: calibration inflates under shift -- a dumbbell per model from in-distribution ECE (well
+    # calibrated) to shifted-test ECE (badly miscalibrated). Replaces a generic grouped bar chart.
+    order = ["logreg", "rf", "histgb"]
+    fig, ax = ps.fig(3.3, 2.15)
+    for i, n in enumerate(order):
+        indist, shift = ece_store[n]
+        ax.annotate("", xy=(shift, i), xytext=(indist, i),
+                    arrowprops=dict(arrowstyle="-|>", color=ps.C["grey"], lw=1.5,
+                                    shrinkA=4, shrinkB=4))
+        ax.scatter(indist, i, s=46, color=ps.C["green"], zorder=3, edgecolor="white", linewidth=0.5,
+                   label="in-distribution" if i == 0 else None)
+        ax.scatter(shift, i, s=46, color=ps.C["vermillion"], zorder=3, edgecolor="white", linewidth=0.5,
+                   label="shifted test" if i == 0 else None)
+    ax.set_yticks(range(len(order))); ax.set_yticklabels([disp[n] for n in order])
+    ax.set_ylim(-0.5, len(order) - 0.5); ax.set_xlim(-0.008, max(s for _, s in ece_store.values()) * 1.12)
+    ax.set_xlabel("expected calibration error (ECE)")
+    ax.grid(axis="y", visible=False)
+    ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2, columnspacing=1.3, handletextpad=0.4)
+    fig.tight_layout(); fig.savefig(FIG / "ece_shift.pdf"); plt.close(fig)
     print(f"wrote {RES/'main.json'} and 3 figures")
 
 

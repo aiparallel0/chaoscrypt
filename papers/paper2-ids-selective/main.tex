@@ -173,22 +173,26 @@ depends strongly on the model family.
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.82\columnwidth]{figures/risk_coverage.pdf}
-\caption{Risk--coverage curves on NSL-KDD. Tree ensembles rank errors well; the linear model does not.}
+\caption{Risk--coverage on NSL-KDD; the ring marks the 80\%-coverage operating point. Accepting only the
+most-confident inputs lowers selective risk sharply for the tree ensembles but barely for logistic
+regression, whose confidence does not rank its errors (nearly flat, and worst at the very top).}
 \label{fig:rc}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.82\columnwidth]{figures/reliability_rf.pdf}
-\caption{Reliability of the random forest, raw vs.\ Platt-scaled, on the shifted test set.}
+\caption{Random-forest reliability on the shifted test set; the shaded wedge below the diagonal is the
+over-confidence (accuracy $<$ confidence) that Platt scaling fitted on source data does not remove.}
 \label{fig:rel}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.82\columnwidth]{figures/ece_shift.pdf}
-\caption{Calibration error in-distribution vs.\ on the shifted test set. Models calibrated at training
-become badly miscalibrated under the test-time shift introduced by novel attacks.}
+\caption{Calibration inflates under shift: each arrow runs from a model's in-distribution ECE (well
+calibrated) to its ECE on the shifted test set, where the novel attacks leave all three badly
+miscalibrated.}
 \label{fig:eceshift}
 \end{figure}
 
@@ -231,7 +235,9 @@ U2R   & \PH{det_seen_U2R}   & \PH{det_unseen_U2R}   & \PH{reject_unseen_U2R} \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.82\columnwidth]{figures/openset_detection.pdf}
-\caption{Detection rate per family when the family is seen in training vs.\ held out (unknown).}
+\caption{Detection collapse under the LOFO protocol: each family's detection rate slopes from
+seen-in-training to held-out (unknown). DoS/Probe/U2R fall steeply; R2L stays near zero even when
+seen---it mimics benign traffic, so there is little detection to lose.}
 \label{fig:open}
 \end{figure}
 
@@ -270,14 +276,6 @@ Hist.\ grad.\ boost. & \PH{cic_histgb_acc} & \PH{cic_histgb_ece} & \PH{cic_histg
 \bottomrule
 \end{tabular}
 \end{table}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.82\columnwidth]{figures/risk_coverage_cic.pdf}
-\caption{Risk--coverage on CIC-IDS-2017 (within-distribution split): the task is easy, so risk is low
-across coverages---unlike NSL-KDD (Fig.~\ref{fig:rc}).}
-\label{fig:rccic}
-\end{figure}
 
 \textbf{Cross-corpus transfer.} The strongest external-validity test trains on CIC-2017 and tests on
 CSE-CIC-IDS-2018 (benign + Infiltration), a different network and year, using the \PH{xfer_n_common}
@@ -334,7 +332,7 @@ $k$NN distance            & \PH{ms_sig_knn_aurc}             & \PH{ms_sig_knn_un
 
 \subsection{A benign-only novelty stage partially closes the blind spot}
 Confidence-based abstention barely flags R2L (Section~\ref{sec:openset}) because such attacks lie on the
-benign feature manifold. The apt detector for that regime is a \emph{benign-only} density model---a
+benign feature manifold (Fig.~\ref{fig:manifold}). The apt detector for that regime is a \emph{benign-only} density model---a
 one-class novelty detector, distinct from the two-class Mahalanobis used above for error ranking. We fit
 an Isolation Forest~\cite{liu2008isolation} and a one-class SVM~\cite{scholkopf2001oneclass} on benign
 records only. At a 10\% benign false-positive budget the Isolation Forest recovers
@@ -349,10 +347,22 @@ different failure modes (confident errors vs.\ benign-mimicking attacks).
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.8\columnwidth]{figures/novelty_auroc.pdf}
-\caption{Benign-only novelty detection (trained on benign records only): AUROC separating each attack
-family from benign. DoS/Probe are easy; R2L/U2R---the abstention blind spot---are only partially
-recoverable, R2L the hardest. Bars are means over $K{=}8$ seeds; error bars are 95\% CIs.}
+\includegraphics[width=0.82\columnwidth]{figures/benign_manifold.pdf}
+\caption{Why R2L is the blind spot. Each NSL-KDD test record is placed by how anomalous the two
+benign-only detectors find it, z-scored so benign sits near the origin (dashed box $=$ central 95\% of
+benign). DoS, Probe, and U2R separate from benign on at least one axis; R2L falls \emph{inside} the
+benign envelope---it mimics normal traffic, so neither abstention nor a benign-only novelty detector can
+cleanly flag it.}
+\label{fig:manifold}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\columnwidth]{figures/novelty_auroc.pdf}
+\caption{Benign-only novelty detection (one-class models trained on benign records only): AUROC
+separating each attack family from benign, ordered by difficulty. DoS/Probe are easy; U2R/R2L---the
+abstention blind spot---are only partially recoverable, R2L the hardest. Markers are means over
+$K{=}8$ seeds, whiskers 95\% CIs; the dashed line is chance.}
 \label{fig:novelty}
 \end{figure}
 

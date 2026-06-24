@@ -67,16 +67,56 @@ def main() -> None:
     (RES / "novelty.json").write_text(json.dumps(flat, indent=2))
 
     FIG.mkdir(exist_ok=True)
-    x = np.arange(len(FAMILIES))
-    if_m = [ci(auroc["if"][F]) for F in FAMILIES]
-    oc_m = [ci(auroc["ocsvm"][F]) for F in FAMILIES]
-    plt.figure(figsize=(3.4, 2.5))
-    plt.bar(x - 0.2, [m for m, _ in if_m], 0.4, yerr=[h for _, h in if_m], capsize=2, label="Isolation Forest")
-    plt.bar(x + 0.2, [m for m, _ in oc_m], 0.4, yerr=[h for _, h in oc_m], capsize=2, label="One-Class SVM")
-    plt.axhline(0.5, color="k", ls="--", lw=.7)
-    plt.xticks(x, FAMILIES); plt.ylabel("novelty AUROC vs benign"); plt.ylim(0, 1)
-    plt.legend(fontsize=7); plt.grid(axis="y", alpha=.3); plt.tight_layout()
-    plt.savefig(FIG / "novelty_auroc.pdf"); plt.close()
+    from ids_selective import plotstyle as ps
+    ps.use()
+
+    # Fig A: novelty AUROC as a dot plot (both detectors per family), families ordered by separability
+    # with a chance reference -- replaces a generic grouped bar chart.
+    order = sorted(FAMILIES, key=lambda F: ci(auroc["if"][F])[0], reverse=True)
+    y = np.arange(len(order))
+    fig, ax = ps.fig(3.3, 2.35)
+    for det, mk, col, off, lab in (("if", "o", ps.C["blue"], 0.12, "Isolation Forest"),
+                                   ("ocsvm", "s", ps.C["orange"], -0.12, "One-Class SVM")):
+        m = [ci(auroc[det][F])[0] for F in order]
+        h = [ci(auroc[det][F])[1] for F in order]
+        ax.errorbar(m, y + off, xerr=h, fmt=mk, color=col, ms=6, capsize=2, elinewidth=0.9,
+                    linestyle="none", label=lab)
+    ax.axvline(0.5, color=ps.C["grey"], ls="--", lw=0.9, label="chance")
+    ax.set_yticks(y); ax.set_yticklabels(order); ax.set_ylim(-0.5, len(order) - 0.5)
+    ax.invert_yaxis(); ax.set_xlabel("novelty AUROC vs benign"); ax.set_xlim(0.4, 1.01)
+    ax.grid(axis="y", visible=False); ax.legend(loc="lower left", fontsize=6.5)
+    fig.tight_layout(); fig.savefig(FIG / "novelty_auroc.pdf"); plt.close(fig)
+
+    # Fig B: the benign manifold. Each test record is placed by how anomalous the two benign-only
+    # detectors find it (z-scored so benign sits near 0); R2L falls inside the benign envelope -- it
+    # mimics normal traffic and so evades both abstention and novelty -- while DoS/Probe/U2R separate.
+    iff = IsolationForest(n_estimators=200, random_state=0, n_jobs=-1).fit(benign_tr)
+    rng0 = np.random.default_rng(0)
+    ocs = OneClassSVM(nu=0.05, gamma="scale").fit(benign_tr[rng0.choice(len(benign_tr), 5000, replace=False)])
+    zif = (-iff.score_samples(Xte)); zif = (zif - zif[bmask].mean()) / (zif[bmask].std() + 1e-9)
+    zoc = (-ocs.decision_function(Xte)); zoc = (zoc - zoc[bmask].mean()) / (zoc[bmask].std() + 1e-9)
+
+    def _samp(mask, k):
+        idx = np.where(mask)[0]
+        return rng0.choice(idx, min(k, len(idx)), replace=False) if len(idx) else idx
+
+    fig, ax = ps.fig(3.4, 2.7)
+    bi = _samp(bmask, 4000)
+    ax.scatter(zif[bi], zoc[bi], s=5, color=ps.C["grey"], alpha=0.30, linewidths=0, label="benign")
+    for F, col in (("DoS", ps.C["blue"]), ("Probe", ps.C["green"]),
+                   ("U2R", ps.C["purple"]), ("R2L", ps.C["vermillion"])):
+        fi = _samp(fam_te == F, 1200)
+        ax.scatter(zif[fi], zoc[fi], s=8, color=col, alpha=0.55, linewidths=0, label=F)
+    bx = np.percentile(zif[bmask], [2.5, 97.5]); by = np.percentile(zoc[bmask], [2.5, 97.5])
+    ax.add_patch(plt.Rectangle((bx[0], by[0]), bx[1] - bx[0], by[1] - by[0], fill=False,
+                               ls="--", ec=ps.C["black"], lw=1.0, zorder=4))
+    ax.text(bx[1], by[1], "benign\nenvelope", fontsize=6.5, va="top", ha="left", zorder=5)
+    ax.set_xlim(*np.percentile(zif, [0.5, 99])); ax.set_ylim(*np.percentile(zoc, [0.5, 99]))
+    ax.set_xlabel("Isolation-Forest anomaly (benign SDs)")
+    ax.set_ylabel("One-Class-SVM anomaly (benign SDs)")
+    ax.legend(ncol=3, columnspacing=0.7, handletextpad=0.2, markerscale=1.5, loc="upper center",
+              bbox_to_anchor=(0.5, 1.02))
+    fig.tight_layout(); fig.savefig(FIG / "benign_manifold.pdf"); plt.close(fig)
     print("novelty means + max CI half-width", flat["nov_maxhw"])
 
 

@@ -13,6 +13,7 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 import numpy as np
 from skimage import data
 
@@ -24,6 +25,15 @@ HERE = Path(__file__).parent
 RES, FIG = HERE / "results", HERE / "figures"
 KEY = 0xC0FFEE
 IMAGES = {"cam": data.camera(), "moon": data.moon(), "grv": data.gravel(), "brk": data.brick()}
+
+# House figure style: restrained spines, consistent fonts, Okabe-Ito palette (colour-blind safe).
+plt.rcParams.update({
+    "savefig.bbox": "tight", "savefig.pad_inches": 0.02, "font.size": 8, "axes.titlesize": 8,
+    "axes.labelsize": 8, "xtick.labelsize": 7, "ytick.labelsize": 7, "legend.fontsize": 7,
+    "legend.frameon": False, "axes.spines.top": False, "axes.spines.right": False,
+    "axes.linewidth": 0.7,
+})
+OK_BLUE, OK_VERM, OK_GREEN = "#0072B2", "#D55E00", "#009E73"
 
 
 def entropy(x) -> float:
@@ -112,21 +122,53 @@ def main() -> None:
     plt.tight_layout(); plt.savefig(FIG / "break_grid.pdf"); plt.close()
     img, E2d, rec2d = store["cam"]  # Cameraman, for the histogram/correlation figures below
 
-    # Figure 2: cipher histogram vs uniform (Cameraman)
-    plt.figure(figsize=(3.4, 2.4))
-    plt.hist(E2d.ravel(), bins=256, range=(0, 256), color="steelblue")
-    plt.axhline(E2d.size / 256, color="k", ls="--", lw=.8, label="uniform")
-    plt.xlabel("pixel value"); plt.ylabel("count"); plt.legend(fontsize=7); plt.tight_layout()
-    plt.savefig(FIG / "cipher_hist.pdf"); plt.close()
+    # Figure 2: cipher histogram vs the uniform ideal (Cameraman)
+    fig, a = plt.subplots(figsize=(3.3, 2.2))
+    a.hist(E2d.ravel(), bins=256, range=(0, 256), color=OK_BLUE, alpha=0.9)
+    a.axhline(E2d.size / 256, color=OK_VERM, ls="--", lw=1.0, label="uniform ideal")
+    a.set_xlabel("pixel value"); a.set_ylabel("count"); a.set_xlim(0, 256); a.legend()
+    plt.tight_layout(); plt.savefig(FIG / "cipher_hist.pdf"); plt.close()
 
-    # Figure 3: adjacent-pixel correlation scatter (plain vs cipher)
+    # Figure 3: adjacent-pixel correlation as a 2D density (every pair, log counts), plain vs cipher.
+    # The plain image piles onto the diagonal (neighbours are alike); the cipher fills the square.
     fig, ax = plt.subplots(1, 2, figsize=(5.0, 2.5))
-    for a, im, ttl in zip(ax, [img, E2d], ["plain", "cipher"]):
-        xs = im[:, :-1].ravel()[::31]; ys = im[:, 1:].ravel()[::31]
-        a.scatter(xs, ys, s=1, alpha=.3); a.set_title(f"{ttl}", fontsize=8)
-        a.set_xlabel("pixel (x,y)", fontsize=7); a.set_ylabel("pixel (x+1,y)", fontsize=7)
+    for a, im, ttl in zip(ax, [img, E2d], ["plain image", "LLEO cipher"]):
+        xs = im[:, :-1].ravel(); ys = im[:, 1:].ravel()
+        a.hist2d(xs, ys, bins=128, range=[[0, 256], [0, 256]], cmap="magma", norm=LogNorm())
+        a.set_title(ttl); a.set_aspect("equal")
+        a.set_xlabel("pixel (x,y)"); a.set_ylabel("pixel (x+1,y)")
     plt.tight_layout(); plt.savefig(FIG / "correlation_scatter.pdf"); plt.close()
-    print("wrote results/repro_attack.json and 3 figures; "
+
+    # Figure 4: diffusion-failure difference images (same key throughout) -- the visual core of the NPCR
+    # critique. Each panel is the absolute ciphertext difference |C_0 - C_1|: black where the ciphertext
+    # is unchanged, bright where it differs. (A) a one-pixel plaintext change to LLEO leaves the cipher
+    # black but for a single bright pixel; (B) the ~99.6% LLEO reports is really the gap between two
+    # UNRELATED images; (C) a cipher that seeds its keystream from SHA-256(plaintext) diffuses the same
+    # one-pixel change into full noise -- what (A) should have looked like.
+    camf = img.reshape(-1).astype(np.uint8)
+    cam1 = camf.copy(); cam1[camf.size // 2] ^= 1
+    Ecam, Ecam1 = cc.encrypt(camf), cc.encrypt(cam1)               # cc: key-only LLEO on Cameraman's size
+    Emoon = cc.encrypt(np.asarray(moon, np.uint8).reshape(-1))
+    cD = LLEOCipher(KEY, img.shape, plaintext_seeded=True)
+    Edef0, Edef1 = cD.encrypt(camf), cD.encrypt(cam1)
+    panels = [("LLEO\n1-pixel change", Ecam, Ecam1),
+              ("LLEO\nunrelated images", Ecam, Emoon),
+              ("Diffused\n1-pixel change", Edef0, Edef1)]
+    fig, ax = plt.subplots(1, 3, figsize=(3.4, 1.95))   # column-native: crisp fonts at \columnwidth
+    for a, (ttl, e0, e1) in zip(ax, panels):
+        d = np.abs(e0.astype(np.int16) - e1.astype(np.int16)).reshape(img.shape)
+        a.imshow(d, cmap="gray", vmin=0, vmax=255, interpolation="nearest")
+        a.set_xticks([]); a.set_yticks([]); a.set_title(ttl, fontsize=7.5)
+        val = npcr(e0, e1)
+        a.set_xlabel(f"NPCR\n{val:.3g}%", fontsize=7, color=(OK_VERM if val < 1 else OK_GREEN))
+        ys, xs = np.where(d > 0)
+        if len(xs) <= 4:    # lone changed pixel: ring it and point, else invisible at print size
+            a.add_patch(plt.Circle((xs.mean(), ys.mean()), 34, fill=False, color=OK_VERM, lw=1.2))
+            a.annotate("1 px", xy=(float(xs.mean()), float(ys.mean())),
+                       xytext=(0.36 * img.shape[1], 0.16 * img.shape[0]), color=OK_VERM, fontsize=7,
+                       arrowprops=dict(arrowstyle="->", color=OK_VERM, lw=1.0))
+    plt.tight_layout(pad=0.3); plt.savefig(FIG / "diffusion_diff.pdf"); plt.close()
+    print("wrote results/repro_attack.json and 4 figures; "
           f"NPCR unrelated images = {flat['npcr_unrelated']}% vs 1-pixel = {flat['cam_npcr1px']}%")
 
 

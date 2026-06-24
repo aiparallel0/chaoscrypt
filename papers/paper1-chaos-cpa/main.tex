@@ -324,14 +324,30 @@ $1024\times1024$ & \PH{scale1024_cpt} & \PH{scale1024_s} & exact \\
 
 \subsection{The differential metric is illusory}
 LLEO reports NPCR $\approx$99.6\,\% as evidence of differential-attack resistance. But by
-\eqref{eq:monomial} flipping one plaintext pixel changes exactly one ciphertext pixel, so the true
+\eqref{eq:monomial} flipping one plaintext pixel changes exactly one ciphertext pixel
+(Fig.~\ref{fig:diffusion}, left), so the true
 one-pixel NPCR is $100/MN=\PH{cam_npcr1px}\,\%$ (UACI \PH{cam_uaci1px}\,\%)---five orders of magnitude
 below the reported value. The 99.6\,\% figure instead measures the difference between \emph{unrelated}
-images, which for LLEO is \PH{npcr_unrelated}\,\%; this is achieved by any cipher with a near-uniform
+images, which for LLEO is \PH{npcr_unrelated}\,\% (Fig.~\ref{fig:diffusion}, centre); this is achieved by
+any cipher with a near-uniform
 output and says nothing about chosen-plaintext security. Table~\ref{tab:claims} contrasts each claimed
 property with what the cipher actually provides. Finally, the chaotic keystreams are themselves
 non-uniform: a chi-square test rejects uniformity for the logistic keystream
 ($\chi^2=\PH{chi2_logistic}$, $p<10^{-300}$, numerically zero).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/diffusion_diff.pdf}
+\caption{Why LLEO's reported NPCR is illusory: the absolute ciphertext difference $|C_0-C_1|$ (black
+${=}$ unchanged, bright ${=}$ changed), under one fixed key. \textbf{(left)} A one-pixel plaintext change
+alters \emph{exactly one} ciphertext pixel (ringed)---no diffusion---so the true one-pixel NPCR is
+$100/MN\approx\PH{cam_npcr1px}\,\%$. \textbf{(centre)} The ${\approx}99.6\,\%$ LLEO reports is really the
+difference between two \emph{unrelated} images (here \PH{npcr_unrelated}\,\%), which any near-uniform
+cipher attains and which says nothing about plaintext sensitivity. \textbf{(right)} Seeding the keystream
+from SHA-256 of the plaintext diffuses the \emph{same} one-pixel change into full noise---what a one-pixel
+NPCR should measure.}
+\label{fig:diffusion}
+\end{figure}
 
 \begin{table}[t]
 \centering
@@ -360,7 +376,9 @@ Key type                   & ``asymmetric'' & symmetric \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.92\columnwidth]{figures/correlation_scatter.pdf}
-\caption{Adjacent-pixel correlation, plain vs.\ cipher (Cameraman).}
+\caption{Adjacent-pixel correlation as a 2D density (every horizontal pixel pair, log counts): the plain
+image concentrates on the diagonal---neighbours are alike---while the LLEO cipher fills the plane
+uniformly (Cameraman).}
 \label{fig:corr}
 \end{figure}
 

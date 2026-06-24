@@ -59,17 +59,24 @@ def main() -> None:
     RES.mkdir(exist_ok=True)
     (RES / "openset.json").write_text(json.dumps(flat, indent=2))
 
-    # figure: detection seen vs unknown with 95% CI error bars
+    # figure: a slopegraph of the detection collapse. Each family's detection rate when SEEN in
+    # training drops to when it is HELD OUT (unknown); the steep DoS/Probe/U2R slopes contrast with
+    # R2L, which sits low even when seen -- it mimics benign, so there is little detection to lose.
     FIG.mkdir(exist_ok=True)
-    x = np.arange(len(FAMILIES))
-    seen_m = [ci(seen[F]) for F in FAMILIES]
-    uns_m = [ci(unseen[F]) for F in FAMILIES]
-    plt.figure(figsize=(3.4, 2.6))
-    plt.bar(x - 0.2, [m for m, _ in seen_m], 0.4, yerr=[h for _, h in seen_m], capsize=2, label="family seen")
-    plt.bar(x + 0.2, [m for m, _ in uns_m], 0.4, yerr=[h for _, h in uns_m], capsize=2, label="family held out")
-    plt.xticks(x, FAMILIES); plt.ylabel("detection rate"); plt.ylim(0, 1)
-    plt.legend(fontsize=7); plt.grid(axis="y", alpha=.3); plt.tight_layout()
-    plt.savefig(FIG / "openset_detection.pdf"); plt.close()
+    from ids_selective import plotstyle as ps
+    ps.use()
+    fcol = {"DoS": ps.C["blue"], "Probe": ps.C["green"], "R2L": ps.C["vermillion"], "U2R": ps.C["purple"]}
+    fig, ax = ps.fig(3.3, 2.6)
+    for F in FAMILIES:
+        ms, hs = ci(seen[F]); mu, hu = ci(unseen[F])
+        ax.errorbar([0, 1], [ms, mu], yerr=[hs, hu], fmt="none", ecolor=fcol[F],
+                    elinewidth=0.8, capsize=2, alpha=0.6, zorder=2)
+        ax.plot([0, 1], [ms, mu], "-o", color=fcol[F], ms=5, lw=1.8, zorder=3)
+        ax.text(1.05, mu, F, color=fcol[F], va="center", ha="left", fontsize=8, fontweight="bold")
+    ax.set_xticks([0, 1]); ax.set_xticklabels(["seen in\ntraining", "held out\n(unknown)"])
+    ax.set_xlim(-0.18, 1.34); ax.set_ylim(0, 1)
+    ax.set_ylabel("detection rate"); ax.grid(axis="x", visible=False)
+    fig.tight_layout(); fig.savefig(FIG / "openset_detection.pdf"); plt.close(fig)
     print("openset means + max CI half-width", flat["openset_maxhw"])
 
 
