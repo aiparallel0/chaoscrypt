@@ -173,9 +173,10 @@ depends strongly on the model family.
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.82\columnwidth]{figures/risk_coverage.pdf}
-\caption{Risk--coverage on NSL-KDD; the ring marks the 80\%-coverage operating point. Accepting only the
-most-confident inputs lowers selective risk sharply for the tree ensembles but barely for logistic
-regression, whose confidence does not rank its errors (nearly flat, and worst at the very top).}
+\caption{Risk--coverage on NSL-KDD; the ring marks the 80\%-coverage operating point and the shaded
+areas are the AURC (area under the curve) for the two extremes. Accepting only the most-confident inputs
+lowers selective risk sharply for the tree ensembles but barely for logistic regression, whose confidence
+does not rank its errors (nearly flat, and worst at the very top).}
 \label{fig:rc}
 \end{figure}
 
@@ -350,9 +351,9 @@ different failure modes (confident errors vs.\ benign-mimicking attacks).
 \includegraphics[width=0.82\columnwidth]{figures/benign_manifold.pdf}
 \caption{Why R2L is the blind spot. Each NSL-KDD test record is placed by how anomalous the two
 benign-only detectors find it, z-scored so benign sits near the origin (dashed box $=$ central 95\% of
-benign). DoS, Probe, and U2R separate from benign on at least one axis; R2L falls \emph{inside} the
-benign envelope---it mimics normal traffic, so neither abstention nor a benign-only novelty detector can
-cleanly flag it.}
+benign; top/right curves are the per-family marginal densities on each axis). DoS, Probe, and U2R
+separate from benign on at least one axis; R2L falls \emph{inside} the benign envelope---it mimics normal
+traffic, so neither abstention nor a benign-only novelty detector can cleanly flag it.}
 \label{fig:manifold}
 \end{figure}
 

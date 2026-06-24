@@ -97,16 +97,12 @@ plaintext; LLEO violates these. The differential metrics we scrutinise were stan
 \emph{et al.}~\cite{wu2011npcr}, who also note that NPCR/UACI quantify sensitivity to a one-pixel
 plaintext change---precisely the quantity LLEO fails to deliver despite its reported value.
 
-The pattern these works expose is structural rather than incidental. A permutation--diffusion cipher
-whose confusion and diffusion are both fixed by the key is, as a function of the plaintext, an affine
-or monomial map; composing more such stages yields another map of the same form, so neither extra
-rounds nor extra chaotic maps add security against an attacker who can query the
-encryption~\cite{li2019attacker,li2011optimal}. The decisive design choice is therefore binary: does
-any key material depend on the image? Schemes that answer ``no''---including LLEO, and the block- and
-shuffling-based constructions analysed in~\cite{arroyo2009,li2018entropy}---are broken by recovering an
-equivalent key, while schemes that bind the keystream to a per-image value (a hash, or a feedback
-chain) resist it. Our analysis of LLEO is a direct instance of this dichotomy, and our positive
-control (Section~\ref{sec:results}) demonstrates both sides of it on the same construction.
+The pattern is structural, not incidental: when both confusion and diffusion are fixed by the key the
+cipher is---as a function of the plaintext---an affine or monomial map, and composing more such stages
+changes only its coefficients~\cite{li2019attacker,li2011optimal}. The decisive question is binary: does
+any key material depend on the image? Schemes that answer ``no'' (LLEO included) fall to an equivalent
+key, while those that bind the keystream to a per-image value resist---both sides of which our positive
+control demonstrates on the same construction (Section~\ref{sec:results}).
 
 \section{The target cipher}\label{sec:target}
 LLEO encrypts an $M\times N$ grayscale image $X$ in three key-driven steps.
@@ -332,13 +328,23 @@ images, which for LLEO is \PH{npcr_unrelated}\,\% (Fig.~\ref{fig:diffusion}, cen
 any cipher with a near-uniform
 output and says nothing about chosen-plaintext security. Table~\ref{tab:claims} contrasts each claimed
 property with what the cipher actually provides. Finally, the chaotic keystreams are themselves
-non-uniform: a chi-square test rejects uniformity for the logistic keystream
+non-uniform (Fig.~\ref{fig:keystream}): a chi-square test rejects uniformity for the logistic keystream
 ($\chi^2=\PH{chi2_logistic}$, $p<10^{-300}$, numerically zero).
 
 \begin{figure}[t]
 \centering
+\includegraphics[width=0.86\columnwidth]{figures/keystream_ridgeline.pdf}
+\caption{Keystream byte distributions (ridgeline). The logistic keystream is sharply non-uniform---its
+invariant density spikes at the extremes---and even the Lorenz stream is measurably lumpy, whereas a
+secure stream cipher would match the flat uniform reference. A chi-square test rejects uniformity for
+both ($\chi^2$ annotated).}
+\label{fig:keystream}
+\end{figure}
+
+\begin{figure}[t]
+\centering
 \includegraphics[width=\columnwidth]{figures/diffusion_diff.pdf}
-\caption{Why LLEO's reported NPCR is illusory: the absolute ciphertext difference $|C_0-C_1|$ (black
+\caption{Why LLEO's reported NPCR is illusory: the absolute ciphertext difference $|C_0-C_1|$ (dark
 ${=}$ unchanged, bright ${=}$ changed), under one fixed key. \textbf{(left)} A one-pixel plaintext change
 alters \emph{exactly one} ciphertext pixel (ringed)---no diffusion---so the true one-pixel NPCR is
 $100/MN\approx\PH{cam_npcr1px}\,\%$. \textbf{(centre)} The ${\approx}99.6\,\%$ LLEO reports is really the

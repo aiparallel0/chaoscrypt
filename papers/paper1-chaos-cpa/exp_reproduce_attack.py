@@ -13,7 +13,6 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
 import numpy as np
 from skimage import data
 
@@ -33,7 +32,38 @@ plt.rcParams.update({
     "legend.frameon": False, "axes.spines.top": False, "axes.spines.right": False,
     "axes.linewidth": 0.7,
 })
-OK_BLUE, OK_VERM, OK_GREEN = "#0072B2", "#D55E00", "#009E73"
+OK_BLUE, OK_VERM, OK_GREEN, OK_GREY, OK_SKY = "#0072B2", "#D55E00", "#009E73", "#999999", "#56B4E9"
+
+
+def _seq(name="batlow", fallback="cividis"):
+    """Perceptually-uniform sequential colormap (Crameri/cmocean if installed, else a built-in)."""
+    try:
+        import cmcrameri.cm as _cmc
+        if hasattr(_cmc, name):
+            return getattr(_cmc, name)
+    except Exception:
+        pass
+    try:
+        import cmocean
+        if name in cmocean.cm.cmapnames:
+            return cmocean.cm.cmap_d[name]
+    except Exception:
+        pass
+    return plt.get_cmap(fallback)
+
+
+def _ridgeline(ax, rows, labels, colors, overlap=0.6):
+    """Joyplot: stacked filled densities (bottom row first); densities share one normalising scale."""
+    peak = max(float(np.max(y)) for _, y in rows) or 1.0
+    scale = (1.0 + overlap) / peak
+    for i, (x, y) in enumerate(rows):
+        z = 2 * (len(rows) - i)
+        ax.fill_between(x, i, i + np.asarray(y) * scale, color=colors[i], alpha=0.85, lw=0, zorder=z)
+        ax.plot(x, i + np.asarray(y) * scale, color="white", lw=0.8, zorder=z + 1)
+    ax.set_yticks(range(len(rows))); ax.set_yticklabels(labels)
+    ax.set_ylim(-0.1, len(rows) + overlap); ax.tick_params(axis="y", length=0)
+    for s in ("left", "right", "top"):
+        ax.spines[s].set_visible(False)
 
 
 def entropy(x) -> float:
@@ -86,8 +116,10 @@ def main() -> None:
     flat["one_over_N_pct"] = round(100.0 / cam.size, 6)
 
     # chi-square keystream distinguisher (chaotic maps are non-uniform)
-    chi_log, p_log = chi_square_uniformity(logistic_keystream(0.413, 1_000_000))
-    chi_lor, p_lor = chi_square_uniformity(lorenz_keystream(200_000))
+    ks_log = logistic_keystream(0.413, 1_000_000)
+    ks_lor = lorenz_keystream(200_000)
+    chi_log, p_log = chi_square_uniformity(ks_log)
+    chi_lor, p_lor = chi_square_uniformity(ks_lor)
     flat["chi2_logistic"] = round(chi_log, 1); flat["p_logistic"] = float(f"{p_log:.1e}")
     flat["chi2_lorenz"] = round(chi_lor, 1); flat["p_lorenz"] = float(f"{p_lor:.1e}")
 
@@ -129,13 +161,15 @@ def main() -> None:
     a.set_xlabel("pixel value"); a.set_ylabel("count"); a.set_xlim(0, 256); a.legend()
     plt.tight_layout(); plt.savefig(FIG / "cipher_hist.pdf"); plt.close()
 
-    # Figure 3: adjacent-pixel correlation as a 2D density (every pair, log counts), plain vs cipher.
-    # The plain image piles onto the diagonal (neighbours are alike); the cipher fills the square.
+    # Figure 3: adjacent-pixel correlation as a hexbin density (every pair, log counts, Crameri batlow),
+    # plain vs cipher. The plain image piles onto the diagonal (neighbours are alike); the cipher fills
+    # the square. Hexagonal binning packs the plane without the directional bias of a square grid.
     fig, ax = plt.subplots(1, 2, figsize=(5.0, 2.5))
     for a, im, ttl in zip(ax, [img, E2d], ["plain image", "LLEO cipher"]):
         xs = im[:, :-1].ravel(); ys = im[:, 1:].ravel()
-        a.hist2d(xs, ys, bins=128, range=[[0, 256], [0, 256]], cmap="magma", norm=LogNorm())
-        a.set_title(ttl); a.set_aspect("equal")
+        a.hexbin(xs, ys, gridsize=48, extent=(0, 256, 0, 256), cmap=_seq("batlow", "magma"),
+                 bins="log", mincnt=1, linewidths=0)
+        a.set_title(ttl); a.set_aspect("equal"); a.set_xlim(0, 256); a.set_ylim(0, 256)
         a.set_xlabel("pixel (x,y)"); a.set_ylabel("pixel (x+1,y)")
     plt.tight_layout(); plt.savefig(FIG / "correlation_scatter.pdf"); plt.close()
 
@@ -157,18 +191,36 @@ def main() -> None:
     fig, ax = plt.subplots(1, 3, figsize=(3.4, 1.95))   # column-native: crisp fonts at \columnwidth
     for a, (ttl, e0, e1) in zip(ax, panels):
         d = np.abs(e0.astype(np.int16) - e1.astype(np.int16)).reshape(img.shape)
-        a.imshow(d, cmap="gray", vmin=0, vmax=255, interpolation="nearest")
+        a.imshow(d, cmap=_seq("thermal", "inferno"), vmin=0, vmax=255, interpolation="nearest")
         a.set_xticks([]); a.set_yticks([]); a.set_title(ttl, fontsize=7.5)
         val = npcr(e0, e1)
         a.set_xlabel(f"NPCR\n{val:.3g}%", fontsize=7, color=(OK_VERM if val < 1 else OK_GREEN))
         ys, xs = np.where(d > 0)
         if len(xs) <= 4:    # lone changed pixel: ring it and point, else invisible at print size
-            a.add_patch(plt.Circle((xs.mean(), ys.mean()), 34, fill=False, color=OK_VERM, lw=1.2))
+            a.add_patch(plt.Circle((xs.mean(), ys.mean()), 34, fill=False, color=OK_SKY, lw=1.3))
             a.annotate("1 px", xy=(float(xs.mean()), float(ys.mean())),
-                       xytext=(0.36 * img.shape[1], 0.16 * img.shape[0]), color=OK_VERM, fontsize=7,
-                       arrowprops=dict(arrowstyle="->", color=OK_VERM, lw=1.0))
+                       xytext=(0.36 * img.shape[1], 0.16 * img.shape[0]), color=OK_SKY, fontsize=7,
+                       arrowprops=dict(arrowstyle="->", color=OK_SKY, lw=1.1))
     plt.tight_layout(pad=0.3); plt.savefig(FIG / "diffusion_diff.pdf"); plt.close()
-    print("wrote results/repro_attack.json and 4 figures; "
+
+    # Figure 5: keystream non-uniformity as a ridgeline (joyplot). Byte-value densities of the two
+    # chaotic keystreams pile up away from flat -- unlike a true uniform source -- the visual companion
+    # to the chi-square distinguisher (annotated). A secure stream cipher would match the uniform row.
+    rng = np.random.default_rng(0)
+    edges = np.arange(257)
+    xc = (edges[:-1] + edges[1:]) / 2
+
+    def _dens(b):
+        return np.histogram(np.asarray(b, np.uint8), bins=edges, density=True)[0]
+
+    rows3 = [(xc, _dens(rng.integers(0, 256, 200_000))), (xc, _dens(ks_lor)), (xc, _dens(ks_log))]
+    fig, a = plt.subplots(figsize=(3.4, 2.3))
+    _ridgeline(a, rows3, ["uniform\n(reference)", "Lorenz", "logistic"], [OK_GREY, OK_VERM, OK_BLUE])
+    a.text(248, 1.05, f"$\\chi^2$={chi_lor:.0f}", color=OK_VERM, fontsize=6.5, ha="right")
+    a.text(248, 2.05, f"$\\chi^2$={chi_log:.0f}", color=OK_BLUE, fontsize=6.5, ha="right")
+    a.set_xlabel("keystream byte value"); a.set_xlim(0, 256)
+    plt.tight_layout(); plt.savefig(FIG / "keystream_ridgeline.pdf"); plt.close()
+    print("wrote results/repro_attack.json and 5 figures; "
           f"NPCR unrelated images = {flat['npcr_unrelated']}% vs 1-pixel = {flat['cam_npcr1px']}%")
 
 

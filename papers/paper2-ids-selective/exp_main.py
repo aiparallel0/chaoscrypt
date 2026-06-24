@@ -113,7 +113,9 @@ def main() -> None:
     # the flat linear model (uninformative confidence) and the falling tree ensembles is the point.
     fig, ax = ps.fig(3.3, 2.5)
     for name, (cov, risks) in curves.items():
-        ax.plot(cov, risks, label=disp[name], color=mcol[name])
+        ax.plot(cov, risks, label=disp[name], color=mcol[name], zorder=3)
+        if name in ("logreg", "histgb"):   # shade AURC (area under the curve) for the two extremes
+            ax.fill_between(cov, 0, risks, color=mcol[name], alpha=0.13, lw=0, zorder=1)
         ax.scatter(0.8, float(np.interp(0.8, cov, risks)), s=34, facecolor="white",
                    edgecolor=mcol[name], linewidth=1.4, zorder=5)
     ax.axvline(0.8, color=ps.C["grey"], ls=":", lw=1.0, zorder=0)
