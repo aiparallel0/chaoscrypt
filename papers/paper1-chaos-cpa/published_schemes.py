@@ -47,7 +47,7 @@ def _lscm_keystream(x0: float, r: float, b: float, n: int) -> np.ndarray:
     out = np.empty(n, np.uint8)
     for i in range(n):
         x = np.sin(r * np.pi * (1.0 - x) * b * x)
-        out[i] = int((x * 0.5 + 0.5) * 256.0) & 0xFF           # map [-1,1] -> [0,256)
+        out[i] = int(abs(x) * 1e14) % 256                      # standard uniformizing extraction -> ~8-bit entropy
     return out
 
 
@@ -76,7 +76,7 @@ def build_lscm_ca(key: int, shape) -> Encrypt:
     its model spans the GF(2)-affine CA layer)."""
     n = shape[0] * shape[1]
     rng = np.random.default_rng(int(key) & 0x7FFFFFFF)
-    x0, r, b = 0.1 + 0.8 * rng.random(), 0.7 + 0.6 * rng.random(), 0.7 + 0.6 * rng.random()
+    x0, r, b = 0.1 + 0.8 * rng.random(), 3.0 + rng.random(), 3.0 + rng.random()  # chaotic regime (uniform orbit)
     K = _lscm_keystream(x0, r, b, n)                           # key-only keystream
     s = rng.permutation(n)                                     # key-only fixed permutation
 

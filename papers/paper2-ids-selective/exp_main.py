@@ -110,6 +110,10 @@ def main() -> None:
         T = fit_temperature(base.predict_proba(Xcal)[:, 1], ycal)
         e_temp = ece(temp_confidence(proba[:, 1], T), correct)         # argmax (accuracy) unchanged by T
         ev_temp = ece(temp_confidence(pv[:, 1], T), (pv.argmax(1) == yval).astype(float))
+        # Brier score (binary, positive class = attack): a proper scoring rule corroborating ECE
+        y_atk = (yte == 1).astype(float)
+        brier = float(np.mean((proba[:, 1] - y_atk) ** 2))
+        brier_cal = float(np.mean((pcal[:, 1] - y_atk) ** 2))
         det_known = (pred[is_known_atk] == 1).mean()
         det_novel = (pred[is_novel] == 1).mean()
         flat.update({
@@ -128,6 +132,8 @@ def main() -> None:
             f"{name}_ece_val_iso": round(float(ev_iso), 4),
             f"{name}_ece_val_temp": round(float(ev_temp), 4),
             f"{name}_temp_T": round(float(T), 3),
+            f"{name}_brier": round(brier, 4),
+            f"{name}_brier_cal": round(brier_cal, 4),
         })
         curves[name] = (cov, risks)
         ece_store[name] = (float(ev_raw), float(e_raw))

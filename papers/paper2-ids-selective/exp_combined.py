@@ -66,11 +66,30 @@ def main() -> None:
 
     delta = np.array(union) - np.array(tuned)                     # stack minus tuned threshold (matched cost)
     md, hd = ci(list(delta))
+
+    # Bootstrap CI on the headline gap over the EVALUATION distribution (resample test flows), using the
+    # last seed's frozen scores. Seed-only t-intervals reflect train/model variance and understate
+    # evaluation uncertainty; this is the wider, reviewer-requested interval on the main claim.
+    brng = np.random.default_rng(0)
+    Nte = len(yte_full)
+    boot = []
+    for _ in range(2000):
+        idx = brng.integers(0, Nte, Nte)
+        sc, sn, cf, pr, bb, tg = s_clf[idx], s_nov[idx], conf[idx], pred[idx], benign[idx], tgt[idx]
+        if not bb.any() or not tg.any():
+            continue
+        Ub = (pr == 1) | (cf < np.quantile(cf, 0.20)) | (sn > np.quantile(sn[bb], 0.90))
+        bud = float(Ub[bb].mean())
+        tau_b = np.quantile(sc[bb], 1 - bud)
+        boot.append(float(Ub[tg].mean()) - float((sc[tg] >= tau_b).mean()))
+    blo, bhi = (float(np.percentile(boot, 2.5)), float(np.percentile(boot, 97.5))) if boot else (md, md)
+
     flat = {"comb_target": TARGET}
     for k, v in (("comb_recall_argmax", argmax), ("comb_recall_tuned", tuned),
                  ("comb_recall_union", union), ("comb_review", review)):
         m, h = ci(v); flat[k] = round(m, 3); flat[k + "_hw"] = round(h, 3)
     flat["comb_delta_union_tuned"] = round(md, 3); flat["comb_delta_union_tuned_hw"] = round(hd, 3)
+    flat["comb_delta_boot_lo"] = round(blo, 3); flat["comb_delta_boot_hi"] = round(bhi, 3)
     flat["comb_stack_beats_tuned"] = bool((md - hd) > 0)
     RES.mkdir(exist_ok=True)
     (RES / "combined.json").write_text(json.dumps(flat, indent=2))

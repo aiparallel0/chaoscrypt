@@ -18,6 +18,8 @@
   "logreg_ece_val_iso": 0.0039,
   "logreg_ece_val_temp": 0.0098,
   "logreg_temp_T": 0.958,
+  "logreg_brier": 0.2232,
+  "logreg_brier_cal": 0.2225,
   "rf_acc": 0.7679,
   "rf_ece_raw": 0.1663,
   "rf_ece_cal": 0.1899,
@@ -33,6 +35,8 @@
   "rf_ece_val_iso": 0.0001,
   "rf_ece_val_temp": 0.0004,
   "rf_temp_T": 0.576,
+  "rf_brier": 0.1696,
+  "rf_brier_cal": 0.1936,
   "histgb_acc": 0.7968,
   "histgb_ece_raw": 0.1806,
   "histgb_ece_cal": 0.1762,
@@ -47,5 +51,7 @@
   "histgb_ece_temp": 0.1816,
   "histgb_ece_val_iso": 0.0003,
   "histgb_ece_val_temp": 0.0004,
-  "histgb_temp_T": 0.958
+  "histgb_temp_T": 0.958,
+  "histgb_brier": 0.1836,
+  "histgb_brier_cal": 0.1785
 }

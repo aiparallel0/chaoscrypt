@@ -16,6 +16,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import NearestNeighbors
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
 
 from ids_selective.data import NslKdd
 from ids_selective.pipeline import encode
@@ -53,8 +56,8 @@ def main() -> None:
     Xtr_all, ytr_all, Xte, yte, _ = encode(ds.train, ds.test)
     is_novel = ds.test["label"].isin(set(ds.novel_attack_labels())).to_numpy()
 
-    acc = {m: [] for m in ("logreg", "rf", "histgb")}
-    ece_, aurc, risk80 = ({m: [] for m in acc} for _ in range(3))
+    acc = {m: [] for m in ("logreg", "rf", "histgb", "mlp")}
+    ece_, aurc, risk80, brier = ({m: [] for m in acc} for _ in range(4))
     sig_aurc = {s: [] for s in ("msp", "rf_disagreement", "mahalanobis", "knn")}
     sig_unk = {s: [] for s in sig_aurc}
     dmsp = {s: [] for s in ("rf_disagreement", "mahalanobis", "knn")}  # paired delta vs MSP
@@ -65,7 +68,10 @@ def main() -> None:
         Xfit, Xcal, yfit, ycal = train_test_split(Xtr2, ytr2, test_size=0.25, random_state=seed, stratify=ytr2)
         models = {"logreg": LogisticRegression(max_iter=300),
                   "rf": RandomForestClassifier(n_estimators=120, n_jobs=-1, random_state=seed),
-                  "histgb": HistGradientBoostingClassifier(random_state=seed)}
+                  "histgb": HistGradientBoostingClassifier(random_state=seed),
+                  "mlp": make_pipeline(StandardScaler(),     # a neural family, to broaden the claim
+                      MLPClassifier(hidden_layer_sizes=(64, 32), early_stopping=True, max_iter=200,
+                                    random_state=seed))}
         rf = None
         for name, clf in models.items():
             clf.fit(Xfit, yfit)
@@ -73,6 +79,7 @@ def main() -> None:
             cor = (pred == yte).astype(float)
             acc[name].append(cor.mean()); ece_[name].append(ece(conf, cor))
             aurc[name].append(risk_coverage(conf, cor)[2]); risk80[name].append(risk_at_coverage(conf, cor, .8))
+            brier[name].append(float(np.mean((p[:, 1] - (yte == 1)) ** 2)))   # binary Brier, positive=attack
             if name == "rf":
                 rf, rf_proba, rf_pred, rf_cor = clf, p, pred, cor
         # signals on the RF base (same errors), seed's fit set as reference
@@ -98,6 +105,7 @@ def main() -> None:
     for name in acc:
         flat[f"ms_{name}_acc"] = fmt(acc[name], 3)
         flat[f"ms_{name}_ece"] = fmt(ece_[name], 4)
+        flat[f"ms_{name}_brier"] = fmt(brier[name], 4)
         flat[f"ms_{name}_aurc"] = fmt(aurc[name], 4)
         flat[f"ms_{name}_risk80"] = fmt(risk80[name], 4)
     for s in sig_aurc:

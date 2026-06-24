@@ -28,7 +28,8 @@ for ax, (tag, title) in zip(axes, panels):
     dhw = [d[f"vf_{tag}_b{b}_delta_hw"] for b in budgets]
     x = np.arange(len(budgets)); w = 0.36
     ax.bar(x - w / 2, base, w, color=ps.C["blue"], label="tuned threshold", zorder=3)
-    ax.bar(x + w / 2, fix, w, color=ps.C["orange"], label="+abstain +novelty (stack)", zorder=3)
+    ax.bar(x + w / 2, fix, w, color=ps.C["orange"], hatch="///", edgecolor="white", linewidth=0,
+           label="+abstain +novelty (stack)", zorder=3)  # hatch => distinguishable in grayscale
     for xi, bb, ff, hw in zip(x, base, fix, dhw):
         dv = ff - bb
         ax.annotate(f"$\\Delta{{=}}{dv:+.2f}$", (xi, max(bb, ff) + 0.03), ha="center", fontsize=6.2,

@@ -1,0 +1,16 @@
+{
+  "pub_npcr_ideal": 99.61,
+  "pub_npcr_1px_512": "0.000381",
+  "pub_lscm_ent": "7.999",
+  "pub_lscm_npcr1": "0.000381",
+  "pub_lscm_npcrX": "99.62",
+  "pub_li_ent": "7.999",
+  "pub_li_npcr1": "99.58",
+  "pub_li_npcrX": "99.61",
+  "pub_mile_ent": "7.999",
+  "pub_mile_npcr1": "0.000381",
+  "pub_mile_npcrX": "99.63",
+  "pub_miea_ent": "7.999",
+  "pub_miea_npcr1": "100.00",
+  "pub_miea_npcrX": "99.60"
+}

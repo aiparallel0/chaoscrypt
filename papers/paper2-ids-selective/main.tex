@@ -42,26 +42,23 @@ for Machine-Learning Network Intrusion Detection}
 \pagestyle{empty}
 
 \begin{abstract}
-A machine-learning intrusion detector that emits one hard label gives no signal of when to trust it and
-fails silently on attacks absent from training. Proposing no new detector, we ask whether off-the-shelf
-ones know when they are wrong, and reach a dissociation between two failure modes. First, over-confidence
-is \emph{task-dependent}: on the dated NSL-KDD benchmark the three standard detectors are badly
-miscalibrated under its train--test shift, and no post-hoc calibrator we try---Platt, isotonic, or
-temperature scaling---transfers, whereas on two modern flow corpora (CIC-IDS-2017 and 2018) the same task
-is well calibrated. Second, a blind spot on minority benign-mimicking families (NSL-KDD R2L, CIC
-Infiltration) recurs, but it is largely an \emph{operating-point} failure, not a representational one:
-such families are nearly missed at the global decision threshold even though their attack score stays
-discriminable, and a per-family threshold recovers much of the recall---so the dramatic ``detection
-collapse'' reported on unknown families is mostly a thresholding artifact. We grade this: the effect is
-cleanest for the strongly scored R2L and weaker for Infiltration, whose score is itself only moderately
-discriminative. Selective prediction cuts selective risk at fixed coverage, but only for models whose
-confidence ranks errors (tree ensembles, not logistic regression); and on the benign-mimicking blind
-spot the lever is the operating point---a budget-tuned threshold recovers most of what the argmax default
-misses, while an added abstention/novelty stack gives no gain at matched cost (across three review
-budgets and two corpora). We also flag that the usual
-fixed-partition confidence intervals understate uncertainty---resampling the evaluation distribution
-widens them severalfold. Selective prediction is a cheap, model-agnostic safety layer whose limits we
-measure rather than assume.
+The widely reported ``detection collapse'' of ML intrusion detectors on unknown attack families is mostly
+a \emph{thresholding artifact}: minority benign-mimicking families (NSL-KDD R2L, CIC Infiltration) keep a
+discriminable attack score but are nearly missed at the global argmax threshold, and a per-family
+threshold recovers much of the recall. Proposing no new detector, we evaluate whether off-the-shelf
+detectors know when they are wrong---the diagnosis itself is the contribution---and report three findings.
+(i) \emph{Over-confidence is task-dependent}: on dated NSL-KDD the three standard detectors are badly
+miscalibrated under train--test shift and no post-hoc calibrator (Platt, isotonic, temperature) transfers,
+whereas on two modern flow corpora (CIC-IDS-2017/2018) the same task is well calibrated (ECE and Brier
+agree). (ii) \emph{The blind spot is an operating-point failure}, not a representational one---the
+artifact above; we grade it, cleanest for the strongly scored R2L and weaker for the only-moderately-scored
+Infiltration. (iii) \emph{The operating point is the lever, not added machinery}: a budget-tuned threshold
+recovers most of what argmax misses, while an abstention/novelty stack gives no gain at matched analyst
+cost (three budgets, two corpora; bootstrap CI on the gap). Selective prediction cuts selective risk at
+fixed coverage, but only for models whose confidence ranks errors (tree ensembles, not logistic
+regression). We also flag that fixed-partition confidence intervals understate uncertainty---resampling
+the evaluation distribution widens them severalfold. Selective prediction is a cheap, model-agnostic
+safety layer whose limits we measure rather than assume.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -161,7 +158,11 @@ records with 41 features (three categorical) and a binary normal/attack label; e
 of four families (DoS, Probe, R2L, U2R). Its test split contains \PH{n_novel_types} attack \emph{types}
 (\PH{n_novel_rows} records) that never appear in training---a built-in open-set test (the model must
 face attack kinds it never saw). Numeric features are standardised and categorical features one-hot
-encoded (turned into 0/1 indicator columns); the encoder is fit on training data only.
+encoded (turned into 0/1 indicator columns); the encoder is fit on training data only. We retain NSL-KDD
+despite its age by deliberate choice: it remains the most-reported IDS benchmark---giving direct
+comparability with the prior selective-prediction and ``detection-collapse'' results we revisit---and its
+train--test shift is a built-in open-set stress test; we pair it with two modern flow corpora so that
+dated-benchmark artefacts can be told apart from task-intrinsic effects (the task-dependence finding).
 
 \textbf{Models.} We use scikit-learn \cite{pedregosa2011scikit} logistic regression (a linear model), a
 random forest, and histogram gradient boosting (two ensembles of decision trees)---deliberately standard
@@ -210,9 +211,11 @@ calibrator fit on source data removes the shift-induced miscalibration: Platt, i
 scaling all leave test ECE essentially where it was (gradient boosting \PH{histgb_ece_raw} raw vs.\
 \PH{histgb_ece_cal}/\PH{histgb_ece_iso}/\PH{histgb_ece_temp}; the random forest is slightly
 \emph{worse} after every one), even though each drives in-distribution ECE below 0.01
-(Fig.~\ref{fig:calmethods}). Calibrating to the source distribution does not certify probabilities once
-the deployed distribution moves; this is why we turn to abstention, which needs only a usable confidence
-\emph{ranking}, not calibrated probabilities.
+(Fig.~\ref{fig:calmethods}). The Brier score (Table~\ref{tab:main}), a proper scoring rule, tells the same
+story---it too barely improves under calibration and \emph{worsens} for the random forest---so the
+over-confidence is a property of the scores under shift, not a binning artefact of ECE. Calibrating to the
+source distribution does not certify probabilities once the deployed distribution moves; this is why we
+turn to abstention, which needs only a usable confidence \emph{ranking}, not calibrated probabilities.
 
 \emph{How precise are these numbers?} Because the canonical KDDTest+ partition is held fixed, our seed
 CIs (Table~\ref{tab:main}) capture only train/model variance and look reassuringly tight. They understate
@@ -224,16 +227,20 @@ benchmark.
 \begin{table*}[t]
 \centering
 \caption{NSL-KDD test metrics: mean $\pm$ 95\% CI over $K{=}15$ seeds (resampling the
-fit/calibration split and model randomness). Lower ECE and AURC are better.}
+fit/calibration split and model randomness), across four model families including a neural MLP. Lower ECE,
+Brier, and AURC are better. Low AURC (confidence ranks errors) is strongest for the tree ensembles, still
+useful for the MLP, and poor for logistic regression---a spectrum, not a linear/nonlinear split---which is
+the property abstention needs.}
 \label{tab:main}
 \setlength{\tabcolsep}{6pt}
-\begin{tabular}{lcccc}
+\begin{tabular}{lccccc}
 \toprule
-Model & Acc. & ECE & AURC & $r(0.8)$ \\
+Model & Acc. & ECE & Brier & AURC & $r(0.8)$ \\
 \midrule
-Logistic reg.        & \PH{ms_logreg_acc} & \PH{ms_logreg_ece} & \PH{ms_logreg_aurc} & \PH{ms_logreg_risk80} \\
-Random forest        & \PH{ms_rf_acc}     & \PH{ms_rf_ece}     & \PH{ms_rf_aurc}     & \PH{ms_rf_risk80} \\
-Hist.\ grad.\ boost. & \PH{ms_histgb_acc} & \PH{ms_histgb_ece} & \PH{ms_histgb_aurc} & \PH{ms_histgb_risk80} \\
+Logistic reg.        & \PH{ms_logreg_acc} & \PH{ms_logreg_ece} & \PH{ms_logreg_brier} & \PH{ms_logreg_aurc} & \PH{ms_logreg_risk80} \\
+Random forest        & \PH{ms_rf_acc}     & \PH{ms_rf_ece}     & \PH{ms_rf_brier}     & \PH{ms_rf_aurc}     & \PH{ms_rf_risk80} \\
+Hist.\ grad.\ boost. & \PH{ms_histgb_acc} & \PH{ms_histgb_ece} & \PH{ms_histgb_brier} & \PH{ms_histgb_aurc} & \PH{ms_histgb_risk80} \\
+MLP (neural)         & \PH{ms_mlp_acc}    & \PH{ms_mlp_ece}    & \PH{ms_mlp_brier}    & \PH{ms_mlp_aurc}    & \PH{ms_mlp_risk80} \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -439,10 +446,12 @@ threshold for a minority family. We instead compare three policies on held-out (
 \emph{same} review budget (\PH{comb_review}): argmax, a global threshold \emph{tuned} to that budget, and
 the full stack (argmax/abstention/novelty). Argmax is blind (\PH{comb_recall_argmax}); a tuned threshold
 recovers \PH{comb_recall_tuned}; the full stack reaches only \PH{comb_recall_union}, \emph{below} the
-tuned threshold at matched cost (paired gap \PH{comb_delta_union_tuned}; Fig.~\ref{fig:combined}). The
-recovery is the operating point, not the gates; even so, the tuned threshold still misses about half of
-unknown R2L (the stack about 60\%). We run this on NSL-KDD R2L only; the Infiltration case is left to
-camera-ready, a single-corpus result.
+tuned threshold at matched cost (paired gap \PH{comb_delta_union_tuned} across seeds; a bootstrap over the
+evaluation distribution gives a 95\% CI of $[\PH{comb_delta_boot_lo},\PH{comb_delta_boot_hi}]$ on the gap,
+excluding any meaningful gain; Fig.~\ref{fig:combined}). The recovery is the operating point, not the
+gates; even so, the tuned threshold still misses about half of unknown R2L (the stack about 60\%). This is
+not a single-corpus result: Section~\ref{sec:validatefix} repeats the comparison across three review
+budgets on both unknown R2L and cross-corpus Infiltration, with the same conclusion.
 
 \begin{figure}[t]
 \centering
@@ -481,6 +490,14 @@ positively dependent---both fire on the same atypical-but-benign-looking flows--
 benign review for little marginal recall, whereas moving the single threshold spends the whole budget on
 the most informative score. Across budgets and corpora, the lever is the operating point, not the stack.
 
+\emph{Is the comparison fair to the stack?} We tune the stack \emph{favourably}, not as a strawman. Its
+gates take conventional, generous settings---abstention at the standard 80\% coverage and the benign-only
+novelty gate at the benign-FPR operating point that maximises its own held-out R2L recall---and we then
+allocate the tuned-threshold baseline the \emph{same} total benign review budget the stack realises, so
+neither side is advantaged on analyst cost. The negative result is thus conservative: even a
+favourably-tuned stack fails to beat a single threshold at equal budget, and a harder-tuned threshold
+(which we do not use) would only widen the gap.
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.98\textwidth]{figures/validatefix.pdf}
@@ -496,7 +513,8 @@ equal cost. Bars are means over $K{=}6$ seeds.}
 Selective prediction is a cheap, model-agnostic safety layer: at the cost of deferring a minority of
 inputs it materially lowers the error among those acted upon, and it partially flags unknown attacks.
 But our results bound the claim. First, the value of abstention is inherited from the confidence
-signal, which is good for tree ensembles and poor for the linear model. Second, post-hoc calibration
+signal, which is strong for the tree ensembles, still useful for the neural MLP, and poor for the linear
+model (a spectrum of confidence quality, not a linear/nonlinear dichotomy). Second, post-hoc calibration
 on source data does not survive distribution shift, so calibrated probabilities should not be trusted
 as deployment-time guarantees. We should be plain about what is and is not novel here: the contribution
 is the \emph{diagnosis}---that the much-cited ``detection collapse'' on unknown families is largely a
@@ -509,14 +527,22 @@ score is discriminable; the fix is to set the operating point to the analyst bud
 budget-tuned threshold, not richer features---and an added abstention/novelty stack does not beat that
 tuned threshold at matched cost (Section~\ref{sec:novelty}).
 
-\emph{Operational recipe.} Deploy a model whose confidence is informative (low validation AURC---a tree
-ensemble here, not the linear model); set the operating coverage from the risk--coverage curve to meet a
-target precision; route the abstained minority to a secondary control; monitor the abstention rate as a
-cheap, label-free drift signal~\cite{jordaney2017transcend,yang2021cade}; and, crucially, set the
-operating point to the analyst budget rather than leaving it at argmax---which alone recovers
-\PH{comb_recall_tuned} of unknown R2L versus \PH{comb_recall_argmax} (Section~\ref{sec:novelty}).
+\subsection{Recommendations}
+The diagnosis turns into concrete guidance, in order. \emph{(1)} Pick a model whose confidence
+\emph{ranks} errors---low validation AURC, strongest for the tree ensembles, still useful for the neural
+MLP, and poor for logistic regression (Table~\ref{tab:main}); calibrated probabilities are neither
+required nor, under shift, achievable post-hoc. \emph{(2)} Set the operating point to the analyst review budget \emph{before}
+reaching for novelty detection: a budget-tuned (ideally per-family) threshold recovers
+\PH{comb_recall_tuned} of unknown R2L versus \PH{comb_recall_argmax} at argmax, while an abstention/novelty
+stack adds no recall at matched cost (Section~\ref{sec:validatefix}). \emph{(3)} Set selective coverage
+from the risk--coverage curve to a target precision, route the abstained minority to a secondary control,
+and monitor the abstention rate as a cheap, label-free drift
+signal~\cite{jordaney2017transcend,yang2021cade}. \emph{(4)} Report \emph{bootstrap} confidence intervals
+over the evaluation distribution, not just fixed-partition seed intervals, which understate uncertainty
+severalfold on a single fixed benchmark.
 
-\emph{Limitations.} NSL-KDD is dated and hand-crafted, so absolute numbers will differ on modern corpora;
+\subsection{Limitations}
+NSL-KDD is dated and hand-crafted, so absolute numbers will differ on modern corpora;
 the mechanisms we isolate---over-confidence under shift, model-dependent confidence quality, and the
 operating-point blind spot on benign-mimicking families---reproduce on CIC-IDS-2017 and 2018, so they are
 not specific to it. We study binary detection with a
@@ -539,8 +565,8 @@ is worth adding to ML intrusion detection, provided its confidence signal and it
 measured, not assumed.
 
 \section*{Acknowledgment}
-The authors used a large language model (Anthropic Claude) to assist with code scaffolding, editing,
-and literature search. All experiments, results, and claims were verified by the authors; the AI
+The author used a large language model (Anthropic Claude) to assist with code scaffolding, editing,
+and literature search. All experiments, results, and claims were verified by the author; the AI
 system is not an author. Generative-AI use is disclosed per IEEE policy.
 
 \bibliographystyle{IEEEtran}
