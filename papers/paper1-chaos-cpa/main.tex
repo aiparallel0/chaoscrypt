@@ -61,9 +61,10 @@ This break stands on the real construction. We then ask how far it generalizes b
 black-box \emph{structural oracle} that, given only chosen-image encryption access, decides whether a
 cipher is a fixed plaintext-independent map and recovers an equivalent key, certifying each verdict by
 predicting held-out ciphertext (we prove the certificate sound). On a corpus of \PH{oracle_n_schemes}
-structural archetypes it breaks all \PH{oracle_n_keyonly_broken} key-only constructions in at most
-\PH{oracle_max_queries} chosen plaintexts and clears the \PH{oracle_n_bound_resist} that bind the
-keystream to the plaintext or a nonce; on \PH{pub_n_real} \emph{real} published 2023--2025 schemes
+structural archetypes it breaks all \PH{oracle_n_keyonly_broken} fully key-only constructions in at most
+\PH{oracle_max_queries} chosen plaintexts, clears the \PH{oracle_n_bound_resist} that bind the keystream
+to the plaintext or a nonce, and degrades gracefully on a sixth, non-invertible key-only variant (the
+deliberate boundary); on \PH{pub_n_real} \emph{real} published 2023--2025 schemes
 (reconstructed from their equations, and shown to reproduce the originals' reported entropy and NPCR) it
 breaks the one key-only design and clears three that seed the keystream from the plaintext. Breaking the
 key-only scheme---an XOR keystream under a per-pixel cellular-automata stage---needed a GF(2)-affine
@@ -474,7 +475,7 @@ this literature.
 
 \textbf{Archetype corpus.} Run blind over \PH{oracle_n_schemes} reconstructed archetypes
 (Table~\ref{tab:oracle}, Fig.~\ref{fig:oracle}), the oracle breaks all \PH{oracle_n_keyonly_broken}
-key-only constructions at $R{=}1$ in at most \PH{oracle_max_queries} chosen plaintexts: LLEO's chaos
+\emph{fully} key-only constructions at $R{=}1$ in at most \PH{oracle_max_queries} chosen plaintexts: LLEO's chaos
 monomial, a pure permutation, an additive stream, a general affine map, and a modern AES-CTR-style key
 stream. The chaos is incidental: an AES-CTR keystream \emph{reused} across images---a fixed key and
 counter for every image---is exactly as broken as LLEO. This is a keystream/counter-reuse failure, not
@@ -482,9 +483,9 @@ any weakness of AES-CTR used correctly with a fresh per-image nonce (which our n
 resists); the flaw is a reused plaintext-independent keystream, not the choice of map. The
 \PH{oracle_n_bound_resist} defended schemes---reseeding the keystream from SHA-256 of the plaintext, or
 from a per-image nonce---are correctly declined ($R{\approx}$ chance), and there a one-pixel change
-avalanches across the whole image. The same equivalent-key CPA also breaks a chained CBC-like XOR cipher
-(a structurally different, non-position-wise construction) in \PH{gen_cpt} chosen plaintexts, per
-Proposition~\ref{prop:monomial}. These are reconstructions of structural archetypes; we turn next to real
+avalanches across the whole image. Beyond the corpus, the same equivalent-key CPA also breaks a chained
+CBC-like XOR cipher (a structurally different, non-position-wise construction not counted among the
+\PH{oracle_n_schemes}) in \PH{gen_cpt} chosen plaintexts, per Proposition~\ref{prop:monomial}. These are reconstructions of structural archetypes; we turn next to real
 published schemes.
 
 \textbf{Scope.} The cheap-query regime spans position-wise affine, monomial, XOR, \emph{and} GF(2)-affine
@@ -497,11 +498,14 @@ stay structurally broken but fall outside this logarithmic-query regime.
 \centering
 \caption{The structural oracle over the \emph{archetype} corpus, blind to each scheme's internals. $R$ is
 the held-out ciphertext-prediction rate of the recovered equivalent key; ``CP'' the chosen plaintexts to
-break the identified algebra at $512^2$. Every key-only scheme is broken; binding the keystream to the
-plaintext or a nonce is what resists. LLEO is the validated target of Section~\ref{sec:results} (its
-reconstruction reproduces the paper's reported statistics); the other rows are \emph{by-construction}
-archetypes, not reconstructions of any paper, so their verdicts carry no reconstruction-fidelity risk
-(contrast the real corpus, Table~\ref{tab:published}).}
+break the identified algebra at $512^2$. The five fully key-only schemes are broken at $R{=}1$; binding
+the keystream to the plaintext or a nonce is what resists. $\dagger$: the even-multiplier affine is also
+key-only but does not force the multiplier odd, so ${\approx}$half its positions are non-invertible and
+recovery degrades \emph{gracefully} ($R{=}\PH{orc_even_R}$) rather than failing---the deliberate boundary
+of the few-query attack. LLEO is the validated target of Section~\ref{sec:results} (its reconstruction
+reproduces the paper's reported statistics); the other rows are \emph{by-construction} archetypes, not
+reconstructions of any paper, so their verdicts carry no reconstruction-fidelity risk (contrast the real
+corpus, Table~\ref{tab:published}).}
 \label{tab:oracle}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{llccc}
@@ -513,6 +517,7 @@ Permutation-only        & key-only  & \PH{orc_perm_R}   & \PH{orc_perm_q}   & \P
 Additive stream $P{+}K$ & key-only  & \PH{orc_add_R}    & \PH{orc_add_q}    & \PH{orc_add_v} \\
 Affine $KP{+}B$         & key-only  & \PH{orc_affine_R} & \PH{orc_affine_q} & \PH{orc_affine_v} \\
 AES-CTR key stream      & key-only  & \PH{orc_aes_R}    & \PH{orc_aes_q}    & \PH{orc_aes_v} \\
+Even-mult.\ affine$^\dagger$ & key-only & \PH{orc_even_R} & \PH{orc_even_q} & \PH{orc_even_v} \\
 SHA-256$(P)$-seeded     & plaintext & \PH{orc_sha_R}    & \PH{orc_sha_q}    & \PH{orc_sha_v} \\
 Per-image nonce         & nonce     & \PH{orc_nonce_R}  & \PH{orc_nonce_q}  & \PH{orc_nonce_v} \\
 \bottomrule
@@ -552,10 +557,8 @@ plaintext entropy (a 256-way scalar). The oracle certifies ``\emph{not} a fixed 
 map,'' which is true; it does \emph{not} certify strength, and these two signals cannot separate
 MIEA-PRHM's near-miss from Li--DNA's genuine SHA-256 binding (Fig.~\ref{fig:published})---a boundary we
 mark rather than hide. Reconstructions are paper-only (no scheme released code); each verdict is
-nonetheless a falsifiable certificate of the reconstructed cipher. Two further candidates---an inferred
-key-only affine-Hill scheme~\cite{lone2023ahc} (paywalled) and a multi-layered design with a disputed
-seed~\cite{guvenoglu2024mlc}---are deferred pending full text, as is a key-only candidate that an
-automated search surfaced but could read only in abstract.
+nonetheless a falsifiable certificate of the reconstructed cipher. (Two further
+candidates~\cite{lone2023ahc,guvenoglu2024mlc} are deferred pending full text.)
 
 \begin{table}[t]
 \centering

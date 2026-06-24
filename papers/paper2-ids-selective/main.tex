@@ -446,9 +446,11 @@ threshold for a minority family. We instead compare three policies on held-out (
 \emph{same} review budget (\PH{comb_review}): argmax, a global threshold \emph{tuned} to that budget, and
 the full stack (argmax/abstention/novelty). Argmax is blind (\PH{comb_recall_argmax}); a tuned threshold
 recovers \PH{comb_recall_tuned}; the full stack reaches only \PH{comb_recall_union}, \emph{below} the
-tuned threshold at matched cost (paired gap \PH{comb_delta_union_tuned} across seeds; a bootstrap over the
-evaluation distribution gives a 95\% CI of $[\PH{comb_delta_boot_lo},\PH{comb_delta_boot_hi}]$ on the gap,
-excluding any meaningful gain; Fig.~\ref{fig:combined}). The recovery is the operating point, not the
+tuned threshold at matched cost. Two distinct resamplings agree on no gain: the seed-paired gap is
+\PH{comb_delta_union_tuned} (over the six training seeds), and resampling the evaluation distribution of a
+fixed model gives a gap of \PH{comb_delta_boot_mid} (95\% CI
+$[\PH{comb_delta_boot_lo},\PH{comb_delta_boot_hi}]$, upper bound ${\approx}0$; Fig.~\ref{fig:combined}).
+The recovery is the operating point, not the
 gates; even so, the tuned threshold still misses about half of unknown R2L (the stack about 60\%). This is
 not a single-corpus result: Section~\ref{sec:validatefix} repeats the comparison across three review
 budgets on both unknown R2L and cross-corpus Infiltration, with the same conclusion.

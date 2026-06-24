@@ -30,9 +30,9 @@ for ax, (tag, title) in zip(axes, panels):
     ax.bar(x - w / 2, base, w, color=ps.C["blue"], label="tuned threshold", zorder=3)
     ax.bar(x + w / 2, fix, w, color=ps.C["orange"], hatch="///", edgecolor="white", linewidth=0,
            label="+abstain +novelty (stack)", zorder=3)  # hatch => distinguishable in grayscale
-    for xi, bb, ff, hw in zip(x, base, fix, dhw):
-        dv = ff - bb
-        ax.annotate(f"$\\Delta{{=}}{dv:+.2f}$", (xi, max(bb, ff) + 0.03), ha="center", fontsize=6.2,
+    for i, (bb, ff) in enumerate(zip(base, fix)):
+        dv = d[f"vf_{tag}_b{budgets[i]}_delta"]               # authoritative paired-mean delta from JSON
+        ax.annotate(f"$\\Delta{{=}}{dv:+.3f}$", (i, max(bb, ff) + 0.03), ha="center", fontsize=6.2,
                     color=(ps.C["green"] if dv > 0 else ps.C["vermillion"]))
     ax.set_xticks(x); ax.set_xticklabels([f"{b}%" for b in budgets])
     ax.set_xlabel("analyst review budget (benign FPR)")

@@ -12,5 +12,6 @@
   "comb_delta_union_tuned_hw": 0.073,
   "comb_delta_boot_lo": -0.102,
   "comb_delta_boot_hi": 0.002,
+  "comb_delta_boot_mid": -0.058,
   "comb_stack_beats_tuned": false
 }

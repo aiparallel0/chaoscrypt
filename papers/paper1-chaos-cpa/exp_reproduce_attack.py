@@ -111,7 +111,7 @@ def main() -> None:
     # NPCR between two UNRELATED images' ciphers (same key) -- explains the ~99.6% they report
     cam, moon = IMAGES["cam"], IMAGES["moon"]
     cc = LLEOCipher(KEY, cam.shape)
-    flat["npcr_unrelated"] = round(npcr(cc.encrypt(cam.reshape(-1)), cc.encrypt(moon.reshape(-1))), 4)
+    flat["npcr_unrelated"] = round(npcr(cc.encrypt(cam.reshape(-1)), cc.encrypt(moon.reshape(-1))), 2)
     flat["ideal_npcr"] = 99.6094
     flat["one_over_N_pct"] = round(100.0 / cam.size, 6)
 
@@ -194,7 +194,8 @@ def main() -> None:
         a.imshow(d, cmap=_seq("thermal", "inferno"), vmin=0, vmax=255, interpolation="nearest")
         a.set_xticks([]); a.set_yticks([]); a.set_title(ttl, fontsize=7.5)
         val = npcr(e0, e1)
-        a.set_xlabel(f"NPCR\n{val:.3g}%", fontsize=7, color=(OK_VERM if val < 1 else OK_GREEN))
+        vlab = f"{val:.2f}" if val >= 1 else f"{val:.3g}"        # 2dp for the ~99.x panels, precise for 1px
+        a.set_xlabel(f"NPCR\n{vlab}%", fontsize=7, color=(OK_VERM if val < 1 else OK_GREEN))
         ys, xs = np.where(d > 0)
         if len(xs) <= 4:    # lone changed pixel: ring it and point, else invisible at print size
             a.add_patch(plt.Circle((xs.mean(), ys.mean()), 34, fill=False, color=OK_SKY, lw=1.3))

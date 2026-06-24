@@ -83,6 +83,7 @@ def main() -> None:
         tau_b = np.quantile(sc[bb], 1 - bud)
         boot.append(float(Ub[tg].mean()) - float((sc[tg] >= tau_b).mean()))
     blo, bhi = (float(np.percentile(boot, 2.5)), float(np.percentile(boot, 97.5))) if boot else (md, md)
+    bmid = float(np.median(boot)) if boot else md
 
     flat = {"comb_target": TARGET}
     for k, v in (("comb_recall_argmax", argmax), ("comb_recall_tuned", tuned),
@@ -90,6 +91,7 @@ def main() -> None:
         m, h = ci(v); flat[k] = round(m, 3); flat[k + "_hw"] = round(h, 3)
     flat["comb_delta_union_tuned"] = round(md, 3); flat["comb_delta_union_tuned_hw"] = round(hd, 3)
     flat["comb_delta_boot_lo"] = round(blo, 3); flat["comb_delta_boot_hi"] = round(bhi, 3)
+    flat["comb_delta_boot_mid"] = round(bmid, 3)
     flat["comb_stack_beats_tuned"] = bool((md - hd) > 0)
     RES.mkdir(exist_ok=True)
     (RES / "combined.json").write_text(json.dumps(flat, indent=2))
