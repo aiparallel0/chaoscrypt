@@ -342,16 +342,33 @@ P1 = [
         ("A secure keystream would be flat, like the uniform reference row at the bottom.", 0),
      ], 0.6),
 
-    ("fig", "The contribution: a structural oracle that retires the genre", im("p1_oracle_corpus.png"),
-     "Recoverability R per scheme (red = broken, green = resists); chosen plaintexts at 512x512.", [
+    ("fig", "The contribution: a reusable structural audit", im("p1_oracle_corpus.png"),
+     "Recoverability R per scheme on an archetype corpus (red = broken, green = resists); chosen plaintexts at 512x512.", [
         ("We package the attack as a black-box test: given only the ability to encrypt chosen images, it "
          "decides whether a cipher is one fixed plaintext-independent map and, if so, recovers an "
-         "equivalent key -- knowing nothing about the scheme inside.", 0),
-        ("Across 8 schemes it breaks all 5 key-only ones at R = 1 in <= 5 chosen plaintexts: chaos, "
-         "permutation, additive, affine, and even a modern AES-CTR key stream -- the chaos was never the "
-         "point; a reused, image-independent keystream is.", 0),
-        ("It correctly declines the 2 defended schemes that tie the keystream to the image (SHA-256) or a "
-         "per-image nonce -- so the test retires the whole genre, not one paper.", 0),
+         "equivalent key -- knowing nothing about the scheme inside, and CERTIFYING each verdict by "
+         "predicting fresh ciphertext exactly (a check we prove sound).", 0),
+        ("On 8 structural archetypes it breaks all 5 fully key-only ones at R = 1 in <= 5 chosen plaintexts "
+         "(chaos, permutation, additive, affine, even a modern AES-CTR key stream); 2 image-/nonce-bound "
+         "schemes correctly resist; a 6th, with non-invertible multipliers, degrades GRACEFULLY (R = 0.52, "
+         "PARTIAL) -- the deliberate boundary.", 0),
+        ("The chaos was never the point -- a reused, image-independent keystream is. This is a reusable "
+         "audit, not a one-paper break.", 0),
+     ], 0.6),
+
+    ("fig", "Run on four real published 2023–2025 ciphers", im("p1_published_audit.png"),
+     "The audit in its two signals (avalanche vs. recoverability) on real schemes rebuilt from their papers.", [
+        ("We reconstructed four real, open-access chaos image ciphers from their equations and ran the "
+         "audit. Each reproduces the originals' near-ideal entropy (~7.99) and inter-image NPCR (~99.6%) -- "
+         "so the rebuilds behave like the published ciphers where it counts.", 0),
+        ("Seeding decides the verdict. LSCM-CA (Sun et al. 2025) is key-only -> BROKEN (R = 1.0, 12 chosen "
+         "plaintexts) -- but only after a GF(2)-affine 'bitlinear' extension to peel its per-pixel "
+         "cellular-automata layer, which the plain affine/XOR model misses. The other three bind the "
+         "keystream to the plaintext (SHA-256 / block sum) -> correctly RESIST.", 0),
+        ("Honest limits: two 'resists' are thin (one injects only a 256-way scalar; one collapses if a "
+         "64-pixel seed block is fixed), and the two cheap signals cannot tell genuine binding from a "
+         "near-miss -- we mark this, not hide it. Reconstructions are paper-only; LLEO is the one "
+         "fully-validated break.", 0),
      ], 0.6),
 
     ("bul", "Discussion: good statistics are not security", [
@@ -369,14 +386,16 @@ P1 = [
     ("bul", "Conclusions, remedies, and disclosure", [
         ("LLEO is completely broken by an equivalent-key chosen-plaintext attack in 4 queries and a "
          "fraction of a second, despite near-ideal statistics.", 0),
-        ("More than one break: the structural oracle flags every key-only scheme in a corpus and clears "
-         "the image-bound ones -- an automated test for the flaw.", 0),
+        ("More than one break: the audit flags every fully key-only scheme in an 8-archetype corpus and, on "
+         "four real published 2023-2025 ciphers, breaks the one key-only design (LSCM-CA) and clears three "
+         "plaintext-bound ones -- one break needing a GF(2)-affine extension.", 0),
         ("Remedies (standard): (i) tie the keystream to the image (seed the chaos from a SHA-256 hash of "
          "the image); (ii) add real diffusion (a chaining rule). The identical attack then recovers 100% "
          "of pixels against the key-only cipher but only 0.25% (chance) once the keystream is "
          "image-seeded.", 0),
         ("Statistical scores should support -- not replace -- an explicit chosen-plaintext argument. "
-         "Authors notified before camera-ready (responsible disclosure).", 0),
+         "Authors of both broken schemes (LLEO and LSCM-CA) notified before camera-ready (responsible "
+         "disclosure).", 0),
     ]),
 
     ("bul", "Appendix: why the break is sound (invertibility & fidelity)", [
@@ -436,8 +455,9 @@ P2 = [
 
     ("bul", "Method", [
         ("Calibration -- does a model's stated confidence match how often it is right? We measure the gap "
-         "with expected calibration error (ECE) and try three standard fixes (Platt, isotonic, and "
-         "temperature scaling), each fit only on held-out training data so no test information leaks in.", 0),
+         "with expected calibration error (ECE) -- and the Brier score, a proper scoring rule, agrees -- "
+         "then try three standard fixes (Platt, isotonic, and temperature scaling), each fit only on "
+         "held-out training data so no test information leaks in.", 0),
         ("Selective prediction -- confidence = the model's top class probability. The risk-coverage curve "
          "plots error against the fraction answered; the area under it (AURC) summarizes it (lower is "
          "better).", 0),
@@ -453,6 +473,8 @@ P2 = [
         ("Detectors: logistic regression (a simple linear model), a random forest, and gradient "
          "boosting (both built from many decision trees) — deliberately ordinary; the subject is their "
          "confidence, not the architecture.", 0),
+        ("A neural MLP is added as a supplementary fourth family in the model summary, to check the "
+         "confidence-ranking finding generalizes beyond trees and the linear model.", 1),
         ("Confidence signals compared: the top class probability (max-softmax), how much the forest’s "
          "trees disagree, and two “distance-from-normal” scores (Mahalanobis and nearest-neighbour).", 0),
         ("Novelty detectors — trained only on normal traffic to flag anything unusual: Isolation Forest "
@@ -527,6 +549,17 @@ P2 = [
          "only 0.40 -- BELOW the tuned threshold (paired gap -0.11).", 0),
         ("So the lever is the operating point, not the gates: stacking adds no net recall once the "
          "threshold is set to the budget. (Even so, about half of unknown R2L is still missed.)", 0),
+     ], 0.6),
+
+    ("fig", "Validating the fix: across budgets and a second corpus", im("p2_validatefix.png"),
+     "Tuned threshold vs. the full stack at matched analyst budget, on unknown R2L and cross-corpus Infiltration.", [
+        ("Is the re-baseline a one-point fluke? We sweep three review budgets (5/10/20%) and add a second "
+         "corpus -- CIC-2018 Infiltration, the look-like-normal family there.", 0),
+        ("The abstention+novelty stack beats a budget-tuned threshold in just 1 of 6 budget x corpus cells "
+         "(CIC at 5%, +0.015); it loses the other five, decisively on unknown R2L (e.g. -0.39 at 20%).", 0),
+        ("So at equal analyst cost the stack adds no recall a tuned threshold doesn't already give -- and we "
+         "tune the stack FAVOURABLY, not as a strawman; a harder-tuned threshold only widens the gap. "
+         "(Headline gap: seed-paired -0.11; bootstrap -0.06, 95% CI [-0.10, 0.00].)", 0),
      ], 0.6),
 
     ("bul", "Finding 6: calibration need is task-dependent; the blind spot recurs (3 datasets)", [
