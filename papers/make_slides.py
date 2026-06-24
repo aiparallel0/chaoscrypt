@@ -342,34 +342,52 @@ P1 = [
         ("A secure keystream would be flat, like the uniform reference row at the bottom.", 0),
      ], 0.6),
 
-    ("bul", "Discussion: two persistent failure modes", [
-        ("Good statistics are not security: flat histogram, ideal entropy, near-zero correlation, and a "
-         "large inter-image NPCR all hold for our fixed, key-only map — broken in 4 queries.", 0),
-        ("Naming is not architecture: labelling a symmetric construction “asymmetric” adds no "
-         "security.", 0),
-        ("The single deciding question: does any key material depend on the image?", 0),
+    ("fig", "The contribution: a structural oracle that retires the genre", im("p1_oracle_corpus.png"),
+     "Recoverability R per scheme (red = broken, green = resists); chosen plaintexts at 512x512.", [
+        ("We package the attack as a black-box test: given only the ability to encrypt chosen images, it "
+         "decides whether a cipher is one fixed plaintext-independent map and, if so, recovers an "
+         "equivalent key -- knowing nothing about the scheme inside.", 0),
+        ("Across 8 schemes it breaks all 5 key-only ones at R = 1 in <= 5 chosen plaintexts: chaos, "
+         "permutation, additive, affine, and even a modern AES-CTR key stream -- the chaos was never the "
+         "point; a reused, image-independent keystream is.", 0),
+        ("It correctly declines the 2 defended schemes that tie the keystream to the image (SHA-256) or a "
+         "per-image nonce -- so the test retires the whole genre, not one paper.", 0),
+     ], 0.6),
+
+    ("bul", "Discussion: good statistics are not security", [
+        ("A flat histogram, ideal entropy, near-zero correlation, and a large inter-image NPCR all hold "
+         "for our fixed, key-only map -- yet it is broken in 4 queries.", 0),
+        ("The single deciding question is binary: does any key material depend on the image? The oracle "
+         "answers it automatically for any scheme.", 0),
+        ("The break is sound by construction: LLEO forces its multipliers odd (always invertible), and the "
+         "equivalent key predicts fresh ciphertexts exactly -- the falsifiable check that the cipher truly "
+         "ignores the image.", 0),
+        ("(The scheme's 'asymmetric' label is also a misnomer -- same keys encrypt and decrypt -- but that "
+         "is cosmetic.)", 0),
     ]),
 
     ("bul", "Conclusions, remedies, and disclosure", [
         ("LLEO is completely broken by an equivalent-key chosen-plaintext attack in 4 queries and a "
          "fraction of a second, despite near-ideal statistics.", 0),
-        ("Remedies (standard): (i) tie the keystream to the image — e.g., seed the chaos from a SHA-256 "
-         "hash (a fixed-size fingerprint of the image); (ii) add real diffusion, e.g., a chaining rule so "
-         "each output pixel also depends on the previous one.", 0),
-        ("Sanity check: the identical attack recovers 100% of pixels against the original key-only "
-         "cipher, but only 0.25% (no better than guessing) once the keystream is seeded from the image's "
-         "hash.", 0),
-        ("Statistical scores should support — not replace — an explicit chosen-plaintext security "
-         "argument. The authors will be notified before camera-ready (responsible disclosure).", 0),
+        ("More than one break: the structural oracle flags every key-only scheme in a corpus and clears "
+         "the image-bound ones -- an automated test for the flaw.", 0),
+        ("Remedies (standard): (i) tie the keystream to the image (seed the chaos from a SHA-256 hash of "
+         "the image); (ii) add real diffusion (a chaining rule). The identical attack then recovers 100% "
+         "of pixels against the key-only cipher but only 0.25% (chance) once the keystream is "
+         "image-seeded.", 0),
+        ("Statistical scores should support -- not replace -- an explicit chosen-plaintext argument. "
+         "Authors notified before camera-ready (responsible disclosure).", 0),
     ]),
 
-    ("bul", "Appendix: the attack is not specific to LLEO", [
-        ("A second, very different cipher family (an XOR-and-chain design, like CBC) also reduces to one "
-         "simple fixed equation; we recover it exactly in 3 chosen plaintexts at 128×128.", 0),
-        ("Cost grows only logarithmically — i.e. barely — with image size: 3 chosen plaintexts at "
-         "128²/256², 4 at 512²/1024², each under 0.3 s.", 0),
-        ("The same procedure fails once the keystream is tied to a hash of the image — confirming that "
-         "what matters is image-dependence, not the algebra or the number of rounds.", 0),
+    ("bul", "Appendix: why the break is sound (invertibility & fidelity)", [
+        ("Odd multipliers: LLEO inverts its substitution by a modular conjugate, which forces every "
+         "multiplier odd (always invertible mod 256). On the reconstruction all are odd and E(0)=0 holds "
+         "exactly; if even multipliers were allowed the oracle degrades gracefully (about half the "
+         "positions recovered) rather than returning a wrong inverse.", 0),
+        ("Fidelity: matching entropy/correlation proves nothing -- the load-bearing check is that the "
+         "recovered key predicts fresh ciphertexts exactly, which only a plaintext-independent cipher can.", 0),
+        ("Generality & scale: a very different XOR-and-chain (CBC-like) cipher also falls in 3-4 chosen "
+         "plaintexts; cost grows only logarithmically with image size (3-4 plaintexts up to 1024x1024).", 0),
     ]),
 
     ("bul", "Selected references", [
@@ -402,31 +420,32 @@ P2 = [
         ("We propose no new detector; we test the ones people already use.", 1),
      ], 0.62),
 
-    ("bul", "Contributions (most important first)", [
-        ("A controlled “leave-one-family-out” (LOFO) test — hide one whole attack family during "
-         "training, then test on it (the unknown-attack, or “open-set,” setting). Detection of that "
-         "family collapses; letting the model abstain recovers only part; and R2L — an attack that "
-         "looks like ordinary traffic — is a built-in blind spot that neither abstaining nor a novelty "
-         "detector can catch.", 0),
-        ("Abstaining cuts the error among the inputs the model does answer — but only for models whose "
-         "confidence actually ranks their mistakes (tree-based models, not the simple linear one).", 0),
-        ("Why: the detectors become over-confident once test traffic differs from training, and the "
-         "standard confidence fix (Platt scaling) does not carry over.", 0),
+    ("bul", "Contributions: a dissociation between two failure modes", [
+        ("Over-confidence is task-dependent: detectors are badly miscalibrated under NSL-KDD's shift and "
+         "NO post-hoc fix (Platt, isotonic, or temperature scaling) transfers -- yet on two modern flow "
+         "datasets the same task is well calibrated.", 0),
+        ("The benign-mimicry blind spot is an operating-point failure, not a representational one, and it "
+         "recurs across all three datasets. R2L is nearly missed at the default threshold (recall 0.06) "
+         "yet its score is discriminative (AUROC 0.87); a per-family threshold recovers much of it (0.49). "
+         "Class balancing does not help -- so the cause is the threshold, not class frequency.", 0),
+        ("Selective prediction is useful but bounded: it helps only when confidence ranks errors, and the "
+         "full recipe (classifier + abstention + novelty together) recovers unknown benign-mimicking "
+         "attacks that any single gate misses.", 0),
     ]),
 
     ("bul", "Method", [
-        ("Calibration — does a model’s stated confidence match how often it is actually right? We "
-         "measure the gap with expected calibration error (ECE), and try the standard fix (Platt "
-         "scaling), fitted only on held-out training data so no test information leaks in.", 0),
-        ("Selective prediction — confidence = the model’s top class probability. The risk–coverage "
-         "curve plots error against the fraction of inputs it chooses to answer; the area under it (AURC) "
-         "summarizes it (lower is better).", 0),
-        ("Open-set (LOFO): drop one attack family from training, retrain, and measure detection and "
-         "abstaining on that unseen family.", 0),
-        ("Conformal prediction: a method that promises a chosen hit-rate, as long as new data looks like "
-         "the old.", 0),
-        ("Every number is a mean over many random repeats (“seeds”) with a 95% confidence interval — "
-         "the range the true value likely lies in.", 0),
+        ("Calibration -- does a model's stated confidence match how often it is right? We measure the gap "
+         "with expected calibration error (ECE) and try three standard fixes (Platt, isotonic, and "
+         "temperature scaling), each fit only on held-out training data so no test information leaks in.", 0),
+        ("Selective prediction -- confidence = the model's top class probability. The risk-coverage curve "
+         "plots error against the fraction answered; the area under it (AURC) summarizes it (lower is "
+         "better).", 0),
+        ("Open-set (LOFO): drop one attack family from training, retrain, and measure detection on the "
+         "unseen family. To separate a threshold artifact from true indistinguishability we also report "
+         "threshold-free per-family detection AUROC.", 0),
+        ("Honesty checks: a bootstrap over the (fixed) test set -- the seed-only intervals understate "
+         "uncertainty about 5x -- and conformal prediction, which promises a hit-rate as long as new data "
+         "looks like the old.", 0),
     ]),
 
     ("bul", "Models, confidence signals, and novelty detectors", [
@@ -450,21 +469,29 @@ P2 = [
         ("Each result averages many random repeats; the official test sets are kept fixed.", 0),
     ]),
 
-    ("fig", "Finding 1: detection collapses on unknown families (LOFO)", im("p2_openset_detection.png"),
-     "Share of a family caught when it is seen in training vs. held out (unknown).", [
-        ("When a family is hidden during training, detection of it drops sharply: DoS 0.86 → 0.60; "
-         "Probe 0.79 → 0.43; U2R 0.18 → 0.05.", 0),
-        ("Abstaining (refusing to answer) catches only part of the unknowns (DoS 0.41, Probe 0.37).", 0),
-        ("R2L is barely caught even when seen (0.07) — it looks like normal traffic.", 0),
+    ("fig", "Finding 1: the blind spot is a threshold failure, not indistinguishability",
+     im("p2_perfamily_auroc.png"),
+     "Per-family detection AUROC (threshold-free), family seen vs. held out of training.", [
+        ("The most attackable reading -- 'R2L is just an unbalanced classifier at the default cut' -- is "
+         "wrong about the cause. The attack score separates R2L from normal well above chance "
+         "(AUROC 0.87 seen, 0.80 unknown).", 0),
+        ("At the global default threshold only 0.06 of R2L is flagged; class-balancing barely moves it "
+         "(0.06); a per-family threshold recovers 0.49. So a single global operating point fails a "
+         "minority, look-like-normal family.", 0),
+        ("Threshold-free, holding a family out of training costs little AUROC (DoS -0.06, R2L -0.07) -- so "
+         "the dramatic 'detection collapse' on unknown families is largely a thresholding artifact.", 0),
      ], 0.6),
 
-    ("fig2", "Finding 2: detectors are over-confident under shift",
-     im("p2_ece_shift.png"), im("p2_reliability_rf.png"), [
-        ("On data like the training set the models are almost perfectly calibrated (calibration error "
-         "≲ 0.003); on the real test set — which adds unseen attacks — it jumps to ≈ 0.16–0.22.", 0),
-        ("Re-scaling confidence (Platt scaling) on the training distribution does NOT fix it — the "
-         "over-confidence gap (shaded) remains.", 0),
-     ], "Calibration error: training-like → shifted test", "Forest: stated confidence vs. real accuracy"),
+    ("fig", "Finding 2: over-confident under shift, and no calibrator fixes it",
+     im("p2_calibration_methods.png"),
+     "Calibration error on the shifted test set under four post-hoc calibrators (per model).", [
+        ("On data like the training set the models are nearly perfectly calibrated (error below 0.01); on "
+         "the real shifted test set it jumps to about 0.16-0.22.", 0),
+        ("No post-hoc fix removes it: Platt, isotonic, and temperature scaling all stay high (every marker "
+         "clusters at the top) -- each is fit on the source distribution.", 0),
+        ("Source-calibrated probabilities do not certify the deployed distribution -- which is why we turn "
+         "to abstention (it needs only a usable confidence ranking).", 0),
+     ], 0.6),
 
     ("fig", "Finding 3: abstaining helps — if confidence ranks errors", im("p2_risk_coverage.png"),
      "Error among answered cases vs. the fraction answered; ring = the 80%-answered point.", [
@@ -491,23 +518,35 @@ P2 = [
         ("Abstaining and novelty detection catch different failures, so use both.", 0),
      ], 0.6),
 
-    ("bul", "Finding 6: the need for calibration depends on the task; the blind spot does not", [
-        ("On CIC-IDS-2017 the within-day task is easy and already well-calibrated (accuracy 0.9998, "
-         "calibration error 0.0001) — so over-confidence is a property of the task, not a built-in flaw.", 0),
-        ("Train one day, test another (drift): Web detection 0.98 → 0.79, and abstaining now catches 0.95 "
-         "of unknown Web — far more than R2L, because Web does not look like normal traffic.", 0),
-        ("Across datasets (2017 → 2018, 27 shared features): accuracy 0.96 → 0.67, calibration error 0.26; "
-         "Infiltration — which again mimics normal traffic — is once more the blind spot (caught 0.14).", 0),
+    ("fig", "The recipe, measured end-to-end (combined gate)", im("p2_combined_pipeline.png"),
+     "Recall on unknown (held-out) R2L as gates are stacked; dashed = analyst review load.", [
+        ("No single gate sees unknown look-like-normal R2L: the classifier alone recalls 0.003.", 0),
+        ("Add confidence abstention -> 0.31; add a normal-only novelty stage -> 0.40, at a 12% analyst "
+         "review load.", 0),
+        ("The concrete payoff of the two-failure-modes story: stack the gates and recover a usable "
+         "fraction at a bounded cost.", 0),
+     ], 0.6),
+
+    ("bul", "Finding 6: calibration need is task-dependent; the blind spot recurs (3 datasets)", [
+        ("CIC-IDS-2017: the within-day task is easy and already well-calibrated (accuracy ~1.0, "
+         "calibration error ~0.0001) -- over-confidence is a property of the task, not a built-in flaw.", 0),
+        ("Drift (train one day, test another): Web detection 0.98 -> 0.79, and abstaining catches 0.95 of "
+         "unknown Web -- far more than R2L, because Web does not look like normal traffic.", 0),
+        ("CIC-IDS-2018 (third dataset): Infiltration is the canonical look-like-normal family and repeats "
+         "the R2L signature exactly -- well-calibrated (error 0.006), yet missed at the default cut "
+         "(recall 0.25) while its score is discriminative (AUROC 0.71) and a per-family threshold recovers "
+         "0.39.", 0),
     ]),
 
     ("bul", "Which confidence signal? Can we promise a hit-rate?", [
         ("Comparing the signals fairly (same data, paired): the cheap top-probability is statistically "
          "tied with the fancier ones; the distance score is slightly better at ranking errors but worse "
          "at spotting unknown attacks.", 0),
-        ("So on this kind of tabular traffic data, plain confidence is a strong default — the value is "
-         "in the abstain framework, not the exact signal.", 0),
-        ("Conformal prediction’s promised 90% hit-rate holds on training-like data (0.93) but falls to "
-         "0.61 once the traffic shifts — the guarantee breaks exactly when deployment changes.", 0),
+        ("So on this kind of tabular traffic data, plain confidence is a strong default -- the value is "
+         "in the abstain framework, not the exact signal. (Classical signals only; energy/ODIN-style "
+         "scores need a neural net we deliberately avoid.)", 0),
+        ("Conformal prediction's promised 90% hit-rate holds on training-like data (0.93) but falls to "
+         "0.61 once the traffic shifts -- the guarantee breaks exactly when deployment changes.", 0),
     ]),
 
     ("bul", "Discussion: a practical recipe", [
@@ -520,12 +559,13 @@ P2 = [
     ]),
 
     ("bul", "Conclusions and future work", [
-        ("Letting a detector abstain is a cheap, model-independent safety layer for ML intrusion "
-         "detection, with clearly measured limits.", 0),
-        ("It helps a lot when unknown attacks look different from normal traffic, and little when they "
-         "mimic it.", 0),
-        ("On an easy modern dataset calibration is already fine, so the need for it depends on the task — "
-         "but the look-like-normal blind spot does not.", 0),
+        ("Detectors are over-confident under NSL-KDD's shift and not fixable by post-hoc calibration, yet "
+         "well-calibrated on two modern datasets -- calibration need is task-dependent.", 0),
+        ("The second failure recurs on all three datasets but is an operating-point one: a single global "
+         "threshold misses minority look-like-normal families whose score is in fact discriminable -- so "
+         "the much-cited 'detection collapse' is mostly a thresholding artifact.", 0),
+        ("Abstention lowers error where confidence ranks it, and stacking it with a normal-only novelty "
+         "stage recovers much of the otherwise-missed look-like-normal traffic.", 0),
         ("Future: a full time-ordered evaluation, the label-corrected CIC-2017, and a shared NetFlow "
          "feature format for transfer across networks.", 0),
     ]),

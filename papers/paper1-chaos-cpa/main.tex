@@ -58,7 +58,13 @@ ciphertext is decrypted pixel-exactly in
 illusory: because it applies no plaintext diffusion, a one-pixel change alters exactly one ciphertext
 pixel, giving a true NPCR of \PH{cam_npcr1px}\,\% (i.e.\ 100/MN), not the reported 99.6\,\%
 (that figure merely reflects the difference between unrelated images, here \PH{npcr_unrelated}\,\%).
-We conclude with the standard fixes.
+Beyond this one break, we distil the attack into a black-box \emph{structural oracle}: given only the
+ability to encrypt chosen images, it decides whether a cipher is a fixed, plaintext-independent map and,
+if so, recovers an equivalent key, knowing nothing of the scheme's internals. Over a corpus of
+\PH{oracle_n_schemes} constructions it flags all \PH{oracle_n_keyonly_broken} key-only ciphers as broken
+---chaotic, permutation, additive, affine, and AES-CTR-style alike---in at most \PH{oracle_max_queries}
+chosen plaintexts, and clears the \PH{oracle_n_bound_resist} that bind the keystream to the plaintext or
+a nonce. The method retires the genre, not just one scheme; we close with the standard fixes.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -118,6 +124,10 @@ decrypts any image pixel-exactly without the key (Section~\ref{sec:crypt}).
 \item We reproduce LLEO, confirm it matches the paper's reported statistics, and then show those
 statistics coexist with \emph{zero} plaintext diffusion: the true one-pixel NPCR is
 \PH{cam_npcr1px}\,\%, not 99.6\,\% (Section~\ref{sec:results}).
+\item Most importantly, we distil the attack into a reusable, black-box \emph{structural oracle} and run
+it over a corpus of key-only and defended ciphers, breaking every plaintext-independent scheme and
+declining those that bind the keystream to the image or a nonce---turning a single break into an
+automated test for the structural flaw (Section~\ref{sec:oracle}).
 \end{itemize}
 Fig.~\ref{fig:break} previews the outcome: four standard images, their LLEO ciphertexts, and our
 key-free recoveries, each bit-identical to the original and obtained in \PH{cam_cpt} chosen plaintexts.
@@ -341,9 +351,8 @@ Brick     & \PH{brk_ent_plain} & \PH{brk_ent_cipher} & \PH{brk_corr_cipher} & \P
 
 \subsection{The break}
 The attack of Section~\ref{sec:crypt} recovers the equivalent key in \PH{cam_cpt} chosen plaintexts and
-decrypts a fresh ciphertext pixel-exactly in \PH{cam_attack_s}\,s (Cameraman), using no
-key.\footnote{Wall-clock, single core. The $512^2$ entry in Table~\ref{tab:scale} (\PH{scale512_s}\,s,
-a random image) differs only by run-to-run variation.}
+decrypts a fresh ciphertext pixel-exactly in \PH{cam_attack_s}\,s (Cameraman, single core; the random
+$512^2$ entry in Table~\ref{tab:scale} is \PH{scale512_s}\,s), using no key.
 Fig.~\ref{fig:break} shows the original, the LLEO ciphertext, and the key-free recovery, which is
 identical to the original.
 
@@ -410,24 +419,84 @@ Key type                   & ``asymmetric'' & symmetric \\
 \end{tabular}
 \end{table}
 
-\subsection{The attack is not specific to LLEO}
-The same principle breaks any key-only permutation--diffusion cipher. As a second, structurally
-distinct example we take the canonical construction with a CBC-like XOR diffusion chain,
-$C[i]=X_{\pi}[i]\oplus k[i]\oplus C[i-1]$---representative of a large published family and unlike
-LLEO's multiplicative monomial form. With a key-only keystream this map is affine over
-$\mathrm{GF}(2)$ (the identity $E(a)\oplus E(b)\oplus E(\mathbf 0)=E(a\oplus b)$ holds at one
-\emph{and} three rounds in our checks), and the equivalent-key CPA recovers it exactly in
-\PH{gen_cpt} chosen plaintexts (one all-zeros query plus $\lceil\log_{256}n\rceil$ digit probes---the same
-$1+\lceil\log_{256}n\rceil$ rule). The identical procedure fails against a plaintext-hash-seeded version
-of the \emph{same} structure, reinforcing that what matters is the keystream's dependence on the
-image---not the algebra or the round count.
+\section{A structural oracle: from one break to the genre}\label{sec:oracle}
+A single break is an exercise; a test that retires the genre is the contribution. We package the attack
+as a black-box \emph{structural oracle}. Given only encryption access to an unknown cipher on $M\times N$
+images---no key, no source---it fits the affine and XOR position-wise models of
+Proposition~\ref{prop:monomial} from $1{+}\lceil\log_{256}n\rceil$ chosen plaintexts and \emph{certifies}
+the result by predicting the ciphertext of fresh random plaintexts. Two cheap signals drive the verdict:
+the \emph{avalanche} (fraction of ciphertext bytes a one-pixel plaintext flip changes; ${\approx}1/n$
+means no diffusion) and the \emph{recoverability} $R$ (exact held-out ciphertext-prediction rate;
+$R{\approx}1$ means broken).
+
+\textbf{Corpus.} Run blind over \PH{oracle_n_schemes} reconstructed schemes
+(Table~\ref{tab:oracle}, Fig.~\ref{fig:oracle}), the oracle breaks all \PH{oracle_n_keyonly_broken}
+key-only constructions at $R{=}1$ in at most \PH{oracle_max_queries} chosen plaintexts: LLEO's chaos
+monomial, a pure permutation, an additive stream, a general affine map, and a modern AES-CTR-style key
+stream. The chaos is incidental---an AES-CTR key stream reused across images is exactly as broken as
+LLEO; the flaw is a reused plaintext-independent keystream, not the choice of map. The
+\PH{oracle_n_bound_resist} defended schemes---reseeding the keystream from SHA-256 of the plaintext, or
+from a per-image nonce---are correctly declined ($R{\approx}$ chance), and there a one-pixel change
+avalanches across the whole image. The same equivalent-key CPA also breaks a chained CBC-like XOR cipher
+(a structurally different, non-position-wise construction) in \PH{gen_cpt} chosen plaintexts, per
+Proposition~\ref{prop:monomial}.
+
+\begin{table}[t]
+\centering
+\caption{The structural oracle over a corpus, blind to each scheme's internals. $R$ is the held-out
+ciphertext-prediction rate of the recovered equivalent key; ``CP'' the chosen plaintexts to break the
+identified algebra at $512^2$. Every key-only scheme is broken; binding the keystream to the plaintext or
+a nonce is what resists.}
+\label{tab:oracle}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llccc}
+\toprule
+Scheme & keystream & $R$ & CP & verdict \\
+\midrule
+LLEO (chaos monomial)   & key-only  & \PH{orc_lleo_R}   & \PH{orc_lleo_q}   & \PH{orc_lleo_v} \\
+Permutation-only        & key-only  & \PH{orc_perm_R}   & \PH{orc_perm_q}   & \PH{orc_perm_v} \\
+Additive stream $P{+}K$ & key-only  & \PH{orc_add_R}    & \PH{orc_add_q}    & \PH{orc_add_v} \\
+Affine $KP{+}B$         & key-only  & \PH{orc_affine_R} & \PH{orc_affine_q} & \PH{orc_affine_v} \\
+AES-CTR key stream      & key-only  & \PH{orc_aes_R}    & \PH{orc_aes_q}    & \PH{orc_aes_v} \\
+SHA-256$(P)$-seeded     & plaintext & \PH{orc_sha_R}    & \PH{orc_sha_q}    & \PH{orc_sha_v} \\
+Per-image nonce         & nonce     & \PH{orc_nonce_R}  & \PH{orc_nonce_q}  & \PH{orc_nonce_v} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.96\columnwidth]{figures/oracle_corpus.pdf}
+\caption{Structural-audit panel: equivalent-key recoverability $R$ per scheme (circle ${=}$
+one-pixel-local, square ${=}$ avalanche; red ${=}$ broken, green ${=}$ resists), with the chosen-plaintext
+count at $512^2$. Every key-only scheme sits at $R{=}1$; only binding the keystream to the plaintext or a
+nonce escapes to $R{\approx}$ chance.}
+\label{fig:oracle}
+\end{figure}
+
+\textbf{Invertibility (the odd-multiplier question).} The recovery needs each multiplier $K[p]$ to be a
+unit mod 256---and this is \emph{guaranteed by LLEO}, not assumed by us: the scheme decrypts via a
+modular conjugate, which forces the keystream odd. On the reconstruction every recovered multiplier is
+odd and $E(\mathbf 0){=}\mathbf 0$ holds exactly. Were even multipliers allowed, $x\mapsto K[p]\,x$ would
+be $2$-to-$1$ there; the oracle does not return a wrong inverse but degrades gracefully, reporting the
+invertible fraction and a partial recoverability (on a deliberately even-tolerant variant, about half the
+positions are invertible and $R{=}\PH{even_recoverability}$).
+
+\textbf{Reconstruction fidelity.} Our attack rests on the load-bearing claim that no LLEO quantity
+depends on the image; the oracle makes that claim \emph{falsifiable}, not merely asserted. Matching the
+paper's entropy or correlation cannot establish it---countless ciphers hit those values---but the
+held-out test can: an equivalent key recovered from \PH{cam_cpt} chosen plaintexts predicts the
+ciphertext of fresh random images \emph{exactly}, which is possible only under plaintext-independence. If
+a reader's reading of the original differs (say, some keystream were image-seeded), the same oracle
+returns RESISTS on that variant, as it does for our SHA-256--seeded control---so the verdict is checkable
+against any reimplementation, including the authors' own.
 
 \section{Discussion}
-LLEO illustrates two persistent failure modes. First, \emph{good statistics are not security}: a flat
-histogram, near-ideal entropy, near-zero correlation, and a large inter-image NPCR are all satisfied
-by our fixed, key-only map, which we nonetheless break in \PH{cam_cpt} queries---testing plaintext
-sensitivity directly~\cite{alvarez2006,wu2011npcr} is what catches this. Second, \emph{naming is not
-architecture}: labelling a symmetric construction ``asymmetric'' adds no security.
+LLEO illustrates a persistent failure mode: \emph{good statistics are not security}. A flat histogram,
+near-ideal entropy, near-zero correlation, and a large inter-image NPCR are all satisfied by our fixed,
+key-only map, which we nonetheless break in \PH{cam_cpt} queries; testing plaintext sensitivity
+directly~\cite{alvarez2006,wu2011npcr} is what catches this. (The scheme's ``asymmetric'' label is also a
+misnomer---the same keys encrypt and decrypt---but that is cosmetic.)
 
 The remedies are standard. (i) Make the keystream depend on the plaintext---e.g.\ derive the chaotic
 initial conditions from a SHA-256 hash of the image, so a different plaintext yields an unrelated

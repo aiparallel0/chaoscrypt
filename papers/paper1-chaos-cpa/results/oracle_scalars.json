@@ -1,0 +1,8 @@
+{
+  "oracle_n_schemes": 8,
+  "oracle_n_broken": 5,
+  "oracle_n_keyonly": 5,
+  "oracle_n_keyonly_broken": 5,
+  "oracle_n_bound_resist": 2,
+  "oracle_max_queries": 5
+}

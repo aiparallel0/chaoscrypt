@@ -17,6 +17,7 @@ from sklearn.frozen import FrozenEstimator
 from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
+from scipy.optimize import minimize_scalar
 
 from ids_selective.data import NslKdd
 from ids_selective.pipeline import encode
@@ -25,6 +26,29 @@ from ids_selective.metrics import ece, risk_coverage, risk_at_coverage
 HERE = Path(__file__).parent
 RES, FIG = HERE / "results", HERE / "figures"
 RNG = 42
+
+
+def _logit(p, eps=1e-6):
+    p = np.clip(np.asarray(p, float), eps, 1 - eps)
+    return np.log(p / (1 - p))
+
+
+def fit_temperature(p_pos_cal, y_cal):
+    """Temperature scaling (Guo et al. 2017): one scalar T>0 rescaling the positive-class logit to
+    minimise NLL on the calibration split. T>1 cools over-confidence; argmax (accuracy) is unchanged."""
+    z = _logit(p_pos_cal); y = np.asarray(y_cal, float)
+
+    def nll(logT):
+        s = 1.0 / (1.0 + np.exp(-z / np.exp(logT)))
+        s = np.clip(s, 1e-7, 1 - 1e-7)
+        return float(-(y * np.log(s) + (1 - y) * np.log(1 - s)).mean())
+    return float(np.exp(minimize_scalar(nll, bounds=(np.log(0.05), np.log(20)), method="bounded").x))
+
+
+def temp_confidence(p_pos, T):
+    """Max-class confidence after scaling the positive-class logit by 1/T (binary)."""
+    s = 1.0 / (1.0 + np.exp(-_logit(p_pos) / T))
+    return np.maximum(s, 1 - s)
 
 
 def reliability(conf, correct, n_bins=15):
@@ -58,7 +82,7 @@ def main() -> None:
     }
     flat: dict = {"n_train": int(len(ytr)), "n_test": int(len(yte)),
                   "n_novel_types": len(novel), "n_novel_rows": int(is_novel.sum())}
-    curves, rf_arrays, ece_store = {}, {}, {}
+    curves, rf_arrays, ece_store, cal_methods = {}, {}, {}, {}
 
     for name, base in models.items():
         base.fit(Xfit, yfit)
@@ -78,6 +102,14 @@ def main() -> None:
         ev_raw = ece(pv.max(1), (pv.argmax(1) == yval).astype(float))
         pvc = cal.predict_proba(Xval)
         ev_cal = ece(pvc.max(1), (pvc.argmax(1) == yval).astype(float))
+        # additional calibrators the reviewers asked for: isotonic regression and temperature scaling
+        iso = CalibratedClassifierCV(FrozenEstimator(base), method="isotonic").fit(Xcal, ycal)
+        piso, pviso = iso.predict_proba(Xte), iso.predict_proba(Xval)
+        e_iso = ece(piso.max(1), (piso.argmax(1) == yte).astype(float))
+        ev_iso = ece(pviso.max(1), (pviso.argmax(1) == yval).astype(float))
+        T = fit_temperature(base.predict_proba(Xcal)[:, 1], ycal)
+        e_temp = ece(temp_confidence(proba[:, 1], T), correct)         # argmax (accuracy) unchanged by T
+        ev_temp = ece(temp_confidence(pv[:, 1], T), (pv.argmax(1) == yval).astype(float))
         det_known = (pred[is_known_atk] == 1).mean()
         det_novel = (pred[is_novel] == 1).mean()
         flat.update({
@@ -91,9 +123,16 @@ def main() -> None:
             f"{name}_det_novel": round(float(det_novel), 4),
             f"{name}_ece_val_raw": round(float(ev_raw), 4),
             f"{name}_ece_val_cal": round(float(ev_cal), 4),
+            f"{name}_ece_iso": round(float(e_iso), 4),
+            f"{name}_ece_temp": round(float(e_temp), 4),
+            f"{name}_ece_val_iso": round(float(ev_iso), 4),
+            f"{name}_ece_val_temp": round(float(ev_temp), 4),
+            f"{name}_temp_T": round(float(T), 3),
         })
         curves[name] = (cov, risks)
         ece_store[name] = (float(ev_raw), float(e_raw))
+        cal_methods[name] = {"raw": float(e_raw), "Platt": float(e_cal),
+                             "isotonic": float(e_iso), "temperature": float(e_temp)}
         if name == "rf":
             rf_arrays = dict(conf=conf, correct=correct, conf_c=conf_c,
                              correct_c=(pred_c == yte).astype(float))
@@ -158,7 +197,27 @@ def main() -> None:
     ax.grid(axis="y", visible=False)
     ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2, columnspacing=1.3, handletextpad=0.4)
     fig.tight_layout(); fig.savefig(FIG / "ece_shift.pdf"); plt.close(fig)
-    print(f"wrote {RES/'main.json'} and 3 figures")
+
+    # Fig 4: do better calibrators rescue over-confidence under shift? Per model, ECE on the shifted
+    # test set under raw / Platt / isotonic / temperature. The cluster staying high is the point: no
+    # post-hoc calibrator fit on the source distribution removes shift-induced miscalibration.
+    methods = ["raw", "Platt", "isotonic", "temperature"]
+    mk = {"raw": ("o", ps.C["vermillion"]), "Platt": ("s", ps.C["blue"]),
+          "isotonic": ("^", ps.C["green"]), "temperature": ("D", ps.C["orange"])}
+    fig, ax = ps.fig(3.3, 2.2)
+    for i, n in enumerate(order):
+        for mth in methods:
+            m2, c2 = mk[mth]
+            ax.scatter(cal_methods[n][mth], i, marker=m2, s=42, color=c2, edgecolor="white",
+                       linewidth=0.4, zorder=3, label=mth if i == 0 else None)
+    ax.set_yticks(range(len(order))); ax.set_yticklabels([disp[n] for n in order])
+    ax.set_ylim(-0.5, len(order) - 0.5); ax.set_xlim(left=-0.005)
+    ax.set_xlabel("ECE on shifted test set (lower = better)")
+    ax.grid(axis="y", visible=False)
+    ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=4, fontsize=6.2,
+              columnspacing=0.9, handletextpad=0.2)
+    fig.tight_layout(); fig.savefig(FIG / "calibration_methods.pdf"); plt.close(fig)
+    print(f"wrote {RES/'main.json'} and 4 figures")
 
 
 if __name__ == "__main__":
