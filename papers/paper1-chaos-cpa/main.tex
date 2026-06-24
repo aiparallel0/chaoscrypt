@@ -11,6 +11,7 @@
 \usepackage{amsthm}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{flafter} % floats appear at/after their definition (keeps the page-1 teaser below the abstract)
 \newtheorem{proposition}{Proposition}
 
 % Placeholders (PH of a key) are replaced by scripts/fill_tex.py from results/*.json.
@@ -408,14 +409,11 @@ sensitivity directly~\cite{alvarez2006,wu2011npcr} is what catches this. Second,
 architecture}: labelling a symmetric construction ``asymmetric'' adds no security.
 
 The remedies are standard. (i) Make the keystream depend on the plaintext---e.g.\ derive the chaotic
-initial conditions from a cryptographic hash (SHA-256) of the image, so that a different plaintext
-yields an unrelated keystream and the all-ones/digit probes no longer reveal a reusable equivalent
-key. (ii) Add genuine diffusion, e.g.\ a chaining rule $C[i]=f(X[i],k[i],C[i-1])$, so that one
-plaintext change propagates and the true NPCR approaches its ideal. With either defence in place the
-map of \eqref{eq:monomial} is no longer fixed across images and the attack of Section~\ref{sec:crypt}
-fails. We verified this directly: the identical attack recovers \PH{keyonly_match_pct}\,\% of pixels
-against the key-only cipher but only \PH{defended_match_pct}\,\% (chance level) once the keystream is
-seeded from a SHA-256 hash of the image.
+initial conditions from a SHA-256 hash of the image, so a different plaintext yields an unrelated
+keystream. (ii) Add genuine diffusion, e.g.\ a chaining rule $C[i]=f(X[i],k[i],C[i-1])$, so one
+plaintext change propagates. With either, \eqref{eq:monomial} is no longer fixed across images and the
+attack fails: it recovers \PH{keyonly_match_pct}\,\% of pixels against the key-only cipher but only
+\PH{defended_match_pct}\,\% (chance) once the keystream is SHA-256--seeded from the image.
 
 \emph{Scope and disclosure.} We recover an equivalent key that decrypts any ciphertext of the probed
 size, not the underlying chaotic secret seed---the standard, defensible claim in this

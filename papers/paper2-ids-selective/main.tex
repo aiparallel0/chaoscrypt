@@ -8,6 +8,7 @@
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning}
+\usepackage{flafter} % floats appear at/after their definition (keeps the page-1 teaser below the abstract)
 
 % Placeholders (PH of a key) are replaced by scripts/fill_tex.py from results/*.json.
 % The definition lets the unfilled source still compile (shows the key in red).
@@ -146,7 +147,17 @@ training set.
 
 \textbf{Selective prediction.} The confidence of a prediction is its maximum class probability. Sorting
 the test set by confidence and accepting the most-confident fraction $c$ yields the selective risk
-$r(c)$; we report the area under $r(c)$ (AURC) and $r(0.8)$.
+$r(c)$; we report the area under $r(c)$ (AURC) and $r(0.8)$ (Fig.~\ref{fig:rc}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\columnwidth]{figures/risk_coverage.pdf}
+\caption{Risk--coverage on NSL-KDD; the ring marks the 80\%-coverage operating point and the shaded
+areas are the AURC (area under the curve) for the two extremes. Accepting only the most-confident inputs
+lowers selective risk sharply for the tree ensembles but barely for logistic regression, whose confidence
+does not rank its errors (nearly flat, and worst at the very top).}
+\label{fig:rc}
+\end{figure}
 
 \textbf{Open-set protocol (LOFO).} To probe genuinely unknown attacks under control, our
 leave-one-family-out protocol removes one attack family entirely from training (keeping benign traffic
@@ -192,16 +203,6 @@ forest is similar (AURC \PH{ms_rf_aurc}). Logistic regression is the cautionary 
 barely ranks its errors (AURC \PH{ms_logreg_aurc}), so abstention buys little (\PH{ms_logreg_risk80}).
 The lesson is that selective prediction is only as good as the underlying confidence signal, which here
 depends strongly on the model family.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.82\columnwidth]{figures/risk_coverage.pdf}
-\caption{Risk--coverage on NSL-KDD; the ring marks the 80\%-coverage operating point and the shaded
-areas are the AURC (area under the curve) for the two extremes. Accepting only the most-confident inputs
-lowers selective risk sharply for the tree ensembles but barely for logistic regression, whose confidence
-does not rank its errors (nearly flat, and worst at the very top).}
-\label{fig:rc}
-\end{figure}
 
 \begin{figure}[t]
 \centering
