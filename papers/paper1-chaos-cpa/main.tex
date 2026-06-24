@@ -12,6 +12,21 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{flafter} % floats appear at/after their definition (keeps the page-1 teaser below the abstract)
+
+% --- UBMK official formatting (UBMK-Template-A4): geometry, spacing, captions, keyword label ---
+\usepackage{textcomp}
+\usepackage[font=footnotesize]{caption}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{8pt}{4pt}
+\titlespacing*{\subsection}{0pt}{6pt}{3pt}
+\titlespacing*{\subsubsection}{0pt}{4pt}{2pt}
+\usepackage{geometry}
+\geometry{a4paper, top=2cm, bottom=2.5cm, left=1.6cm, right=1.6cm}
+\setlength{\parskip}{6pt}
+\setlength{\floatsep}{0pt}
+\setlength{\textfloatsep}{6pt}
+\setlength{\intextsep}{6pt}
+\renewcommand{\IEEEkeywordsname}{Keywords}
 \newtheorem{proposition}{Proposition}
 
 % Placeholders (PH of a key) are replaced by scripts/fill_tex.py from results/*.json.
