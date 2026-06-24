@@ -57,7 +57,8 @@ cleanest for the strongly scored R2L and weaker for Infiltration, whose score is
 discriminative. Selective prediction cuts selective risk at fixed coverage, but only for models whose
 confidence ranks errors (tree ensembles, not logistic regression); and on the benign-mimicking blind
 spot the lever is the operating point---a budget-tuned threshold recovers most of what the argmax default
-misses, while an added abstention/novelty stack gives no gain at matched cost. We also flag that the usual
+misses, while an added abstention/novelty stack gives no gain at matched cost (across three review
+budgets and two corpora). We also flag that the usual
 fixed-partition confidence intervals understate uncertainty---resampling the evaluation distribution
 widens them severalfold. Selective prediction is a cheap, model-agnostic safety layer whose limits we
 measure rather than assume.
@@ -463,6 +464,33 @@ abstention blind spot---are only partially recoverable, R2L the hardest. Markers
 $K{=}8$ seeds, whiskers 95\% CIs; the dashed line is chance.}
 \label{fig:novelty}
 \end{figure}
+
+\subsection{Validating the fix across budgets and corpora}\label{sec:validatefix}
+The re-baselined gate (Section~\ref{sec:novelty}) compared the stack to a budget-matched tuned threshold
+at a single operating point; we now sweep the budget and add a second corpus to check the conclusion is
+not a single-point artefact. At a matched analyst review budget $b\in\{5,10,20\}\%$ (benign FPR), we
+compare a single global threshold \emph{tuned} to $b$ against the
+classifier\,$\cup$\,abstention\,$\cup$\,novelty stack, on unknown R2L (NSL-KDD, family held out) and
+cross-corpus Infiltration (CIC-2018, the second benign-mimicking family), over $K{=}6$ seeds
+(Fig.~\ref{fig:validatefix}). The stack beats the tuned threshold in \emph{one} of six budget$\times$corpus
+cells (CIC at $b{=}5\%$, $\Delta{=}\PH{vf_cic2018_infil_b5_delta}$); it loses the other five, decisively on
+unknown R2L ($\Delta{=}\PH{vf_nslkdd_r2l_b10_delta}$ at $b{=}10\%$, $\PH{vf_nslkdd_r2l_b20_delta}$ at
+$20\%$). At equal analyst cost the novelty stage adds no recall a budget-tuned threshold does not already
+deliver. The reason is structural: on a benign-mimicking family the novelty and classifier scores are
+positively dependent---both fire on the same atypical-but-benign-looking flows---so the union spends extra
+benign review for little marginal recall, whereas moving the single threshold spends the whole budget on
+the most informative score. Across budgets and corpora, the lever is the operating point, not the stack.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/validatefix.pdf}
+\caption{Validating the fix at matched analyst cost. At each review budget (benign FPR) a single
+\emph{tuned} threshold (blue) is compared against the classifier\,$\cup$\,abstention\,$\cup$\,novelty
+stack (orange), on unknown R2L (NSL-KDD, left) and cross-corpus Infiltration (CIC-2018, right). The stack
+beats the tuned threshold in only one of six cells ($\Delta>0$); the novelty stage adds no recall at
+equal cost. Bars are means over $K{=}6$ seeds.}
+\label{fig:validatefix}
+\end{figure*}
 
 \section{Discussion and Limitations}
 Selective prediction is a cheap, model-agnostic safety layer: at the cost of deferring a minority of

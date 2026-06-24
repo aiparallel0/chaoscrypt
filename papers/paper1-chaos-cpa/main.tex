@@ -64,10 +64,14 @@ if so, recovers an equivalent key, knowing nothing of the scheme's internals. Ov
 \PH{oracle_n_schemes} constructions it flags all \PH{oracle_n_keyonly_broken} key-only ciphers as broken
 ---chaotic, permutation, additive, affine, and AES-CTR-style alike---in at most \PH{oracle_max_queries}
 chosen plaintexts, and clears the \PH{oracle_n_bound_resist} that bind the keystream to the plaintext or
-a nonce. The oracle is thus an automated, black-box structural test for reused plaintext-independent
-keystreams---it flags them and recovers an equivalent key. Its few-query result covers affine, monomial,
-and XOR-diffusion families; a key-only but nonlinear byte-substitution layer stays structurally broken
-yet needs more queries, outside this logarithmic regime. We close with the standard fixes.
+a nonce. We then run it on \PH{pub_n_real} \emph{real} published 2023--2025 chaos ciphers: it breaks the
+one key-only design and clears the three that seed the keystream from the plaintext (a SHA-256 hash or a
+block sum). Breaking the key-only scheme---which hides an XOR keystream under a per-pixel
+cellular-automata stage---needed a GF(2)-affine (\emph{bitlinear}) extension of the recovery, which we
+prove sound and which leaves every prior verdict unchanged. The oracle is thus an automated, black-box
+structural test for reused plaintext-independent keystreams---now covering affine, monomial, XOR, and
+bit-level substitution families; a key-only but genuinely nonlinear byte S-box stays structurally broken
+yet outside this logarithmic-query regime. We close with the standard fixes.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -128,10 +132,13 @@ decrypts any image pixel-exactly without the key (Section~\ref{sec:crypt}).
 statistics coexist with \emph{zero} plaintext diffusion: the true one-pixel NPCR is
 \PH{cam_npcr1px}\,\%, not 99.6\,\% (Section~\ref{sec:results}).
 \item Most importantly, we distil the attack into a reusable, black-box \emph{structural audit} that
-decides plaintext-independence for any cipher: over a corpus of structural archetypes it recovers an
-equivalent key from every key-only construction and correctly clears those that bind the keystream to
-the image or a nonce. Running it across a survey of published schemes is the natural next step
-(Section~\ref{sec:oracle}).
+decides plaintext-independence for any cipher, with a held-out certificate we prove sound
+(Proposition~\ref{prop:certificate}). It recovers an equivalent key from every key-only archetype and
+clears those that bind the keystream to the image or a nonce; on \PH{pub_n_real} \emph{real} published
+2023--2025 schemes it breaks the one key-only design and clears three plaintext-bound ones
+(Section~\ref{sec:oracle}, Table~\ref{tab:published}). Breaking a real bit-level cipher required---and
+motivated---a GF(2)-affine extension of the recovery that widens its reach while leaving every prior
+verdict intact.
 \end{itemize}
 Fig.~\ref{fig:break} previews the outcome: four standard images, their LLEO ciphertexts, and our
 key-free recoveries, each bit-identical to the original and obtained in \PH{cam_cpt} chosen plaintexts.
@@ -426,14 +433,36 @@ Key type                   & ``asymmetric'' & symmetric \\
 \section{A structural oracle: from one break to a reusable audit}\label{sec:oracle}
 A single break is an exercise; a reusable test for the structural flaw is the contribution. We package the attack
 as a black-box \emph{structural oracle}. Given only encryption access to an unknown cipher on $M\times N$
-images---no key, no source---it fits the affine and XOR position-wise models of
-Proposition~\ref{prop:monomial} from $1{+}\lceil\log_{256}n\rceil$ chosen plaintexts and \emph{certifies}
-the result by predicting the ciphertext of fresh random plaintexts. Two cheap signals drive the verdict:
+images---no key, no source---it fits three position-wise models---affine and XOR
+(Proposition~\ref{prop:monomial}) and a GF(2)-affine \emph{bitlinear} model (below)---from a handful of
+chosen plaintexts and \emph{certifies} the result by predicting the ciphertext of fresh random plaintexts
+(Proposition~\ref{prop:certificate}). Two cheap signals drive the verdict:
 the \emph{avalanche} (fraction of ciphertext bytes a one-pixel plaintext flip changes; ${\approx}1/n$
 means no diffusion) and the \emph{recoverability} $R$ (exact held-out ciphertext-prediction rate;
-$R{\approx}1$ means broken).
+$R{\approx}1$ means broken). We run it blind on both structural archetypes and four real published schemes.
 
-\textbf{Corpus.} Run blind over \PH{oracle_n_schemes} reconstructed schemes
+\begin{proposition}[Held-out certificate]\label{prop:certificate}
+If $\mathrm{Enc}$ is position-wise (affine, XOR, or GF(2)-affine) and the recovered model $\hat M$ predicts
+$t$ independent uniform-random plaintexts exactly, then $\hat M=\mathrm{Enc}$ everywhere: the probes pin
+each per-position map and the digit images pin $s$, so $R{=}1$ certifies a true equivalent key. Conversely,
+if any per-position map depends on the plaintext (there exist $P,P'$ whose maps differ), no fixed
+position-wise model predicts all plaintexts, and $R{\to}1/256$ per byte once the dependence is through a
+cryptographic hash or a fresh nonce. The \textsc{broken} verdict therefore carries a falsifiable
+certificate; \textsc{resists} is correct for plaintext- and nonce-bound constructions.
+\end{proposition}
+
+\textbf{The bitlinear model.} A key-only cipher can append a per-pixel \emph{bit-level} stage---a cellular
+automaton or a bit-sliced S-box---on an XOR/permutation core. Such a stage is a fixed GF(2)-affine byte map
+$g(y){=}My\oplus d$ with $M{\neq}I$ (it mixes bits \emph{within} a byte), so the composite is
+$C[j]{=}M\,P[s_j]\oplus B_j$. The plain-XOR model then reads $\mathrm{out}\oplus c_0{=}M\,D[s_j]$ instead of
+$D[s_j]$, the source index comes back bit-scrambled, and a key-only cipher is mislabelled \textsc{resists}.
+The remedy is a third model: eight bit-basis probes (every pixel ${=}\,1{\ll}t$) read $M$ one column at a
+time ($\mathrm{out}_t\oplus c_0{=}M e_t$, constant across positions), and $M^{-1}$ over GF(2) unscrambles
+the digit images to recover $s$ exactly. It is a strict generalization ($M{=}I$ recovers XOR), so it never
+overturns a prior verdict; it widens the cheap-query regime to the bit-level substitution layers common in
+this literature.
+
+\textbf{Archetype corpus.} Run blind over \PH{oracle_n_schemes} reconstructed archetypes
 (Table~\ref{tab:oracle}, Fig.~\ref{fig:oracle}), the oracle breaks all \PH{oracle_n_keyonly_broken}
 key-only constructions at $R{=}1$ in at most \PH{oracle_max_queries} chosen plaintexts: LLEO's chaos
 monomial, a pure permutation, an additive stream, a general affine map, and a modern AES-CTR-style key
@@ -445,14 +474,14 @@ resists); the flaw is a reused plaintext-independent keystream, not the choice o
 from a per-image nonce---are correctly declined ($R{\approx}$ chance), and there a one-pixel change
 avalanches across the whole image. The same equivalent-key CPA also breaks a chained CBC-like XOR cipher
 (a structurally different, non-position-wise construction) in \PH{gen_cpt} chosen plaintexts, per
-Proposition~\ref{prop:monomial}. These schemes are reconstructions of structural archetypes, not
-published systems; running the audit across a survey of recent schemes is the natural next step.
+Proposition~\ref{prop:monomial}. These are reconstructions of structural archetypes; we turn next to real
+published schemes.
 
-\textbf{Scope.} The $1{+}\lceil\log_{256}n\rceil$-query bound is specific to position-wise affine,
-monomial, and XOR-diffusion maps---the algebra the oracle fits. A key-only but \emph{nonlinear}
-per-position substitution (a fixed byte S-box, still plaintext-independent) is not affine: recovering it
-needs up to $L{=}256$ queries per position to tabulate, so such ciphers stay structurally broken but fall
-outside this logarithmic-query regime.
+\textbf{Scope.} The cheap-query regime spans position-wise affine, monomial, XOR, \emph{and} GF(2)-affine
+(bitlinear) maps---the last costs only eight extra bit-basis probes (12 chosen plaintexts at $512^2$, as
+for LSCM-CA below). The boundary it does not cross is a key-only but \emph{genuinely nonlinear} byte S-box
+(not GF(2)-affine): recovering it needs up to $L{=}256$ queries per position to tabulate, so such ciphers
+stay structurally broken but fall outside this logarithmic-query regime.
 
 \begin{table}[t]
 \centering
@@ -485,6 +514,64 @@ one-pixel-local, square ${=}$ avalanche; red ${=}$ broken, green ${=}$ resists),
 count at $512^2$. Every key-only scheme sits at $R{=}1$; only binding the keystream to the plaintext or a
 nonce escapes to $R{\approx}$ chance.}
 \label{fig:oracle}
+\end{figure}
+
+\textbf{Real-literature audit.} We then ran the audit on \PH{pub_n_real} real, open-access 2023--2025
+chaos image ciphers, reconstructed faithfully from their published equations/pseudocode
+(Table~\ref{tab:published}, Fig.~\ref{fig:published}). The decisive question---does any chaotic seed,
+S-box, or permutation index depend on the plaintext?---separates them cleanly. \emph{LSCM-CA}%
+~\cite{sun2025lscm}, whose keystream and permutation are key-only and which adds a per-pixel
+cellular-automata bit stage, is \textsc{broken} at $R{=}\PH{pub_lscm_R}$ in \PH{pub_lscm_q} chosen
+plaintexts---but \emph{only} via the bitlinear model: the affine/XOR model alone returns
+$R{=}\PH{pub_lscm_R_naive}$, a false negative its CA layer induces (the real scheme that motivated the
+model). The other three bind the keystream to the plaintext and correctly \textsc{resist}
+($R{\approx}\PH{pub_li_R}$): \emph{Li--DNA}~\cite{li2024dnadual} seeds its logistic and Chen systems from
+SHA-256 of the image, \emph{MILE}~\cite{mansour2025mile} from the sum of the first $8{\times}8$ block, and
+\emph{MIEA-PRHM}~\cite{feng2024miea} keeps a key-only keystream but adds a single plaintext-dependent
+scalar.
+
+Two of these resistances are \emph{thin}, and the oracle's two signals expose it. \emph{MILE} shows no
+diffusion---a one-pixel change outside its seed block moves one byte ($A{\cdot}n{\approx}1$)---yet
+$R{\approx}$ chance, because its plaintext-dependence flows through only 64 pixels: hold that seed block
+constant (a legitimate chosen-plaintext sub-class) and $R$ rises to \PH{pub_mile_fix_off} off the block,
+collapsing it to a recovered fixed map. \emph{MIEA-PRHM} avalanches fully yet injects just 8 bits of
+plaintext entropy (a 256-way scalar). The oracle certifies ``\emph{not} a fixed plaintext-independent
+map,'' which is true; it does \emph{not} certify strength, and these two signals cannot separate
+MIEA-PRHM's near-miss from Li--DNA's genuine SHA-256 binding (Fig.~\ref{fig:published})---a boundary we
+mark rather than hide. Reconstructions are paper-only (no scheme released code); each verdict is
+nonetheless a falsifiable certificate of the reconstructed cipher. Two further candidates---an inferred
+key-only affine-Hill scheme~\cite{lone2023ahc} (paywalled) and a multi-layered design with a disputed
+seed~\cite{guvenoglu2024mlc}---are deferred pending full text, as is a key-only candidate that an
+automated search surfaced but could read only in abstract.
+
+\begin{table}[t]
+\centering
+\caption{Real-literature audit: the structural oracle on \PH{pub_n_real} published 2023--2025 chaos image
+ciphers, reconstructed from their equations (paper-only). Seeding---not the diffusion algebra---decides the
+verdict; \PH{pub_n_broken} key-only scheme is broken, \PH{pub_n_resist} plaintext-bound ones resist.}
+\label{tab:published}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llcc}
+\toprule
+Scheme & seeding & $R$ & verdict \\
+\midrule
+LSCM-CA~\cite{sun2025lscm}      & key-only             & \PH{pub_lscm_R} & \PH{pub_lscm_v} \\
+Li--DNA~\cite{li2024dnadual}    & plaintext SHA-256    & \PH{pub_li_R}   & \PH{pub_li_v} \\
+MILE~\cite{mansour2025mile}     & plaintext block-sum  & \PH{pub_mile_R} & \PH{pub_mile_v} \\
+MIEA-PRHM~\cite{feng2024miea}   & key-only ${+}$ scalar & \PH{pub_miea_R} & \PH{pub_miea_v} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.96\columnwidth]{figures/published_audit.pdf}
+\caption{The real-corpus audit in the oracle's two signals (avalanche $A{\cdot}n$ vs.\ recoverability
+$R$). LSCM-CA (key-only) breaks top-left; the three plaintext-bound schemes sit at $R{\approx}0$. Li--DNA
+(genuine SHA-256 binding) and MIEA-PRHM (a 256-way scalar) coincide---the two signals cannot separate
+them. The dashed arrow shows MILE collapsing to a recovered fixed map once its 64-pixel seed block is held
+constant.}
+\label{fig:published}
 \end{figure}
 
 \textbf{Invertibility (the odd-multiplier question).} The recovery needs each multiplier $K[p]$ to be a
@@ -531,8 +618,10 @@ NPCR of $\approx$99.6\,\%. The break follows directly from the cipher being key-
 metric, measured correctly, is \PH{cam_npcr1px}\,\%. We recommend plaintext-dependent keystreams and
 real diffusion, and that statistical scores accompany---rather than replace---an explicit
 chosen-plaintext security argument. More broadly, the attack generalizes into a reusable structural audit
-that decides plaintext-independence: it has recovered an equivalent key from every key-only archetype we
-tested, and auditing a survey of published schemes is the natural next step.
+that decides plaintext-independence, with a held-out certificate we prove sound: it recovers an
+equivalent key from every key-only archetype, and on four real published 2023--2025 schemes it breaks the
+one key-only design and clears three that bind the keystream to the plaintext---one break needing a
+GF(2)-affine extension that widens the audit to bit-level diffusion.
 
 \section*{Acknowledgment}
 The author used a large language model (Anthropic Claude) to assist with code, reproduction, and

@@ -1,7 +1,8 @@
 # Paper 2 — Calibration & selective prediction (abstention) for ML intrusion detection
 
-**Venue:** IEEE UBMK 2026 (see `docs/VENUE_UBMK2026.md`). ~6 pages, IEEEtran, <25% similarity.
-CPU-only, scikit-learn. Distinct from Paper 1 (no cryptography).
+**Venue:** IEEE UBMK 2026 (6 pp; see `docs/VENUE_UBMK2026.md`), with an extended strong-venue version
+(~7 pp, current `main.tex`) that adds the budget-and-corpus *validate-the-fix* study (Fig. 8). IEEEtran,
+<25% similarity. CPU-only, scikit-learn. Distinct from Paper 1 (no cryptography).
 
 ## Thesis / headline claim
 Standard ML intrusion detectors (NSL-KDD, CIC-IDS-2017) are systematically over-confident — poor
@@ -23,7 +24,7 @@ family attacks. Methodological angle (calibration + abstention + open-set), not 
    `figures/` (reliability diagram, risk–coverage curve). Anchor framing in Arp et al. "Dos and Don'ts
    of ML in Computer Security" (USENIX 2022).
 
-## Section outline (6 pp)
+## Section outline
 Abstract · Intro (overconfidence + unknown-attack failure; abstention as fix) · related work
 (calibration, selective prediction / SelectiveNet, open-set IDS, Arp et al.) · methodology
 (datasets, models, family-holdout protocol, abstention mechanisms, leakage controls) · calibration

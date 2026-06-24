@@ -88,7 +88,29 @@ def main() -> None:
 
     (RES / "published_audit.json").write_text(json.dumps(
         {"n_schemes": len(rows), "n_broken": n_broken, "schemes": rows, "fragility": frag}, indent=2))
-    print(f"\n{n_broken}/{len(rows)} published schemes flagged BROKEN; wrote results/published_audit.json")
+
+    # Naive-model recoverability for LSCM-CA: best of affine/xor ONLY (no bitlinear) -- the false
+    # negative that motivated the GF(2)-affine extension. Computed here so the paper's number is live.
+    from structural_oracle import recover_structure
+    enc = build_lscm_ca(KEY, SHAPE); nn = SHAPE[0] * SHAPE[1]
+    cands = [c for c in recover_structure(enc, nn) if c.algebra in ("affine", "xor")]
+    rng = np.random.default_rng(0); probes = [rng.integers(0, 256, nn).astype(np.uint8) for _ in range(8)]
+    truths = [enc(p) for p in probes]
+    r_naive = max(float(np.mean([np.mean(t == c.predict(p)) for p, t in zip(probes, truths)])) for c in cands)
+
+    by = {r["cite"]: r for r in rows}
+    def f3(x): return f"{x:.3f}"
+    flat = {"pub_n_real": len(rows), "pub_n_broken": n_broken, "pub_n_resist": len(rows) - n_broken,
+            "pub_lscm_R": f3(by["sun2025lscm"]["recoverability"]), "pub_lscm_q": by["sun2025lscm"]["queries_512sq"],
+            "pub_lscm_v": by["sun2025lscm"]["verdict"], "pub_lscm_alg": by["sun2025lscm"]["algebra"],
+            "pub_lscm_R_naive": f3(r_naive),
+            "pub_li_R": f3(by["li2024dnadual"]["recoverability"]), "pub_li_v": by["li2024dnadual"]["verdict"],
+            "pub_mile_R": f3(by["mansour2025mile"]["recoverability"]), "pub_mile_v": by["mansour2025mile"]["verdict"],
+            "pub_miea_R": f3(by["feng2024miea"]["recoverability"]), "pub_miea_v": by["feng2024miea"]["verdict"],
+            "pub_mile_fix_R": f3(frag["recoverability"]), "pub_mile_fix_off": f3(frag["recoverability_off_seedblock"])}
+    (RES / "published_flat.json").write_text(json.dumps(flat, indent=2))
+    print(f"\n{n_broken}/{len(rows)} published schemes flagged BROKEN; LSCM-CA naive(affine/xor) R={r_naive:.3f} "
+          f"-> bitlinear R={flat['pub_lscm_R']}; wrote results/published_audit.json + published_flat.json")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,9 @@
 # Paper 1 — Equivalent-key chosen-plaintext cryptanalysis of a published chaos image cipher
 
-**Venue:** IEEE UBMK 2026 (see `docs/VENUE_UBMK2026.md`). ~6 pages, IEEEtran, <25% similarity.
+**Venue:** IEEE UBMK 2026 (6 pp; see `docs/VENUE_UBMK2026.md`), with an extended strong-venue version
+(~7 pp, current `main.tex`) that folds in the real-literature audit (Table V on four published 2023--2025
+schemes), the GF(2)-affine *bitlinear* recovery model, and the held-out-certificate proposition. IEEEtran,
+<25% similarity.
 
 ## Thesis / headline claim
 A published permutation–diffusion ("chaos") image cipher whose diffusion keystream is plaintext-
@@ -26,7 +29,7 @@ full plaintext hash ⇒ DEFENDED (switch to a backup in `docs/RESEARCH_NOTES.md`
 6. Figures → `figures/`: original/encrypted/recovered images; keystream histogram vs uniform.
    Results → `results/*.json` consumed by `\PH{}` in `main.tex`.
 
-## Section outline (6 pp)
+## Section outline
 Abstract · Intro + chaos-cryptanalysis context · target recap · the equivalent-key CPA + complexity ·
 results (recovery, runtime, recovered images, chi-square, NPCR caveat) · how-to-fix (plaintext-hash
 seeding) · conclusion. Cite Li et al. lineage (see `docs/RESEARCH_NOTES.md`). + AI-use disclosure.
