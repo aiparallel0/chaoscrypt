@@ -22,7 +22,7 @@ Usage: python papers/make_slides.py  (writes presentation.pptx into each paper d
 """
 from __future__ import annotations
 from pathlib import Path
-import copy
+import re
 from PIL import Image
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
@@ -41,6 +41,27 @@ GREY = RGBColor(0x55, 0x55, 0x55)
 L_TITLE, L_TITLECONTENT, L_TITLEONLY, L_BLANK = 0, 1, 5, 6
 
 
+# ----------------------------------------------------------------------------- text normalization
+# PowerPoint's default theme font renders only a limited glyph set; math/exotic Unicode (subscripts,
+# superscripts, ceiling brackets, double-struck Z, arrows, etc.) shows as missing-glyph boxes. Convert
+# such characters to robust ASCII so the slide text renders everywhere. Plain typographic characters
+# (en/em dash, curly quotes, middle dot, multiplication sign) are kept -- they render in every font.
+_SUB = {c: d for c, d in zip("₀₁₂₃₄₅₆₇₈₉", "0123456789")}
+_SUP = {c: d for c, d in zip("⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺", "0123456789-+")}
+_REPL = {"ℤ": "Z", "⌈": "ceil(", "⌉": ")", "≈": "~", "≲": "<=", "≤": "<=", "≥": ">=",
+         "→": " -> ", "−": "-", "χ": "chi", "Δ": "Delta ", "≠": "!="}
+_SUBRE = re.compile("[" + "".join(_SUB) + "]+")
+_SUPRE = re.compile("[" + "".join(re.escape(c) for c in _SUP) + "]+")
+
+
+def ascii_safe(t: str) -> str:
+    t = _SUBRE.sub(lambda m: "_" + "".join(_SUB[c] for c in m.group()), t)
+    t = _SUPRE.sub(lambda m: "^" + "".join(_SUP[c] for c in m.group()), t)
+    for a, b in _REPL.items():
+        t = t.replace(a, b)
+    return re.sub(r"\s+->\s+", " -> ", t)
+
+
 # ----------------------------------------------------------------------------- low-level helpers
 def clear_slides(prs):
     """Remove the template's placeholder slides: drop each slide relationship (so the orphaned slide
@@ -53,7 +74,7 @@ def clear_slides(prs):
 
 def _title(slide, text, size=30):
     t = slide.shapes.title
-    t.text = text
+    t.text = ascii_safe(text)
     for p in t.text_frame.paragraphs:
         for r in p.runs:
             r.font.size = Pt(size); r.font.bold = True; r.font.color.rgb = NAVY
@@ -80,7 +101,7 @@ def _bullets(tf, items, base=20, clear=True):
     tf.word_wrap = True
     for i, (txt, lvl) in enumerate(items):
         p = tf.paragraphs[0] if i == 0 and clear else tf.add_paragraph()
-        p.text = txt
+        p.text = ascii_safe(txt)
         p.level = lvl
         p.space_after = Pt(4)
         sz = base - 2 * lvl
@@ -96,7 +117,7 @@ def _textbox(slide, left, top, width, height, items, base=18, align=PP_ALIGN.LEF
     tf.word_wrap = True
     for i, (txt, lvl) in enumerate(items):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        p.text = txt
+        p.text = ascii_safe(txt)
         p.level = lvl
         p.alignment = align
         p.space_after = Pt(4)
@@ -127,7 +148,7 @@ def _caption(slide, text, left, top, width):
     tb = slide.shapes.add_textbox(left, top, width, Inches(0.4))
     p = tb.text_frame.paragraphs[0]
     p.alignment = PP_ALIGN.CENTER
-    r = p.add_run(); r.text = text
+    r = p.add_run(); r.text = ascii_safe(text)
     r.font.size = Pt(12); r.font.italic = True; r.font.color.rgb = GREY
     return tb
 
@@ -147,7 +168,8 @@ def bullet_slide(prs, title, items, base=20):
     s = prs.slides.add_slide(prs.slide_layouts[L_TITLECONTENT])
     _title(s, title)
     ph = _content_ph(s)
-    ph.top = Inches(1.95); ph.height = Inches(4.5)   # keep clear of the footer banner (top ~6.69")
+    # set ALL four (setting only top/height would default left/width to 0 -> zero-width text box)
+    ph.left = Inches(0.7); ph.top = Inches(1.95); ph.width = Inches(11.95); ph.height = Inches(4.5)
     _bullets(ph.text_frame, items, base=base)
     return s
 
@@ -287,7 +309,7 @@ P1 = [
         ("Decryption in a fraction of a second — no key used.", 0),
      ], 0.7),
 
-    ("fig2", "Good statistics ≠ security",
+    ("fig2", "Good statistics are not security",
      im("p1_cipher_hist.png"), im("p1_correlation_scatter.png"), [
         ("Cipher entropy 7.23 → 7.99 (near-ideal 8); adjacent-pixel correlation ≈ −0.007 "
          "(near zero); flat histogram.", 0),
