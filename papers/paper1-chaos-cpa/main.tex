@@ -64,7 +64,10 @@ if so, recovers an equivalent key, knowing nothing of the scheme's internals. Ov
 \PH{oracle_n_schemes} constructions it flags all \PH{oracle_n_keyonly_broken} key-only ciphers as broken
 ---chaotic, permutation, additive, affine, and AES-CTR-style alike---in at most \PH{oracle_max_queries}
 chosen plaintexts, and clears the \PH{oracle_n_bound_resist} that bind the keystream to the plaintext or
-a nonce. The method retires the genre, not just one scheme; we close with the standard fixes.
+a nonce. The oracle is thus an automated, black-box structural test for reused plaintext-independent
+keystreams---it flags them and recovers an equivalent key. Its few-query result covers affine, monomial,
+and XOR-diffusion families; a key-only but nonlinear byte-substitution layer stays structurally broken
+yet needs more queries, outside this logarithmic regime. We close with the standard fixes.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -124,10 +127,11 @@ decrypts any image pixel-exactly without the key (Section~\ref{sec:crypt}).
 \item We reproduce LLEO, confirm it matches the paper's reported statistics, and then show those
 statistics coexist with \emph{zero} plaintext diffusion: the true one-pixel NPCR is
 \PH{cam_npcr1px}\,\%, not 99.6\,\% (Section~\ref{sec:results}).
-\item Most importantly, we distil the attack into a reusable, black-box \emph{structural oracle} and run
-it over a corpus of key-only and defended ciphers, breaking every plaintext-independent scheme and
-declining those that bind the keystream to the image or a nonce---turning a single break into an
-automated test for the structural flaw (Section~\ref{sec:oracle}).
+\item Most importantly, we distil the attack into a reusable, black-box \emph{structural audit} that
+decides plaintext-independence for any cipher: over a corpus of structural archetypes it recovers an
+equivalent key from every key-only construction and correctly clears those that bind the keystream to
+the image or a nonce. Running it across a survey of published schemes is the natural next step
+(Section~\ref{sec:oracle}).
 \end{itemize}
 Fig.~\ref{fig:break} previews the outcome: four standard images, their LLEO ciphertexts, and our
 key-free recoveries, each bit-identical to the original and obtained in \PH{cam_cpt} chosen plaintexts.
@@ -419,8 +423,8 @@ Key type                   & ``asymmetric'' & symmetric \\
 \end{tabular}
 \end{table}
 
-\section{A structural oracle: from one break to the genre}\label{sec:oracle}
-A single break is an exercise; a test that retires the genre is the contribution. We package the attack
+\section{A structural oracle: from one break to a reusable audit}\label{sec:oracle}
+A single break is an exercise; a reusable test for the structural flaw is the contribution. We package the attack
 as a black-box \emph{structural oracle}. Given only encryption access to an unknown cipher on $M\times N$
 images---no key, no source---it fits the affine and XOR position-wise models of
 Proposition~\ref{prop:monomial} from $1{+}\lceil\log_{256}n\rceil$ chosen plaintexts and \emph{certifies}
@@ -433,13 +437,22 @@ $R{\approx}1$ means broken).
 (Table~\ref{tab:oracle}, Fig.~\ref{fig:oracle}), the oracle breaks all \PH{oracle_n_keyonly_broken}
 key-only constructions at $R{=}1$ in at most \PH{oracle_max_queries} chosen plaintexts: LLEO's chaos
 monomial, a pure permutation, an additive stream, a general affine map, and a modern AES-CTR-style key
-stream. The chaos is incidental---an AES-CTR key stream reused across images is exactly as broken as
-LLEO; the flaw is a reused plaintext-independent keystream, not the choice of map. The
+stream. The chaos is incidental: an AES-CTR keystream \emph{reused} across images---a fixed key and
+counter for every image---is exactly as broken as LLEO. This is a keystream/counter-reuse failure, not
+any weakness of AES-CTR used correctly with a fresh per-image nonce (which our nonce-bound entry shows
+resists); the flaw is a reused plaintext-independent keystream, not the choice of map. The
 \PH{oracle_n_bound_resist} defended schemes---reseeding the keystream from SHA-256 of the plaintext, or
 from a per-image nonce---are correctly declined ($R{\approx}$ chance), and there a one-pixel change
 avalanches across the whole image. The same equivalent-key CPA also breaks a chained CBC-like XOR cipher
 (a structurally different, non-position-wise construction) in \PH{gen_cpt} chosen plaintexts, per
-Proposition~\ref{prop:monomial}.
+Proposition~\ref{prop:monomial}. These schemes are reconstructions of structural archetypes, not
+published systems; running the audit across a survey of recent schemes is the natural next step.
+
+\textbf{Scope.} The $1{+}\lceil\log_{256}n\rceil$-query bound is specific to position-wise affine,
+monomial, and XOR-diffusion maps---the algebra the oracle fits. A key-only but \emph{nonlinear}
+per-position substitution (a fixed byte S-box, still plaintext-independent) is not affine: recovering it
+needs up to $L{=}256$ queries per position to tabulate, so such ciphers stay structurally broken but fall
+outside this logarithmic-query regime.
 
 \begin{table}[t]
 \centering
@@ -517,7 +530,9 @@ A 2025 chaos-based image cipher is completely broken by an equivalent-key chosen
 NPCR of $\approx$99.6\,\%. The break follows directly from the cipher being key-only; its differential
 metric, measured correctly, is \PH{cam_npcr1px}\,\%. We recommend plaintext-dependent keystreams and
 real diffusion, and that statistical scores accompany---rather than replace---an explicit
-chosen-plaintext security argument.
+chosen-plaintext security argument. More broadly, the attack generalizes into a reusable structural audit
+that decides plaintext-independence: it has recovered an equivalent key from every key-only archetype we
+tested, and auditing a survey of published schemes is the natural next step.
 
 \section*{Acknowledgment}
 The author used a large language model (Anthropic Claude) to assist with code, reproduction, and
