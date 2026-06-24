@@ -43,6 +43,38 @@ for _a in range(1, MOD, 2):
     _INV[_a] = pow(_a, -1, MOD)
 
 
+# --- GF(2) byte algebra: the bitlinear model, for per-byte cellular-automata / bit-level S-box layers ---
+def _byte_bits(x: np.ndarray) -> np.ndarray:
+    """Unpack a uint8 array to bits along a new last axis (bit t = (x>>t)&1)."""
+    return ((np.asarray(x, np.uint8)[..., None] >> np.arange(8, dtype=np.uint8)) & 1).astype(np.uint8)
+
+
+def _bits_byte(bits: np.ndarray) -> np.ndarray:
+    """Pack bits along the last axis back to a uint8 array."""
+    return (bits.astype(np.uint8) << np.arange(8, dtype=np.uint8)).sum(-1).astype(np.uint8)
+
+
+def _gf2_apply(Mbits: np.ndarray, x: np.ndarray) -> np.ndarray:
+    """y = M x over GF(2): Mbits is 8x8 (row i, col t), x a uint8 array; (Mx)_i = XOR_t M[i,t] & x_t."""
+    return _bits_byte((_byte_bits(x) @ Mbits.T) & 1)
+
+
+def _gf2_inv(Mbits: np.ndarray):
+    """Inverse of an 8x8 GF(2) matrix by Gauss-Jordan, or None if singular."""
+    A = (np.array(Mbits, np.uint8) & 1).copy()
+    I = np.eye(8, dtype=np.uint8)
+    for c in range(8):
+        piv = next((r for r in range(c, 8) if A[r, c]), None)
+        if piv is None:
+            return None
+        if piv != c:
+            A[[c, piv]] = A[[piv, c]]; I[[c, piv]] = I[[piv, c]]
+        for r in range(8):
+            if r != c and A[r, c]:
+                A[r] ^= A[c]; I[r] ^= I[c]
+    return I
+
+
 def n_digits_for(n: int) -> int:
     """Base-256 digits needed to address n positions = ceil(log_256 n)."""
     return max(1, int(np.ceil(np.log(n) / np.log(MOD))))
@@ -50,19 +82,22 @@ def n_digits_for(n: int) -> int:
 
 @dataclass
 class Recovery:
-    algebra: str             # "affine" (C = a*P[s]+b mod 256) or "xor" (C = P[s] ^ k)
-    a: np.ndarray            # per-output multiplier a_j (affine; all-ones for xor)
-    b: np.ndarray            # per-output offset b_j (affine) / key byte k_j (xor); = C(0)
+    algebra: str             # "affine" (a*P[s]+b mod 256), "xor" (P[s]^k), or "bitlinear" (M*P[s]^b, GF(2))
+    a: np.ndarray            # per-output multiplier a_j (affine; all-ones for xor/bitlinear)
+    b: np.ndarray            # per-output offset b_j (affine) / key byte k_j (xor/bitlinear); = C(0)
     s: np.ndarray            # source index s_j feeding output j
-    invertible: np.ndarray   # bool: position is uniquely decryptable (affine: a_j odd; xor: always)
+    invertible: np.ndarray   # bool: position is uniquely decryptable (affine: a_j odd; bitlinear: M nonsingular)
     queries: int             # minimal chosen plaintexts to break the IDENTIFIED algebra at this n
     monomial: bool           # affine with b == 0 (pure substitution-permutation, no additive term)
+    M: object = None         # shared 8x8 GF(2) byte map (bitlinear only): the per-pixel bit-mixing S-box/CA
 
     def predict(self, plaintext: np.ndarray) -> np.ndarray:
         """Forward-predict the ciphertext of `plaintext` from the recovered equivalent key."""
         p = np.asarray(plaintext, np.int64).reshape(-1)
         if self.algebra == "xor":
             return (p[self.s].astype(np.uint8) ^ self.b.astype(np.uint8))
+        if self.algebra == "bitlinear":
+            return (_gf2_apply(self.M, p[self.s].astype(np.uint8)) ^ self.b.astype(np.uint8))
         return ((self.a * p[self.s] + self.b) % MOD).astype(np.uint8)
 
 
@@ -94,21 +129,50 @@ def _recover_one(c0, c1, digit_outs, n, algebra: str) -> Recovery:
                     monomial=monomial)
 
 
-def recover_structure(encrypt: Encrypt, n: int) -> List[Recovery]:
-    """Issue the shared probe set once and fit both the affine and xor position-wise models.
+def _recover_bitlinear(c0, basis_outs, digit_outs, n) -> Recovery:
+    """Fit the GF(2)-affine model C[j] = M * P[s_j] XOR b_j, with M a SHARED 8x8 per-pixel bit map.
 
-    Probes: the all-zeros and all-ones images plus ceil(log_256 n) base-256 digit images (output j of
-    a digit image carries digit_t of its source index s_j). The same outputs fit both algebras, so the
-    genre -- per-position modular multiply/add (chaos ciphers) OR per-position xor (stream ciphers) --
-    is identified with no scheme-specific knowledge."""
-    zeros = np.zeros(n, np.uint8)
-    ones = np.ones(n, np.uint8)
-    c0 = encrypt(zeros).astype(np.int64)
-    c1 = encrypt(ones).astype(np.int64)
+    This is the structural class a key-only cipher collapses to when it appends a per-pixel cellular-
+    automata or bit-level S-box stage on top of an xor/permutation core (e.g. LSCM-CA): the byte map is
+    no longer the identity, so the plain-xor model reads a bit-scrambled source index and fails. Each
+    basis image (every pixel = 1<<t) yields out_t XOR c0 = M*e_t = column t of M, identical across all
+    positions; eight of them pin down M. With M^{-1} we unscramble the digit images to read s_j exactly."""
+    b = c0 % MOD
+    Mbits = np.zeros((8, 8), np.uint8)
+    for t, out in enumerate(basis_outs):                 # column t = M*e_t, constant over positions
+        col = (out.astype(np.int64) ^ b) & 0xFF
+        cb = int(np.bincount(col, minlength=MOD).argmax())     # modal byte (robust to any boundary noise)
+        Mbits[:, t] = (cb >> np.arange(8)) & 1
+    Minv = _gf2_inv(Mbits)
+    s = np.zeros(n, np.int64)
+    invertible = np.zeros(n, bool) if Minv is None else np.ones(n, bool)
+    if Minv is not None:
+        for t, out in enumerate(digit_outs):             # M^{-1}(out XOR c0) = digit_t(s_j)
+            s |= _gf2_apply(Minv, (out.astype(np.uint8) ^ b.astype(np.uint8))).astype(np.int64) << (8 * t)
+    s = (s % n).astype(np.intp)
+    queries = 1 + len(basis_outs) + len(digit_outs)      # c0 + 8 basis images + digit images
+    return Recovery(algebra="bitlinear", a=np.ones(n, np.int64), b=b, s=s, invertible=invertible,
+                    queries=queries, monomial=False, M=Mbits)
+
+
+def recover_structure(encrypt: Encrypt, n: int) -> List[Recovery]:
+    """Issue the shared probe set once and fit the affine, xor, and bitlinear position-wise models.
+
+    Probes: all-zeros, the eight bit-basis images (every pixel = 1<<t, t=0..7; the t=0 image is the
+    all-ones probe the affine model needs), and ceil(log_256 n) base-256 digit images (output j of a
+    digit image carries digit_t of its source index s_j). The same outputs fit all three algebras, so
+    the genre -- per-position modular multiply/add (chaos ciphers), per-position xor (stream ciphers),
+    or per-position GF(2) bit-map (cellular-automata / bit-level S-box layers) -- is identified with no
+    scheme-specific knowledge."""
+    c0 = encrypt(np.zeros(n, np.uint8)).astype(np.int64)
+    basis_outs = [encrypt(np.full(n, 1 << t, np.uint8)) for t in range(8)]
+    c1 = basis_outs[0].astype(np.int64)                  # all-ones image == bit-basis t=0
     idx = np.arange(n)
     nd = n_digits_for(n)
     digit_outs = [encrypt(((idx >> (8 * t)) & 0xFF).astype(np.uint8)) for t in range(nd)]
-    return [_recover_one(c0, c1, digit_outs, n, alg) for alg in ("affine", "xor")]
+    return [_recover_one(c0, c1, digit_outs, n, "affine"),
+            _recover_one(c0, c1, digit_outs, n, "xor"),
+            _recover_bitlinear(c0, basis_outs, digit_outs, n)]
 
 
 def recoverability(encrypt: Encrypt, n: int, trials: int = 8, seed: int = 0) -> Tuple[float, Recovery]:
@@ -298,7 +362,13 @@ def _selftest() -> None:
     assert o["avalanche_x_n"] < 2.0, o
     s = run_oracle(sha_seeded_encrypt(0xC0FFEE, shape), shape)
     assert s["verdict"] == "RESISTS", s
+    # regression guard for the bitlinear model: a key-only cipher with a per-pixel GF(2) bit-mixing
+    # (cellular-automata / bit-level S-box) stage must still be BROKEN, via the bitlinear algebra.
+    from published_schemes import build_lscm_ca
+    L = run_oracle(build_lscm_ca(0xC0FFEE, shape), shape)
+    assert L["verdict"] == "BROKEN" and L["algebra"] == "bitlinear", L
     print("selftest OK:", {k: round(v, 4) if isinstance(v, float) else v for k, v in o.items()})
+    print("bitlinear OK:", {k: round(v, 4) if isinstance(v, float) else v for k, v in L.items()})
 
 
 if __name__ == "__main__":
