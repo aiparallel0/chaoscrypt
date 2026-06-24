@@ -1,0 +1,13 @@
+{
+  "beta_miea": 8,
+  "beta_miea_lb": false,
+  "beta_li": 32,
+  "beta_li_lb": true,
+  "beta_mile": 32,
+  "beta_mile_lb": true,
+  "beta_milefix": 0,
+  "beta_milefix_lb": false,
+  "beta_keyonly": 0.0,
+  "beta_k": 100000,
+  "miea_distinct_seeds": 256
+}

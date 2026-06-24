@@ -31,6 +31,7 @@
 \setlength{\intextsep}{6pt}
 \renewcommand{\IEEEkeywordsname}{Keywords}
 \newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
 
 % Placeholders (PH of a key) are replaced by scripts/fill_tex.py from results/*.json.
 \newcommand{\PH}[1]{\textcolor{red}{\texttt{#1}}}
@@ -73,8 +74,11 @@ breaks the one key-only design and clears three that seed the keystream from the
 key-only scheme---an XOR keystream under a per-pixel cellular-automata stage---needed a GF(2)-affine
 (\emph{bitlinear}) extension of the recovery, sound and leaving every prior verdict unchanged. The oracle
 covers affine, monomial, XOR, and bit-level substitution families; a key-only but genuinely nonlinear byte
-S-box stays structurally broken yet outside this logarithmic-query regime. We close with the standard
-fixes.
+S-box stays structurally broken yet outside this logarithmic-query regime. Finally we grade the binary
+verdict with a \emph{plaintext-keying capacity} $\beta$---the bits of plaintext entropy that key the
+cipher map, estimated black-box as a collision rate---which separates a fragile $256$-way scalar
+($\beta{=}\PH{beta_miea}$) from genuine SHA-256 binding ($\beta\!\ge\!\PH{beta_li}$), the two schemes the
+avalanche and recoverability signals could not tell apart. We close with the standard fixes.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -142,6 +146,13 @@ clears those that bind the keystream to the image or a nonce; on \PH{pub_n_real}
 (Section~\ref{sec:oracle}, Table~\ref{tab:published}). Breaking a real bit-level cipher required---and
 motivated---a GF(2)-affine extension of the recovery that widens its reach while leaving every prior
 verdict intact.
+\item We upgrade the binary verdict into a graded one with \emph{plaintext-keying capacity}
+$\beta=\log_2 N_{\mathrm{eff}}$---the bits of plaintext entropy that key the cipher map---estimated
+black-box as a collision rate (a corollary of our certificate). $\beta$ resolves the audit's own blind
+spot: the two real schemes its avalanche/recoverability signals could not tell apart now separate, a
+fragile $256$-way scalar ($\beta{=}\PH{beta_miea}$) from genuine SHA-256 binding ($\beta\!\ge\!\PH{beta_li}$),
+and it decomposes the verdict into security, recovery-integrity, and query-cost axes
+(Section~\ref{sec:beta}).
 \end{itemize}
 Fig.~\ref{fig:break} previews the outcome: four standard images, their LLEO ciphertexts, and our
 key-free recoveries, each bit-identical to the original and obtained in \PH{cam_cpt} chosen plaintexts.
@@ -510,19 +521,19 @@ reproduces the paper's reported statistics); the other rows are \emph{by-constru
 reconstructions of any paper, so their verdicts carry no reconstruction-fidelity risk (contrast the real
 corpus, Table~\ref{tab:published}).}
 \label{tab:oracle}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{llccc}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{llcccc}
 \toprule
-Scheme & keystream & $R$ & CP & verdict \\
+Scheme & keystream & $\beta$ & $R$ & CP & verdict \\
 \midrule
-LLEO (chaos monomial)   & key-only  & \PH{orc_lleo_R}   & \PH{orc_lleo_q}   & \PH{orc_lleo_v} \\
-Permutation-only        & key-only  & \PH{orc_perm_R}   & \PH{orc_perm_q}   & \PH{orc_perm_v} \\
-Additive stream $P{+}K$ & key-only  & \PH{orc_add_R}    & \PH{orc_add_q}    & \PH{orc_add_v} \\
-Affine $KP{+}B$         & key-only  & \PH{orc_affine_R} & \PH{orc_affine_q} & \PH{orc_affine_v} \\
-AES-CTR key stream      & key-only  & \PH{orc_aes_R}    & \PH{orc_aes_q}    & \PH{orc_aes_v} \\
-Even-mult.\ affine$^\dagger$ & key-only & \PH{orc_even_R} & \PH{orc_even_q} & PARTIAL \\
-SHA-256$(P)$-seeded     & plaintext & \PH{orc_sha_R}    & \PH{orc_sha_q}    & \PH{orc_sha_v} \\
-Per-image nonce         & nonce     & \PH{orc_nonce_R}  & \PH{orc_nonce_q}  & \PH{orc_nonce_v} \\
+LLEO (chaos monomial)   & key-only  & $0$ & \PH{orc_lleo_R}   & \PH{orc_lleo_q}   & \PH{orc_lleo_v} \\
+Permutation-only        & key-only  & $0$ & \PH{orc_perm_R}   & \PH{orc_perm_q}   & \PH{orc_perm_v} \\
+Additive stream $P{+}K$ & key-only  & $0$ & \PH{orc_add_R}    & \PH{orc_add_q}    & \PH{orc_add_v} \\
+Affine $KP{+}B$         & key-only  & $0$ & \PH{orc_affine_R} & \PH{orc_affine_q} & \PH{orc_affine_v} \\
+AES-CTR key stream      & key-only  & $0$ & \PH{orc_aes_R}    & \PH{orc_aes_q}    & \PH{orc_aes_v} \\
+Even-mult.\ affine$^\dagger$ & key-only & $0$ & \PH{orc_even_R} & \PH{orc_even_q} & PARTIAL \\
+SHA-256$(P)$-seeded     & plaintext & $\ge\!\PH{beta_li}$ & \PH{orc_sha_R}    & \PH{orc_sha_q}    & \PH{orc_sha_v} \\
+Per-image nonce         & nonce     & $\infty$ & \PH{orc_nonce_R}  & \PH{orc_nonce_q}  & \PH{orc_nonce_v} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -571,17 +582,19 @@ ciphers. Seeding---not the diffusion algebra---decides the verdict; \PH{pub_n_br
 broken, \PH{pub_n_resist} plaintext-bound ones resist. ``fid.'' is reconstruction confidence (H/M-H,
 Table~\ref{tab:fidelity}): all rows are paper-only reconstructions, hence reconstruction-dependent unlike
 the validated LLEO target (Table~\ref{tab:oracle}); each verdict is nonetheless a falsifiable certificate
-of the reconstructed cipher.}
+of the reconstructed cipher. The $\beta$ column grades \textsc{resists} (Section~\ref{sec:beta}):
+MIEA-PRHM's $\beta{=}\PH{beta_miea}$ is a fragile near-miss, Li-DNA's $\beta\ge\PH{beta_li}$ genuine.
+$\ddagger$: MILE's $\beta$ collapses to $0$ once its $64$-pixel seed block is held fixed.}
 \label{tab:published}
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{llccc}
+\setlength{\tabcolsep}{2.7pt}
+\begin{tabular}{llcccc}
 \toprule
-Scheme & seeding & fid. & $R$ & verdict \\
+Scheme & seeding & fid. & $\beta$ & $R$ & verdict \\
 \midrule
-LSCM-CA~\cite{sun2025lscm}      & key-only              & H   & \PH{pub_lscm_R} & \PH{pub_lscm_v} \\
-Li--DNA~\cite{li2024dnadual}    & plaintext SHA-256     & H   & \PH{pub_li_R}   & \PH{pub_li_v} \\
-MILE~\cite{mansour2025mile}     & plaintext block-sum   & M-H & \PH{pub_mile_R} & \PH{pub_mile_v} \\
-MIEA-PRHM~\cite{feng2024miea}   & key-only ${+}$ scalar & H   & \PH{pub_miea_R} & \PH{pub_miea_v} \\
+LSCM-CA~\cite{sun2025lscm}      & key-only              & H   & $0$ & \PH{pub_lscm_R} & \PH{pub_lscm_v} \\
+Li--DNA~\cite{li2024dnadual}    & plaintext SHA-256     & H   & $\ge\!\PH{beta_li}$ & \PH{pub_li_R}   & \PH{pub_li_v} \\
+MILE~\cite{mansour2025mile}     & plaintext block-sum   & M-H & $\ge\!\PH{beta_mile}^{\ddagger}$ & \PH{pub_mile_R} & \PH{pub_mile_v} \\
+MIEA-PRHM~\cite{feng2024miea}   & key-only ${+}$ scalar & H   & $\PH{beta_miea}$ & \PH{pub_miea_R} & \PH{pub_miea_v} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -649,6 +662,167 @@ ciphertext of fresh random images \emph{exactly}, which is possible only under p
 a reader's reading of the original differs (say, some keystream were image-seeded), the same oracle
 returns RESISTS on that variant, as it does for our SHA-256--seeded control---so the verdict is checkable
 against any reimplementation, including the authors' own.
+
+\section{Plaintext-Keying Capacity: a Graded Security Metric}\label{sec:beta}
+The verdict of Section~\ref{sec:oracle} is one bit, and that bit silently conflates three independent
+questions: \emph{is} the cipher broken, \emph{how completely}, and \emph{how cheaply}? We separate them
+with three axes (Fig.~\ref{fig:beta_axes}), of which only the first is new.
+\begin{itemize}
+\item \textbf{Plaintext-keying capacity $\beta$} (security): $\beta=\log_2 N_{\mathrm{eff}}$, the effective
+entropy in bits that the plaintext injects into the cipher map with the secret key held fixed, where
+$N_{\mathrm{eff}}$ is the number of effectively distinct ciphertext maps the plaintext space induces.
+$\beta{=}0$ means the map is a single fixed transformation---\emph{exactly} the key-only case
+Section~\ref{sec:oracle} calls \textsc{broken}. So $\beta$ refines that verdict; it never re-judges it.
+\item \textbf{Recovery integrity $\rho$} (completeness): the invertible-position fraction---the quantity
+the oracle already reports as \texttt{invertible\_frac}. For a clean key-only cipher $\rho{=}1$; the
+even-multiplier of Section~\ref{sec:oracle} has $\rho{=}0.51$. $\rho$ is the structural form of the
+recoverability $R$: on invertible positions the equivalent key predicts exactly, so $R\approx\rho$ (the
+even-multiplier's $R{=}0.523$ shadows $\rho{=}0.51$), and \textsc{partial} is precisely the $\rho<1$ case.
+We reuse $R$'s machinery and name its structural core $\rho$; no redundant symbol is introduced.
+\item \textbf{Query cost $q$} (price): the chosen-plaintext count---$4$--$5$ for the cheap families, $12$
+for LSCM-CA's bitlinear recovery, up to $L{=}256$ per position for a key-only but genuinely nonlinear
+byte S-box. That S-box is thus $\beta{=}0,\rho{=}1,q{=}256$, ``broken but expensive,'' distinct from
+``cheap-broken'' ($q{=}4$).
+\end{itemize}
+The old single flag is the projection $\mathbf 1[\beta{=}0]$ of this triple onto one bit
+(Fig.~\ref{fig:beta_axes}); $(\beta,\rho,q)$ recovers the three questions it collapsed.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\columnwidth]{figures/beta_three_axis.pdf}
+\caption{The single \textsc{broken}/\textsc{resists} bit decomposed into three independent axes
+$(\beta,\rho,q)$: security (plaintext-keying capacity), recovery integrity (invertible-position fraction),
+and query cost. The four corner cases the old flag conflated---cheap-broken, expensive-broken (a nonlinear
+S-box: still $\beta{=}0$ but $q{=}256$ per position), lossy-broken (the even-multiplier, $\rho{=}0.51$),
+and resistant ($\beta$ large)---are now distinct. Marker shape encodes the verdict throughout
+(\,$\bullet$ broken, $\blacksquare$ partial, $\blacktriangle$ fragile, $\blacklozenge$ genuine\,).}
+\label{fig:beta_axes}
+\end{figure}
+
+\subsection{Estimator: the collision rate is the certificate of Proposition~\ref{prop:certificate}}
+\label{sec:beta_est}
+Two plaintexts $P,P'$ induce the \emph{same} map iff the equivalent key recovered under $P$
+(Proposition~\ref{prop:certificate}) predicts $C(P')$ exactly on its $\rho$-fraction invertible positions
+(Fig.~\ref{fig:beta_estimator}). Call the probability of this event over random $P,P'$ the
+\emph{map-collision rate} $a$; for $N_{\mathrm{eff}}$ equiprobable maps two draws collide with probability
+$\sim 1/N_{\mathrm{eff}}$, so $\beta=-\log_2 a$ is a birthday estimator. This is the \emph{exact}-prediction
+sharpening of the per-byte recoverability $R$ of Proposition~\ref{prop:certificate}: $R$ averages
+agreement, $a$ demands it on every invertible position at once---which is exactly what separates a single
+shared scalar (all positions agree together) from independent per-byte chance (the gap that left $R$
+blind in Section~\ref{sec:oracle}).
+
+\begin{corollary}[Collision certificate]\label{cor:beta}
+Let $a$ be the map-collision rate and $\beta=-\log_2 a$. \emph{(i)} $a{=}1\iff$ the per-position maps are
+plaintext-independent $\iff\beta{=}0$, which is exactly Proposition~\ref{prop:certificate}'s
+\textsc{broken} verdict ($R{=}1$): $\beta$ refines, never overturns. \emph{(ii)} Drawing $k$ plaintexts
+yields $\binom{k}{2}$ pairs; if $c>0$ collide, $\hat a=c/\binom{k}{2}$ and $\hat\beta=-\log_2\hat a$.
+\emph{(iii)} If none of the $\binom{k}{2}$ pairs collides, then with confidence $1-\delta$,
+$a\le \ln(1/\delta)/\binom{k}{2}$, hence $\beta\ge 2\log_2 k - O(1)$: a non-collision certifies a
+\emph{lower bound}, sufficient because the fragile regime (small $\beta$) is exactly where collisions are
+observable.
+\end{corollary}
+\begin{proof}[Proof sketch]
+\emph{(i)} $a{=}1$ means the $P$-recovered key predicts every $C(P')$ exactly: one fixed map predicts all
+plaintexts, the certified equivalent key of Proposition~\ref{prop:certificate}. $a{<}1$ exhibits $P,P'$
+with differing maps---its plaintext-dependent case. \emph{(ii)} with $N_{\mathrm{eff}}$ equiprobable maps
+each pair collides independently w.p.\ $1/N_{\mathrm{eff}}$, so $\mathbb E[c]=\binom{k}{2}/N_{\mathrm{eff}}$
+and $\hat a$ is unbiased for $a$. \emph{(iii)} the $m=\binom{k}{2}$ pairs are $\mathrm{Bernoulli}(a)$;
+$(1-a)^m\le\delta$ gives $a\le \ln(1/\delta)/m$, whence the bound on $\beta=-\log_2 a$.
+\end{proof}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.96\textwidth]{figures/beta_estimator.pdf}
+\caption{The black-box $\beta$ estimator, tied to Proposition~\ref{prop:certificate}. Draw two random
+plaintexts, recover the equivalent map from one, and test whether it predicts the other's ciphertext
+exactly on the invertible positions. A match is a map-collision (same map): observed collisions give a
+point estimate $\beta=-\log_2 a$; no collision in $k$ draws certifies the lower bound
+$\beta\ge 2\log_2 k$. The decision rule ``collision $=$ fragile, no collision $=$ genuine'' is the whole
+metric.}
+\label{fig:beta_estimator}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.96\columnwidth]{figures/beta_collision_curve.pdf}
+\caption{Observed map-collisions versus sample count $k$ (log--log). MIEA-PRHM's $256$-way scalar
+accumulates collisions along the $1/256$ ($\beta{=}8$) line within feasible $k$; Li-DNA (SHA-256) and MILE
+(random probing) show \emph{none}, so each only certifies the lower bound $\beta\ge 2\log_2 k$---the
+saturation of the secure regime made visual.}
+\label{fig:beta_collision}
+\end{figure}
+
+\subsection{The phase plane, and the weaknesses $\beta$ closes}\label{sec:beta_plane}
+Placing every audited scheme by $(\beta,\rho)$ (Fig.~\ref{fig:beta_plane}; the seeding-mechanism ladder is
+Fig.~\ref{fig:beta_ladder}) sorts them into three bands: $\beta{=}0$ (\textsc{broken}),
+$0<\beta\lesssim 40$ (\emph{fragile}, false assurance), and $\beta\ge 128$ (\emph{cryptographic},
+\textsc{resists}). This resolves the limitations Section~\ref{sec:oracle} admitted.
+\begin{enumerate}
+\item \emph{MIEA-PRHM vs.\ Li-DNA---the headline.} The two schemes the avalanche/recoverability plane could
+not separate (both at full avalanche, $R\approx$ chance) split cleanly along $\beta$
+(Fig.~\ref{fig:beta_beforeafter}). MIEA-PRHM keys its map with a single $256$-way additive scalar:
+collisions appear within $\sim\!256$ samples and $\hat\beta=\PH{beta_miea}$ (its \PH{miea_distinct_seeds}
+distinct values). Li-DNA keys the whole keystream from SHA-256 of the image: no collision in
+$k{=}\PH{beta_k}$ draws certifies $\beta\ge\PH{beta_li}$ (structurally $256$). Fragile near-miss versus
+genuine binding, now a measured gap.
+\item \emph{From a human judgement to a number.} The oracle's ``a reader inspects the seeding and declares
+it plaintext-dependent'' becomes a quantity estimated black-box from chosen plaintexts
+(Corollary~\ref{cor:beta}).
+\item \emph{From a bit to a quantity.} ``Is the map fixed?'' becomes ``how many plaintext bits key the
+map?''---of which $\beta{=}0$ is the special case.
+\item[4--5.] \emph{Splitting the broken cases.} $(\beta,\rho,q)$ separates insecure-but-lossy (the
+even-multiplier, $\rho{=}0.51$) from insecure-but-expensive (a nonlinear S-box, $q{=}256$), which the
+single flag conflated (Fig.~\ref{fig:beta_axes}).
+\end{enumerate}
+Crucially, $\beta$ depends only on the seeding structure---whether the plaintext enters, and with how many
+bits---not on fine chaotic parameters, so measuring it is exactly as reconstruction-robust as the
+seeding-determined verdict of Section~\ref{sec:oracle}.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/beta_phase_plane.pdf}
+\caption{\textbf{Headline.} The $(\beta,\rho)$ phase plane in three bands. Every audited scheme is placed
+by coordinate; marker shape encodes the verdict. The cheap key-only breaks (LLEO, permutation-only,
+AES-CTR; LSCM-CA at $q{=}12$ via the bitlinear model) sit at $(\beta{=}0,\rho{=}1)$; the even-multiplier
+drops to $\rho{=}0.51$ (\textsc{partial}); MIEA-PRHM sits at $\beta{=}8$ (collision observed); Li-DNA's
+certified lower bound extends rightward to the cryptographic band (structural $\beta{=}256$). The dashed
+arrow marks the headline: the two points the old avalanche-vs-recoverability plane overlapped now separate
+along $\beta$. MILE's dashed arrow shows its $\beta$ collapsing to $0$ once its $64$-pixel seed block is
+held fixed (Section~\ref{sec:beta_lim}).}
+\label{fig:beta_plane}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/beta_ladder.pdf}
+\caption{The seeding-mechanism ladder: how many plaintext bits each mechanism injects. Key-only seeds give
+$\beta{=}0$; a $256$-way plaintext scalar gives $\beta{=}8$; a truncated ($64$-bit) and a full SHA-256
+digest give cryptographically large $\beta$. Each audited scheme lands on this axis at the $\beta$ of its
+mechanism (placed individually in Fig.~\ref{fig:beta_plane}).}
+\label{fig:beta_ladder}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/beta_before_after.pdf}
+\caption{The payoff in one figure. \textbf{(left)} the avalanche-vs-recoverability plane of
+Section~\ref{sec:oracle}: MIEA-PRHM and Li-DNA \emph{overlap} (both full avalanche, $R\approx$ chance), the
+limitation the paper admitted. \textbf{(right)} the $\beta$ axis separates them---fragile ($\beta{=}8$)
+versus genuine (certified $\beta\ge\PH{beta_li}$).}
+\label{fig:beta_beforeafter}
+\end{figure*}
+
+\subsection{Limitations of $\beta$}\label{sec:beta_lim}
+\emph{(i) Necessary, not sufficient.} $\beta{=}0$ certifies broken, but large $\beta$ does \emph{not}
+imply secure: $\beta$ shares the scope of \textsc{resists}---now graded and falsifiable---not a proof of
+security. \emph{(ii) Saturation.} In the secure regime $\beta$ is only lower-bounded; feasible samples
+cannot separate $2^{40}$ from $2^{256}$ maps (Fig.~\ref{fig:beta_collision}), a harmless one-sided
+blindness. \emph{(iii) Structured dependence needs the right probe.} MILE keys its map from a $64$-pixel
+seed block: random-direction probing finds no collision ($\beta\ge\PH{beta_mile}$, apparently safe), yet
+\emph{holding that block fixed}---a structurally-disclosed probe---collapses $\beta$ to $0$ (the cipher
+becomes key-only), the formal analogue of the by-hand fixed-block attack of Section~\ref{sec:oracle}. The
+formal estimator probes random \emph{and} structurally-disclosed directions; random-only under-reports the
+vulnerability.
 
 \section{Discussion}
 LLEO illustrates a persistent failure mode: \emph{good statistics are not security}. A flat histogram,
