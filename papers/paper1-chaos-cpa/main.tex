@@ -357,9 +357,10 @@ uniformly (Cameraman).}
 \caption{Reconstruction statistics and attack outcome (512$\times$512). Every image is recovered
 pixel-exactly without the key.}
 \label{tab:repro}
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{lccccc}
 \toprule
-Image & $H$ plain & $H$ cipher & corr.\ cipher & chosen PT & broken \\
+Image & $H$ plain & $H$ cipher & corr. & CP & broken \\
 \midrule
 Cameraman & \PH{cam_ent_plain} & \PH{cam_ent_cipher} & \PH{cam_corr_cipher} & \PH{cam_cpt} & yes \\
 Moon      & \PH{moon_ent_plain} & \PH{moon_ent_cipher} & \PH{moon_corr_cipher} & \PH{moon_cpt} & yes \\
@@ -456,8 +457,8 @@ $t$ independent uniform-random plaintexts exactly, then $\hat M=\mathrm{Enc}$ ev
 each per-position map and the digit images pin $s$, so $R{=}1$ certifies a true equivalent key. Conversely,
 if any per-position map depends on the plaintext (there exist $P,P'$ whose maps differ), no fixed
 position-wise model predicts all plaintexts, and $R{\to}1/256$ per byte once the dependence is through a
-cryptographic hash or a fresh nonce. The \textsc{broken} verdict therefore carries a falsifiable
-certificate; \textsc{resists} is correct for plaintext- and nonce-bound constructions.
+cryptographic hash or a fresh nonce. The \textup{\textsc{broken}} verdict therefore carries a falsifiable
+certificate; \textup{\textsc{resists}} is correct for plaintext- and nonce-bound constructions.
 \end{proposition}
 
 \textbf{The bitlinear model.} A key-only cipher can append a per-pixel \emph{bit-level} stage---a cellular
@@ -560,20 +561,20 @@ automated search surfaced but could read only in abstract.
 \centering
 \caption{Real-literature audit: the structural oracle on \PH{pub_n_real} published 2023--2025 chaos image
 ciphers. Seeding---not the diffusion algebra---decides the verdict; \PH{pub_n_broken} key-only scheme is
-broken, \PH{pub_n_resist} plaintext-bound ones resist. ``basis'' marks all rows as paper-only
-reconstructions with confidence H/M-H (Table~\ref{tab:fidelity})---reconstruction-dependent, unlike the
-validated LLEO target (Table~\ref{tab:oracle}); each verdict is nonetheless a falsifiable certificate of
-the reconstructed cipher.}
+broken, \PH{pub_n_resist} plaintext-bound ones resist. ``fid.'' is reconstruction confidence (H/M-H,
+Table~\ref{tab:fidelity}): all rows are paper-only reconstructions, hence reconstruction-dependent unlike
+the validated LLEO target (Table~\ref{tab:oracle}); each verdict is nonetheless a falsifiable certificate
+of the reconstructed cipher.}
 \label{tab:published}
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{5pt}
 \begin{tabular}{llccc}
 \toprule
-Scheme & seeding & basis & $R$ & verdict \\
+Scheme & seeding & fid. & $R$ & verdict \\
 \midrule
-LSCM-CA~\cite{sun2025lscm}      & key-only             & recon.\,(H)   & \PH{pub_lscm_R} & \PH{pub_lscm_v} \\
-Li--DNA~\cite{li2024dnadual}    & plaintext SHA-256    & recon.\,(H)   & \PH{pub_li_R}   & \PH{pub_li_v} \\
-MILE~\cite{mansour2025mile}     & plaintext block-sum  & recon.\,(M-H) & \PH{pub_mile_R} & \PH{pub_mile_v} \\
-MIEA-PRHM~\cite{feng2024miea}   & key-only ${+}$ scalar & recon.\,(H)   & \PH{pub_miea_R} & \PH{pub_miea_v} \\
+LSCM-CA~\cite{sun2025lscm}      & key-only              & H   & \PH{pub_lscm_R} & \PH{pub_lscm_v} \\
+Li--DNA~\cite{li2024dnadual}    & plaintext SHA-256     & H   & \PH{pub_li_R}   & \PH{pub_li_v} \\
+MILE~\cite{mansour2025mile}     & plaintext block-sum   & M-H & \PH{pub_mile_R} & \PH{pub_mile_v} \\
+MIEA-PRHM~\cite{feng2024miea}   & key-only ${+}$ scalar & H   & \PH{pub_miea_R} & \PH{pub_miea_v} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -606,19 +607,20 @@ block)---the same split the oracle certifies, now visible in the very metric the
 \caption{Reconstruction fidelity (Cameraman, $512^2$). All four reproduce the near-ideal entropy and
 inter-image NPCR the originals report as security evidence; the true 1-pixel-change NPCR
 (NPCR$_{\text{1px}}$) is that differential metric measured correctly. ``Conf.'' is reconstruction
-confidence (H/M-H); the listed ambiguous constant is resolved as noted, and does not affect the
-seeding-determined verdict.}
+confidence. Resolved ambiguities (none affecting the seeding-determined verdict): LSCM-CA $x_0,r,b$
+(key-set, chaotic regime) and the CA bit-rule (a GF(2)-affine bijection); Li--DNA DNA-rule indexing
+(reduced to a plaintext-seeded stream); MILE $(x_1,x_2){\to}X$ normalisation (unstated); MIEA-PRHM
+mod-$2^{32}$ nibble packing (per-pixel mod-256).}
 \label{tab:fidelity}
-\setlength{\tabcolsep}{3pt}
-\footnotesize
-\begin{tabular}{llccc}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lcccc}
 \toprule
-Scheme & Conf.; ambiguity $\to$ our choice & ent. & NPCR$_{\text{img}}$ & NPCR$_{\text{1px}}$ \\
+Scheme & Conf. & ent. & NPCR$_{\text{img}}$ & NPCR$_{\text{1px}}$ \\
 \midrule
-LSCM-CA   & H; $x_0,r,b$ unset $\to$ key-set, chaotic   & \PH{pub_lscm_ent} & \PH{pub_lscm_npcrX} & \PH{pub_lscm_npcr1} \\
-Li--DNA   & H; DNA rules $\to$ plaintext-seeded stream  & \PH{pub_li_ent}   & \PH{pub_li_npcrX}   & \PH{pub_li_npcr1} \\
-MILE      & M-H; $(x_1,x_2){\to}X$ norm.\ unstated      & \PH{pub_mile_ent} & \PH{pub_mile_npcrX} & \PH{pub_mile_npcr1} \\
-MIEA-PRHM & H; mod-$2^{32}$ nibbles $\to$ mod-256/pixel & \PH{pub_miea_ent} & \PH{pub_miea_npcrX} & \PH{pub_miea_npcr1} \\
+LSCM-CA   & H   & \PH{pub_lscm_ent} & \PH{pub_lscm_npcrX} & \PH{pub_lscm_npcr1} \\
+Li--DNA   & H   & \PH{pub_li_ent}   & \PH{pub_li_npcrX}   & \PH{pub_li_npcr1} \\
+MILE      & M-H & \PH{pub_mile_ent} & \PH{pub_mile_npcrX} & \PH{pub_mile_npcr1} \\
+MIEA-PRHM & H   & \PH{pub_miea_ent} & \PH{pub_miea_npcrX} & \PH{pub_miea_npcr1} \\
 \bottomrule
 \end{tabular}
 \end{table}
