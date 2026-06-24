@@ -50,12 +50,12 @@ the public NSL-KDD benchmark, detection of a held-out attack family collapses (e
 gap, and almost none when the attack mimics benign traffic (R2L), which a benign-only novelty detector
 also cannot cleanly separate---a \emph{structural} blind spot, not a tuning issue. The calibration
 measurements support this picture: the three standard detectors are markedly over-confident under the
-benchmark's train--test shift (expected calibration error up to ${\approx}0.22$), post-hoc Platt scaling
-fitted on source data does not transfer, and split-conformal coverage falls from \PH{ms_conf_indist} to
-\PH{ms_conf_shift}. Selective prediction nonetheless cuts selective risk from ${\approx}0.20$ to
-${\approx}0.11$ at \mbox{80\%} coverage---but only for models whose confidence ranks errors (tree
-ensembles, not logistic regression: area under the risk--coverage curve ${\approx}0.05$ versus
-${\approx}0.23$). On a second, modern corpus (CIC-IDS-2017/2018) the within-distribution task is easy and
+benchmark's train--test shift (expected calibration error up to 0.22), post-hoc Platt scaling
+fitted on source data does not transfer, and split-conformal coverage falls from 0.93 to
+0.61. Selective prediction nonetheless cuts selective risk from 0.20 to
+0.11 at \mbox{80\%} coverage---but only for models whose confidence ranks errors (tree
+ensembles, not logistic regression: area under the risk--coverage curve 0.05 versus
+0.23). On a second, modern corpus (CIC-IDS-2017/2018) the within-distribution task is easy and
 well calibrated, yet an unknown family is still missed under cross-day and cross-corpus drift---so
 over-confidence is task-dependent while the abstention blind spot is not. Selective prediction is a
 cheap, model-agnostic safety layer for ML intrusion detection, with clearly characterised limits.
