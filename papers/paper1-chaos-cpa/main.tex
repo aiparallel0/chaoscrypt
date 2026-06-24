@@ -142,8 +142,9 @@ statistics coexist with \emph{zero} plaintext diffusion: the true one-pixel NPCR
 decides plaintext-independence for any cipher, with a held-out certificate we prove sound
 (Proposition~\ref{prop:certificate}). It recovers an equivalent key from every key-only archetype and
 clears those that bind the keystream to the image or a nonce; on \PH{pub_n_real} \emph{real} published
-2023--2025 schemes it breaks the one key-only design and clears three plaintext-bound ones
-(Section~\ref{sec:oracle}, Table~\ref{tab:published}). Breaking a real bit-level cipher required---and
+2023--2025 schemes---\emph{reconstructed from their papers}, and weighted accordingly---it breaks the one
+key-only design and clears three plaintext-bound ones (the LLEO break alone rests on the validated real
+construction; Section~\ref{sec:oracle}, Table~\ref{tab:published}). Breaking a real bit-level cipher required---and
 motivated---a GF(2)-affine extension of the recovery that widens its reach while leaving every prior
 verdict intact.
 \item We upgrade the binary verdict into a graded one with \emph{plaintext-keying capacity}
@@ -852,8 +853,8 @@ boundary.} It covers affine, XOR, and GF(2)-affine maps; a key-only but genuinel
 stays structurally broken but needs up to $256$ queries per position, outside the logarithmic regime.
 
 \emph{Disclosure.} Consistent with responsible-disclosure practice, the authors of every scheme we
-break---LLEO~\cite{jain2025lleo} and the reconstructed LSCM-CA~\cite{sun2025lscm}---will be notified
-before camera-ready, and our reproduction and attack code is available at \coderepo.
+break---LLEO~\cite{jain2025lleo} and the reconstructed LSCM-CA~\cite{sun2025lscm}---are notified at
+submission, ahead of publication; our reproduction and attack code is available at \coderepo.
 
 \section{Conclusion}
 A 2025 chaos-based image cipher is completely broken by an equivalent-key chosen-plaintext attack in
@@ -863,8 +864,9 @@ metric, measured correctly, is \PH{cam_npcr1px}\,\%. We recommend plaintext-depe
 real diffusion, and that statistical scores accompany---rather than replace---an explicit
 chosen-plaintext security argument. More broadly, the attack generalizes into a reusable structural audit
 that decides plaintext-independence, with a held-out certificate we prove sound: it recovers an
-equivalent key from every key-only archetype, and on four real published 2023--2025 schemes it breaks the
-one key-only design and clears three that bind the keystream to the plaintext---one break needing a
+equivalent key from every key-only archetype, and on four real published 2023--2025 schemes (reconstructed
+from their papers) it breaks the one key-only design and clears three that bind the keystream to the
+plaintext---one break needing a
 GF(2)-affine extension that widens the audit to bit-level diffusion.
 
 \section*{Acknowledgment}

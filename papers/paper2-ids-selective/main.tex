@@ -258,7 +258,11 @@ blind spot. The natural worry is that R2L's near-zero detection is just an unbal
 argmax (the default 0.5 decision boundary). It is not class imbalance---but it \emph{is} largely the
 threshold. The attack score separates R2L from benign well above chance (AUROC \PH{pf_auroc_seen_R2L}
 when R2L is seen in training, \PH{pf_auroc_unk_R2L} when it is held out; Fig.~\ref{fig:perfam}), yet at
-the global argmax cut only \PH{r2l_recall_argmax} of R2L is flagged. Training with
+the global argmax cut only \PH{r2l_recall_argmax} of R2L is flagged.\footnote{R2L's recall at the global
+argmax cut is one quantity measured in three independent experiments---\PH{r2l_recall_argmax} here,
+\PH{pf_recall_seen_R2L} in the per-family panel (Table~\ref{tab:perfam}), and \PH{det_seen_R2L} under LOFO
+(Table~\ref{tab:openset}); the ${\sim}0.01$ spread is random-seed and train-split variation, not a
+methodological discrepancy.} Training with
 \texttt{class\_weight="balanced"} barely moves this (\PH{r2l_recall_balanced})---expected, since the
 binary attack/normal task is already near-balanced---whereas a per-family threshold at a 10\% benign
 false-positive rate recovers \PH{r2l_recall_fpr10}. So R2L is the hardest family, but it is
