@@ -19,6 +19,9 @@
 \titlespacing*{\subsubsection}{0pt}{4pt}{2pt}
 \usepackage{geometry}
 \geometry{a4paper, top=2cm, bottom=2.5cm, left=1.6cm, right=1.6cm}
+% Code repository link. Replace the placeholder with an anonymized mirror (e.g. anonymous.4open.science)
+% for double-blind review, or the public repo URL otherwise, BEFORE submitting.
+\newcommand{\coderepo}{\texttt{[anonymized code repository URL---insert before submission]}}
 \setlength{\parskip}{6pt}
 \setlength{\floatsep}{0pt}
 \setlength{\textfloatsep}{6pt}
@@ -118,7 +121,7 @@ operating point is the lever---a budget-tuned threshold recovers most of what th
 while an added abstention/novelty stack gives no further gain at matched analyst cost
 (Sections~\ref{sec:sp},~\ref{sec:novelty}).
 \end{itemize}
-Our protocol and code are released anonymized and reusable (open-licensed at camera-ready). Throughout we
+Our protocol and code are available at \coderepo (anonymized, reusable, open-licensed). Throughout we
 follow the evaluation guidance of Arp \emph{et al.}\ \cite{arp2022dodos}: calibrators are fit only on
 held-out training data, and no test information leaks into model selection. Unless stated otherwise,
 NSL-KDD metrics are means over multiple seeds with 95\% CIs; because the canonical test partition is
@@ -166,7 +169,10 @@ dated-benchmark artefacts can be told apart from task-intrinsic effects (the tas
 
 \textbf{Models.} We use scikit-learn \cite{pedregosa2011scikit} logistic regression (a linear model), a
 random forest, and histogram gradient boosting (two ensembles of decision trees)---deliberately standard
-detectors, since our subject is their confidence, not their architecture.
+detectors, since our subject is their confidence, not their architecture. The calibration analysis
+(Section~\ref{sec:cal}) is on these three; the model summary (Table~\ref{tab:main}) adds a fourth family,
+a neural MLP, to test whether informative confidence (low AURC) generalizes beyond trees and the linear
+model.
 
 \textbf{Calibration.} For each model we report ECE (15 equal-width bins of the predicted class
 probability) raw and after three post-hoc calibrators---Platt (sigmoid) scaling, isotonic regression,
@@ -227,7 +233,8 @@ benchmark.
 \begin{table*}[t]
 \centering
 \caption{NSL-KDD test metrics: mean $\pm$ 95\% CI over $K{=}15$ seeds (resampling the
-fit/calibration split and model randomness), across four model families including a neural MLP. Lower ECE,
+fit/calibration split and model randomness), for the three standard detectors plus a supplementary neural
+MLP (fourth family). Lower ECE,
 Brier, and AURC are better. Low AURC (confidence ranks errors) is strongest for the tree ensembles, still
 useful for the MLP, and poor for logistic regression---a spectrum, not a linear/nonlinear split---which is
 the property abstention needs.}

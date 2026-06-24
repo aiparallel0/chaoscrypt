@@ -22,6 +22,9 @@
 \titlespacing*{\subsubsection}{0pt}{4pt}{2pt}
 \usepackage{geometry}
 \geometry{a4paper, top=2cm, bottom=2.5cm, left=1.6cm, right=1.6cm}
+% Code repository link. Replace the placeholder with an anonymized mirror (e.g. anonymous.4open.science)
+% for double-blind review, or the public repo URL otherwise, BEFORE submitting.
+\newcommand{\coderepo}{\texttt{[anonymized code repository URL---insert before submission]}}
 \setlength{\parskip}{6pt}
 \setlength{\floatsep}{0pt}
 \setlength{\textfloatsep}{6pt}
@@ -262,7 +265,7 @@ $C[j]=K[s(j)]\,\mathrm{digit}_t(s(j))$, and dividing by the recovered $K[s(j)]$ 
 $\mathrm{digit}_t(s(j))$; collecting all digits reconstructs $s$. If instead the substitution is XOR
 with a key-only keystream, the same argument over $\mathrm{GF}(2)$ gives an affine map $C=Mx\oplus b$
 with $b=E(\mathbf{0})$: the all-zeros query returns $b$ and the index-digit queries return $s$, exactly
-as in the CBC-like XOR cipher we break in Section~\ref{sec:crypt}.
+as in the CBC-like XOR cipher we break in Section~\ref{sec:oracle}.
 \end{proof}
 
 \subsection{Equivalent-key recovery}
@@ -501,8 +504,8 @@ the held-out ciphertext-prediction rate of the recovered equivalent key; ``CP'' 
 break the identified algebra at $512^2$. The five fully key-only schemes are broken at $R{=}1$; binding
 the keystream to the plaintext or a nonce is what resists. $\dagger$: the even-multiplier affine is also
 key-only but does not force the multiplier odd, so ${\approx}$half its positions are non-invertible and
-recovery degrades \emph{gracefully} ($R{=}\PH{orc_even_R}$) rather than failing---the deliberate boundary
-of the few-query attack. LLEO is the validated target of Section~\ref{sec:results} (its reconstruction
+recovery degrades \emph{gracefully} (marked PARTIAL, $R{=}\PH{orc_even_R}$) rather than failing---the
+deliberate boundary of the few-query attack, distinct from the genuine plaintext/nonce RESISTS. LLEO is the validated target of Section~\ref{sec:results} (its reconstruction
 reproduces the paper's reported statistics); the other rows are \emph{by-construction} archetypes, not
 reconstructions of any paper, so their verdicts carry no reconstruction-fidelity risk (contrast the real
 corpus, Table~\ref{tab:published}).}
@@ -517,7 +520,7 @@ Permutation-only        & key-only  & \PH{orc_perm_R}   & \PH{orc_perm_q}   & \P
 Additive stream $P{+}K$ & key-only  & \PH{orc_add_R}    & \PH{orc_add_q}    & \PH{orc_add_v} \\
 Affine $KP{+}B$         & key-only  & \PH{orc_affine_R} & \PH{orc_affine_q} & \PH{orc_affine_v} \\
 AES-CTR key stream      & key-only  & \PH{orc_aes_R}    & \PH{orc_aes_q}    & \PH{orc_aes_v} \\
-Even-mult.\ affine$^\dagger$ & key-only & \PH{orc_even_R} & \PH{orc_even_q} & \PH{orc_even_v} \\
+Even-mult.\ affine$^\dagger$ & key-only & \PH{orc_even_R} & \PH{orc_even_q} & PARTIAL \\
 SHA-256$(P)$-seeded     & plaintext & \PH{orc_sha_R}    & \PH{orc_sha_q}    & \PH{orc_sha_v} \\
 Per-image nonce         & nonce     & \PH{orc_nonce_R}  & \PH{orc_nonce_q}  & \PH{orc_nonce_v} \\
 \bottomrule
@@ -529,7 +532,8 @@ Per-image nonce         & nonce     & \PH{orc_nonce_R}  & \PH{orc_nonce_q}  & \P
 \includegraphics[width=0.96\columnwidth]{figures/oracle_corpus.pdf}
 \caption{Structural-audit panel: equivalent-key recoverability $R$ per scheme (circle ${=}$
 one-pixel-local, square ${=}$ avalanche; red ${=}$ broken, green ${=}$ resists), with the chosen-plaintext
-count at $512^2$. Every key-only scheme sits at $R{=}1$; only binding the keystream to the plaintext or a
+count at $512^2$. The fully key-only schemes sit at $R{=}1$; the even-multiplier boundary (key-only but
+non-invertible) degrades to $R{\approx}0.5$ (PARTIAL); only binding the keystream to the plaintext or a
 nonce escapes to $R{\approx}$ chance.}
 \label{fig:oracle}
 \end{figure}
@@ -673,8 +677,9 @@ including the authors' own (Proposition~\ref{prop:certificate}). \emph{(iii) The
 boundary.} It covers affine, XOR, and GF(2)-affine maps; a key-only but genuinely nonlinear byte S-box
 stays structurally broken but needs up to $256$ queries per position, outside the logarithmic regime.
 
-\emph{Disclosure.} Consistent with responsible-disclosure practice, the authors of the target scheme will
-be notified before camera-ready, and our reproduction and attack code is released to support verification.
+\emph{Disclosure.} Consistent with responsible-disclosure practice, the authors of every scheme we
+break---LLEO~\cite{jain2025lleo} and the reconstructed LSCM-CA~\cite{sun2025lscm}---will be notified
+before camera-ready, and our reproduction and attack code is available at \coderepo.
 
 \section{Conclusion}
 A 2025 chaos-based image cipher is completely broken by an equivalent-key chosen-plaintext attack in
