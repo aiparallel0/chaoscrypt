@@ -1,15 +1,14 @@
 {
-  "comb_recall_clf": 0.003,
-  "comb_recall_clf_hw": 0.0,
-  "comb_recall_abs": 0.308,
-  "comb_recall_abs_hw": 0.043,
-  "comb_recall_nov": 0.22,
-  "comb_recall_nov_hw": 0.029,
-  "comb_recall_clf_abs": 0.308,
-  "comb_recall_clf_abs_hw": 0.043,
+  "comb_target": "R2L",
+  "comb_recall_argmax": 0.003,
+  "comb_recall_argmax_hw": 0.0,
+  "comb_recall_tuned": 0.508,
+  "comb_recall_tuned_hw": 0.077,
   "comb_recall_union": 0.397,
   "comb_recall_union_hw": 0.026,
-  "comb_benign_review": 0.124,
-  "comb_benign_review_hw": 0.005,
-  "comb_target": "R2L"
+  "comb_review": 0.124,
+  "comb_review_hw": 0.005,
+  "comb_delta_union_tuned": -0.111,
+  "comb_delta_union_tuned_hw": 0.073,
+  "comb_stack_beats_tuned": false
 }

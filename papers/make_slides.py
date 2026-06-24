@@ -428,9 +428,10 @@ P2 = [
          "recurs across all three datasets. R2L is nearly missed at the default threshold (recall 0.06) "
          "yet its score is discriminative (AUROC 0.87); a per-family threshold recovers much of it (0.49). "
          "Class balancing does not help -- so the cause is the threshold, not class frequency.", 0),
-        ("Selective prediction is useful but bounded: it helps only when confidence ranks errors, and the "
-         "full recipe (classifier + abstention + novelty together) recovers unknown benign-mimicking "
-         "attacks that any single gate misses.", 0),
+        ("Selective prediction is useful but bounded: it helps only when confidence ranks errors; and on "
+         "the benign-mimicking blind spot the lever is the OPERATING POINT -- a budget-tuned threshold "
+         "recovers most of what argmax misses, while stacking abstention+novelty adds no gain at matched "
+         "cost.", 0),
     ]),
 
     ("bul", "Method", [
@@ -518,13 +519,14 @@ P2 = [
         ("Abstaining and novelty detection catch different failures, so use both.", 0),
      ], 0.6),
 
-    ("fig", "The recipe, measured end-to-end (combined gate)", im("p2_combined_pipeline.png"),
-     "Recall on unknown (held-out) R2L as gates are stacked; dashed = analyst review load.", [
-        ("No single gate sees unknown look-like-normal R2L: the classifier alone recalls 0.003.", 0),
-        ("Add confidence abstention -> 0.31; add a normal-only novelty stage -> 0.40, at a 12% analyst "
-         "review load.", 0),
-        ("The concrete payoff of the two-failure-modes story: stack the gates and recover a usable "
-         "fraction at a bounded cost.", 0),
+    ("fig", "The recipe, re-baselined honestly", im("p2_combined_pipeline.png"),
+     "Unknown (held-out) R2L at a matched review budget: argmax vs tuned threshold vs full stack.", [
+        ("The earlier 0.003 -> 0.40 gain was measured against the argmax default -- a bad threshold for a "
+         "minority family. We re-baseline against a single threshold TUNED to the same review budget.", 0),
+        ("At matched cost: argmax 0.00; a tuned threshold 0.51; the full stack (argmax+abstention+novelty) "
+         "only 0.40 -- BELOW the tuned threshold (paired gap -0.11).", 0),
+        ("So the lever is the operating point, not the gates: stacking adds no net recall once the "
+         "threshold is set to the budget. (Even so, about half of unknown R2L is still missed.)", 0),
      ], 0.6),
 
     ("bul", "Finding 6: calibration need is task-dependent; the blind spot recurs (3 datasets)", [
@@ -564,8 +566,9 @@ P2 = [
         ("The second failure recurs on all three datasets but is an operating-point one: a single global "
          "threshold misses minority look-like-normal families whose score is in fact discriminable -- so "
          "the much-cited 'detection collapse' is mostly a thresholding artifact.", 0),
-        ("Abstention lowers error where confidence ranks it, and stacking it with a normal-only novelty "
-         "stage recovers much of the otherwise-missed look-like-normal traffic.", 0),
+        ("Abstention lowers error where confidence ranks it; and simply tuning the operating point to the "
+         "analyst budget recovers much of the look-like-normal traffic the argmax default hides -- a "
+         "stacked novelty gate adds no further recall at matched cost.", 0),
         ("Future: a full time-ordered evaluation, the label-corrected CIC-2017, and a shared NetFlow "
          "feature format for transfer across networks.", 0),
     ]),
