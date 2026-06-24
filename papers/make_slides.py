@@ -27,7 +27,7 @@ from PIL import Image
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
 from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.text import PP_ALIGN, MSO_ANCHOR, MSO_AUTO_SIZE
 from pptx.oxml.ns import qn
 
 HERE = Path(__file__).parent
@@ -99,6 +99,7 @@ def _bullets(tf, items, base=20, clear=True):
     if clear:
         tf.clear()
     tf.word_wrap = True
+    tf.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
     for i, (txt, lvl) in enumerate(items):
         p = tf.paragraphs[0] if i == 0 and clear else tf.add_paragraph()
         p.text = ascii_safe(txt)
@@ -115,6 +116,7 @@ def _textbox(slide, left, top, width, height, items, base=18, align=PP_ALIGN.LEF
     tb = slide.shapes.add_textbox(left, top, width, height)
     tf = tb.text_frame
     tf.word_wrap = True
+    tf.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
     for i, (txt, lvl) in enumerate(items):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
         p.text = ascii_safe(txt)
@@ -164,7 +166,7 @@ def title_slide(prs, title, subtitle_lines):
     return s
 
 
-def bullet_slide(prs, title, items, base=20):
+def bullet_slide(prs, title, items, base=18):
     s = prs.slides.add_slide(prs.slide_layouts[L_TITLECONTENT])
     _title(s, title)
     ph = _content_ph(s)
@@ -185,7 +187,7 @@ def figure_slide(prs, title, img, caption=None, bullets=None, img_frac=0.62):
     if bullets:
         fw = int(Inches(13.0) * img_frac)
         _picture(s, img, Inches(0.35), top, fw, img_bottom - top)
-        _textbox(s, Inches(0.4) + fw, Inches(1.75), Inches(12.9) - fw, Inches(4.4), bullets, base=17)
+        _textbox(s, Inches(0.4) + fw, Inches(1.75), Inches(12.9) - fw, Inches(4.6), bullets, base=16)
         if caption:
             _caption(s, caption, Inches(0.35), img_bottom, fw)
     else:
@@ -207,7 +209,7 @@ def two_figure_slide(prs, title, imgL, imgR, bullets, capL=None, capR=None):
         _caption(s, capL, Inches(0.5), capy, Inches(6.1))
     if capR:
         _caption(s, capR, Inches(6.8), capy, Inches(6.1))
-    _textbox(s, Inches(0.6), Inches(5.2), Inches(12.2), Inches(1.1), bullets, base=16)
+    _textbox(s, Inches(0.6), Inches(5.15), Inches(12.2), Inches(1.25), bullets, base=15)
     return s
 
 
@@ -253,44 +255,51 @@ P1 = [
       "Author(s) and affiliation withheld for review"]),
 
     ("bul", "Introduction: chaos image ciphers keep breaking the same way", [
-        ("Chaos-based image ciphers are published at a high rate; most follow a permutation–diffusion "
-         "template (confusion + a chaotic keystream).", 0),
-        ("Recurring lesson: when the keystream depends only on the key (not the image), the whole cipher "
-         "is a fixed map — an equivalent key decrypts everything from a few chosen plaintexts.", 0),
-        ("Second, methodological problem: schemes are validated with statistics (entropy, correlation, "
-         "NPCR/UACI) and near-ideal values are treated as security.", 0),
-        ("None of those scores measures chosen-plaintext resistance.", 1),
+        ("Chaos-based image ciphers scramble a picture using chaotic (random-looking) math. Most follow a "
+         "permutation–diffusion design: first shuffle the pixels around (confusion), then mask their "
+         "values with a keystream — a long random-looking sequence the cipher mixes in (diffusion).", 0),
+        ("Recurring lesson: if that keystream depends only on the secret key (never on the image), the "
+         "whole cipher is one fixed transformation — so an equivalent key (a stand-in that decrypts any "
+         "image without being the real key) can be recovered from a few chosen plaintexts (images the "
+         "attacker picks and has the cipher encrypt).", 0),
+        ("Second problem (method): schemes are judged by statistics — entropy (a randomness score), "
+         "neighbouring-pixel correlation, NPCR/UACI — and near-ideal values are treated as proof of "
+         "security.", 0),
+        ("But none of those scores tests resistance to a chosen-plaintext attack.", 1),
         ("We apply both lessons to a 2025 scheme — “LLEO” (Jain et al., Optik, 2025).", 0),
     ]),
 
     ("fig", "The target: LLEO (Jain et al., Optik 2025)", im("p1_schema.png"),
      "LLEO encryption (top) and the equivalent-key attack (bottom).", [
-        ("Lorenz + logistic keystreams drive a per-pixel multiplicative substitution (×K).", 0),
-        ("Then two Fisher–Yates block shuffles (16 rows, 16 columns).", 0),
-        ("Every key element derives from the secret key — nothing depends on the image X.", 0),
-        ("Called “asymmetric,” but the same keys encrypt and decrypt: it is symmetric.", 0),
+        ("Two chaotic maps (simple formulas whose output looks random — Lorenz and logistic) make the "
+         "keystream that masks each pixel (multiply by K).", 0),
+        ("Then two Fisher–Yates shuffles (a standard way to randomly reorder a list) rearrange 16 "
+         "row-blocks, then 16 column-blocks.", 0),
+        ("Every key element comes from the secret key alone — nothing depends on the image X.", 0),
+        ("Called “asymmetric,” but the same keys both encrypt and decrypt: it is really symmetric.", 0),
      ], 0.66),
 
-    ("bul", "Key insight: LLEO is a fixed monomial map", [
-        ("Index the image as a length-n vector, n = M·N. Each step is linear over ℤ₂₅₆ "
-         "and fixed by the key.", 0),
-        ("Substitution multiplies pixel p by a fixed odd unit K[p]; the two shuffles compose into one "
-         "permutation P.", 0),
-        ("Therefore  C[j] = K[s(j)] · X[s(j)]  (mod 256),  with s = P⁻¹ — a fixed "
-         "monomial map.", 0),
-        ("No additive constant (E(0)=0); and no diffusion: each C[j] depends on exactly one input pixel.", 0),
+    ("bul", "Key insight: LLEO is one fixed “multiply-and-reorder” map", [
+        ("Write the image as a list of n = M×N pixels. Every step is just multiply-and-reorder using "
+         "arithmetic that wraps around at 256 (like hours on a clock), and is fixed once the key is set.", 0),
+        ("Masking multiplies pixel p by a fixed odd number K[p] (odd, so it can always be divided back "
+         "out); the two shuffles combine into one fixed reordering of positions.", 0),
+        ("So  C[j] = K[s(j)] · X[s(j)]  (mod 256): each output pixel is exactly one input pixel times a "
+         "fixed number — a “monomial” map.", 0),
+        ("Two gifts to the attacker: no added constant, and no diffusion (each output pixel depends on "
+         "only one input pixel).", 0),
     ]),
 
     ("bul", "Equivalent-key chosen-plaintext attack", [
-        ("(a) Multiplier — one query: encrypt the all-ones image → C[j] = K[s(j)] (the multiplier "
-         "at every output position).", 0),
-        ("(b) Permutation — ⌈log₂₅₆ n⌉ queries: index-digit images; divide by the "
-         "known K → recover the source map s.", 0),
-        ("Equivalent key (s, K) inverts any ciphertext:  X[s(j)] = K[s(j)]⁻¹ · C[j].", 0),
-        ("Cost: 1 + ⌈log₂₅₆ MN⌉ chosen plaintexts = 4 for a 512×512 image — "
-         "independent of the advertised key length.", 0),
-        ("Order-optimal vs. the Li–Lo permutation-only bound; extra rounds/maps leave the map's form "
-         "unchanged.", 0),
+        ("(a) The multiplier — 1 query: encrypt an all-ones image; the output directly reveals K at "
+         "every position.", 0),
+        ("(b) The reordering — a few queries: encrypt images whose pixels carry their own position "
+         "number, then divide out the known K to read off where each pixel came from (the map s).", 0),
+        ("The pair (s, K) is the equivalent key — it inverts any ciphertext:  X[s(j)] = K[s(j)]⁻¹ · C[j].", 0),
+        ("Total cost: 1 + ⌈log₂₅₆ MN⌉ chosen plaintexts = just 4 for a 512×512 image — no matter how "
+         "long the advertised key is.", 0),
+        ("This matches the known best-possible bound for shuffle-only ciphers; adding more rounds or "
+         "maps doesn't change the form, so the same attack still works.", 0),
     ]),
 
     ("bul", "Experimental setup", [
@@ -311,25 +320,26 @@ P1 = [
 
     ("fig2", "Good statistics are not security",
      im("p1_cipher_hist.png"), im("p1_correlation_scatter.png"), [
-        ("Cipher entropy 7.23 → 7.99 (near-ideal 8); adjacent-pixel correlation ≈ −0.007 "
-         "(near zero); flat histogram.", 0),
-        ("By the usual yardsticks LLEO looks strong — yet it is broken in 4 queries.", 0),
-     ], "Flat cipher histogram", "Adjacent-pixel density: structure → uniform"),
+        ("Entropy (a randomness score, maximum 8) rises 7.23 → 7.99; neighbouring pixels go from very "
+         "alike to almost unrelated (correlation ≈ 0); the spread of pixel values is flat.", 0),
+        ("By every usual yardstick LLEO looks strong — yet it is broken in 4 queries.", 0),
+     ], "Flat histogram of cipher pixel values", "Neighbouring-pixel pattern: structure → uniform"),
 
-    ("fig", "The differential metric (NPCR) is illusory", im("p1_diffusion_diff.png"),
-     "|C₀−C₁|: dark = unchanged, bright = changed (one fixed key).", [
-        ("LLEO reports NPCR ≈ 99.6% as differential-attack resistance.", 0),
-        ("No diffusion → a one-pixel change alters exactly one ciphertext pixel: true NPCR = "
-         "100/MN ≈ 0.0004%.", 0),
-        ("The 99.6% is merely the gap between unrelated images (here 99.88%) — any near-uniform "
-         "cipher attains it.", 0),
+    ("fig", "The “differential” score (NPCR) is illusory", im("p1_diffusion_diff.png"),
+     "Difference image |C₀−C₁|: dark = unchanged, bright = changed (one fixed key).", [
+        ("NPCR = the percent of pixels that change when you flip a single input pixel. A good cipher "
+         "should change almost all of them (~99.6%), and LLEO reports ~99.6%.", 0),
+        ("But with no diffusion, flipping one input pixel changes exactly one output pixel — so the "
+         "true value is 100/MN ≈ 0.0004%, five orders of magnitude smaller.", 0),
+        ("The 99.6% is really just the difference between two unrelated images (here 99.88%), which any "
+         "near-uniform cipher reaches and which says nothing about security.", 0),
      ], 0.6),
 
-    ("fig", "The chaotic keystreams are themselves non-uniform", im("p1_keystream_ridgeline.png"),
-     "Byte-value densities: logistic and Lorenz vs. a uniform reference.", [
-        ("A chi-square test rejects uniformity for the logistic (χ² ≈ 5.3×10⁵) and "
-         "Lorenz keystreams.", 0),
-        ("A secure stream cipher would match the flat uniform row.", 0),
+    ("fig", "Even the chaotic keystreams are not evenly random", im("p1_keystream_ridgeline.png"),
+     "How often each byte value appears: logistic and Lorenz vs. a truly uniform source.", [
+        ("A chi-square test (a standard check for whether values are evenly spread) strongly rejects "
+         "“evenly random” for both chaotic streams (logistic χ² ≈ 5.3×10⁵).", 0),
+        ("A secure keystream would be flat, like the uniform reference row at the bottom.", 0),
      ], 0.6),
 
     ("bul", "Discussion: two persistent failure modes", [
@@ -343,21 +353,23 @@ P1 = [
     ("bul", "Conclusions, remedies, and disclosure", [
         ("LLEO is completely broken by an equivalent-key chosen-plaintext attack in 4 queries and a "
          "fraction of a second, despite near-ideal statistics.", 0),
-        ("Remedies (standard): (i) make the keystream plaintext-dependent (e.g., seed the chaos from "
-         "SHA-256 of the image); (ii) add genuine diffusion (a chaining rule).", 0),
-        ("Positive control: the identical attack recovers 100% of pixels against the key-only cipher, but "
-         "only 0.25% (chance) once the keystream is SHA-256-seeded.", 0),
-        ("Statistical scores should accompany — not replace — an explicit chosen-plaintext "
-         "argument. Responsible disclosure to the authors before camera-ready.", 0),
+        ("Remedies (standard): (i) tie the keystream to the image — e.g., seed the chaos from a SHA-256 "
+         "hash (a fixed-size fingerprint of the image); (ii) add real diffusion, e.g., a chaining rule so "
+         "each output pixel also depends on the previous one.", 0),
+        ("Sanity check: the identical attack recovers 100% of pixels against the original key-only "
+         "cipher, but only 0.25% (no better than guessing) once the keystream is seeded from the image's "
+         "hash.", 0),
+        ("Statistical scores should support — not replace — an explicit chosen-plaintext security "
+         "argument. The authors will be notified before camera-ready (responsible disclosure).", 0),
     ]),
 
     ("bul", "Appendix: the attack is not specific to LLEO", [
-        ("A canonical CBC-like XOR diffusion chain (different algebra) is affine over GF(2); recovered "
-         "exactly in 3 chosen plaintexts at 128×128.", 0),
-        ("Cost scales logarithmically: 3 chosen plaintexts at 128²/256², 4 at 512²/1024², "
-         "each under 0.3 s.", 0),
-        ("The same procedure fails against a plaintext-hash-seeded version — confirming that what "
-         "matters is the keystream's dependence on the image, not the algebra or round count.", 0),
+        ("A second, very different cipher family (an XOR-and-chain design, like CBC) also reduces to one "
+         "simple fixed equation; we recover it exactly in 3 chosen plaintexts at 128×128.", 0),
+        ("Cost grows only logarithmically — i.e. barely — with image size: 3 chosen plaintexts at "
+         "128²/256², 4 at 512²/1024², each under 0.3 s.", 0),
+        ("The same procedure fails once the keystream is tied to a hash of the image — confirming that "
+         "what matters is image-dependence, not the algebra or the number of rounds.", 0),
     ]),
 
     ("bul", "Selected references", [
@@ -381,132 +393,141 @@ P2 = [
       "Author(s) and affiliation withheld for review"]),
 
     ("fig", "Introduction: detectors that fail silently", im("p2_pipeline.png"),
-     "The selective-prediction (reject-option) wrapper we evaluate.", [
-        ("A detector that emits one hard label gives no signal of when to trust it — and fails "
-         "silently on attacks absent from training.", 0),
-        ("A reject option — abstain on low-confidence inputs, defer to an analyst or a novelty "
-         "stage — would be more useful.", 0),
-        ("Question: do off-the-shelf detectors know when they are wrong?", 0),
-        ("We propose no new detector; we evaluate existing ones.", 1),
+     "The selective-prediction (“reject-option”) wrapper we evaluate.", [
+        ("A detector that outputs a single hard label (“attack” or “normal”) gives no signal of when to "
+         "trust it — and stays silent on attacks it never saw in training.", 0),
+        ("Better: let it abstain — say “I’m not sure” on low-confidence inputs and pass them to an "
+         "analyst or a backup check. This is called selective prediction.", 0),
+        ("Question: do ordinary, off-the-shelf detectors know when they are wrong?", 0),
+        ("We propose no new detector; we test the ones people already use.", 1),
      ], 0.62),
 
-    ("bul", "Contributions (finding-first)", [
-        ("A controlled leave-one-family-out (LOFO) open-set protocol: detection collapses on held-out "
-         "families; a confidence reject option covers only part; benign-mimicking R2L is a structural "
-         "blind spot — missed by abstention and a benign-only novelty stage alike.", 0),
-        ("Selective prediction cuts selective risk substantially — but only for models whose "
-         "confidence ranks their errors (tree ensembles, not the linear model); conformal coverage erodes "
-         "under shift.", 0),
-        ("Mechanism: the three standard detectors are over-confident under distribution shift, and "
-         "source-fit Platt scaling does not transfer.", 0),
+    ("bul", "Contributions (most important first)", [
+        ("A controlled “leave-one-family-out” (LOFO) test — hide one whole attack family during "
+         "training, then test on it (the unknown-attack, or “open-set,” setting). Detection of that "
+         "family collapses; letting the model abstain recovers only part; and R2L — an attack that "
+         "looks like ordinary traffic — is a built-in blind spot that neither abstaining nor a novelty "
+         "detector can catch.", 0),
+        ("Abstaining cuts the error among the inputs the model does answer — but only for models whose "
+         "confidence actually ranks their mistakes (tree-based models, not the simple linear one).", 0),
+        ("Why: the detectors become over-confident once test traffic differs from training, and the "
+         "standard confidence fix (Platt scaling) does not carry over.", 0),
     ]),
 
     ("bul", "Method", [
-        ("Calibration: expected calibration error (15 bins), reliability diagrams, Platt scaling — fit "
-         "on held-out TRAIN only (no test leakage, per Arp et al. 2022).", 0),
-        ("Selective prediction: confidence = max class probability; risk–coverage curve, area under it "
-         "(AURC), and risk at 80% coverage.", 0),
-        ("Open-set (LOFO): remove one attack family from training, retrain, measure detection and "
-         "abstention on that family.", 0),
-        ("Conformal: split conformal prediction for distribution-free coverage under exchangeability.", 0),
-        ("Multi-seed (K = 15/10/8): means with 95% CIs; paired per-seed differences for equivalence "
-         "claims.", 0),
+        ("Calibration — does a model’s stated confidence match how often it is actually right? We "
+         "measure the gap with expected calibration error (ECE), and try the standard fix (Platt "
+         "scaling), fitted only on held-out training data so no test information leaks in.", 0),
+        ("Selective prediction — confidence = the model’s top class probability. The risk–coverage "
+         "curve plots error against the fraction of inputs it chooses to answer; the area under it (AURC) "
+         "summarizes it (lower is better).", 0),
+        ("Open-set (LOFO): drop one attack family from training, retrain, and measure detection and "
+         "abstaining on that unseen family.", 0),
+        ("Conformal prediction: a method that promises a chosen hit-rate, as long as new data looks like "
+         "the old.", 0),
+        ("Every number is a mean over many random repeats (“seeds”) with a 95% confidence interval — "
+         "the range the true value likely lies in.", 0),
     ]),
 
-    ("bul", "Models, signals, and uncertainty estimators", [
-        ("Detectors: logistic regression, random forest, histogram gradient boosting (scikit-learn) — "
-         "deliberately standard; the subject is their confidence, not their architecture.", 0),
-        ("Abstention signals compared: max-softmax (MSP), random-forest disagreement, Mahalanobis "
-         "distance, k-NN distance.", 0),
-        ("Benign-only novelty detectors: Isolation Forest, one-class SVM (trained on benign records only).", 0),
-        ("Post-hoc calibration: Platt (sigmoid) scaling.", 0),
+    ("bul", "Models, confidence signals, and novelty detectors", [
+        ("Detectors: logistic regression (a simple linear model), a random forest, and gradient "
+         "boosting (both built from many decision trees) — deliberately ordinary; the subject is their "
+         "confidence, not the architecture.", 0),
+        ("Confidence signals compared: the top class probability (max-softmax), how much the forest’s "
+         "trees disagree, and two “distance-from-normal” scores (Mahalanobis and nearest-neighbour).", 0),
+        ("Novelty detectors — trained only on normal traffic to flag anything unusual: Isolation Forest "
+         "and a one-class SVM.", 0),
     ]),
 
     ("bul", "Experimental setup: datasets", [
-        ("NSL-KDD: ~126k train / 22.5k test records, 41 features; families DoS, Probe, R2L, U2R. The "
-         "published test split deliberately contains attack types absent from training (a built-in "
-         "open-set test).", 0),
-        ("CIC-IDS-2017: a modern flow corpus (78 CICFlowMeter features), three days (DDoS, PortScan, Web).", 0),
-        ("CSE-CIC-IDS-2018: cross-corpus transfer on the 27 features whose names match exactly across the "
-         "two releases.", 0),
-        ("Canonical test partitions held fixed; resample the fit/calibration split and model seed across "
-         "K seeds.", 0),
+        ("NSL-KDD — a public benchmark of network connections (~126k train / 22.5k test, 41 measured "
+         "features each); attacks fall into four families (DoS, Probe, R2L, U2R). Its test set deliberately "
+         "includes attack types missing from training — a built-in unknown-attack test.", 0),
+        ("CIC-IDS-2017 — a newer dataset of network “flows” (per-connection summaries, 78 features), over "
+         "three days (DDoS, PortScan, Web attacks).", 0),
+        ("CSE-CIC-IDS-2018 — a different network and year, used to test transfer on the 27 features the "
+         "two datasets share by name.", 0),
+        ("Each result averages many random repeats; the official test sets are kept fixed.", 0),
     ]),
 
     ("fig", "Finding 1: detection collapses on unknown families (LOFO)", im("p2_openset_detection.png"),
-     "Detection rate when a family is seen in training vs. held out (unknown).", [
-        ("DoS 0.86 → 0.60; Probe 0.79 → 0.43; U2R 0.18 → 0.05 when held out.", 0),
-        ("Abstention rejects only part of the unknowns (DoS 0.41, Probe 0.37).", 0),
-        ("R2L is low even when seen (0.07) — it mimics benign traffic.", 0),
+     "Share of a family caught when it is seen in training vs. held out (unknown).", [
+        ("When a family is hidden during training, detection of it drops sharply: DoS 0.86 → 0.60; "
+         "Probe 0.79 → 0.43; U2R 0.18 → 0.05.", 0),
+        ("Abstaining (refusing to answer) catches only part of the unknowns (DoS 0.41, Probe 0.37).", 0),
+        ("R2L is barely caught even when seen (0.07) — it looks like normal traffic.", 0),
      ], 0.6),
 
     ("fig2", "Finding 2: detectors are over-confident under shift",
      im("p2_ece_shift.png"), im("p2_reliability_rf.png"), [
-        ("In-distribution the same models are nearly perfectly calibrated (ECE ≲ 0.003); on the "
-         "shifted test set ECE inflates to ≈ 0.16–0.22.", 0),
-        ("Platt scaling fit on source data does NOT transfer — the over-confidence wedge remains.", 0),
-     ], "ECE: in-distribution → shifted test", "RF reliability (raw vs. Platt-scaled)"),
+        ("On data like the training set the models are almost perfectly calibrated (calibration error "
+         "≲ 0.003); on the real test set — which adds unseen attacks — it jumps to ≈ 0.16–0.22.", 0),
+        ("Re-scaling confidence (Platt scaling) on the training distribution does NOT fix it — the "
+         "over-confidence gap (shaded) remains.", 0),
+     ], "Calibration error: training-like → shifted test", "Forest: stated confidence vs. real accuracy"),
 
-    ("fig", "Finding 3: abstention helps — if confidence ranks errors", im("p2_risk_coverage.png"),
-     "Risk–coverage on NSL-KDD; ring marks the 80%-coverage operating point.", [
-        ("Tree ensembles: selective risk 0.20 → 0.11 at 80% coverage (AURC ≈ 0.05).", 0),
-        ("Logistic regression's confidence barely ranks its errors (AURC ≈ 0.23) — abstention "
-         "buys little.", 0),
-        ("Selective prediction is only as good as the underlying confidence signal.", 0),
+    ("fig", "Finding 3: abstaining helps — if confidence ranks errors", im("p2_risk_coverage.png"),
+     "Error among answered cases vs. the fraction answered; ring = the 80%-answered point.", [
+        ("Tree-based models: refusing the least-confident 20% cuts error 0.20 → 0.11 (area under the "
+         "curve ≈ 0.05; lower is better).", 0),
+        ("The linear model’s confidence barely ranks its mistakes (area ≈ 0.23) — so abstaining buys "
+         "little.", 0),
+        ("Abstaining is only as good as the confidence signal behind it.", 0),
      ], 0.6),
 
     ("fig", "Finding 4: why R2L is the blind spot", im("p2_benign_manifold.png"),
-     "(a) joint (IF, OCSVM) novelty space; (b) per-family anomaly ridgeline.", [
-        ("R2L's distribution sits on top of benign's — inside the benign envelope — for two "
-         "independent benign-only detectors.", 0),
-        ("It mimics normal traffic, so neither abstention nor a benign-only novelty detector can cleanly "
-         "flag it; DoS/Probe/U2R separate.", 0),
+     "(a) how unusual each record looks to two “normal-only” detectors; (b) the same, per family.", [
+        ("R2L’s records pile up right on top of the normal ones — inside the “looks-normal” region — "
+         "for both independent novelty detectors.", 0),
+        ("It mimics ordinary traffic, so neither abstaining nor a normal-only novelty check can cleanly "
+         "flag it; DoS, Probe, and U2R clearly stand out.", 0),
      ], 0.66),
 
-    ("fig", "Finding 5: a benign-only novelty stage partially closes it", im("p2_novelty_auroc.png"),
-     "Novelty AUROC vs. benign, per family, both detectors.", [
-        ("Isolation Forest / one-class SVM separate DoS, Probe, U2R well (AUROC ≈ 0.90–0.99).", 0),
-        ("R2L stays hardest (≈ 0.73–0.82) — its support most overlaps benign.", 0),
-        ("Abstention and novelty catch different failure modes; combine them.", 0),
+    ("fig", "Finding 5: a normal-only novelty stage partly closes the gap", im("p2_novelty_auroc.png"),
+     "How well each attack family separates from normal traffic (1 = perfect, 0.5 = chance).", [
+        ("Trained only on normal traffic, Isolation Forest / one-class SVM separate DoS, Probe, U2R well "
+         "(score ≈ 0.90–0.99).", 0),
+        ("R2L stays hardest (≈ 0.73–0.82) — it overlaps normal traffic the most.", 0),
+        ("Abstaining and novelty detection catch different failures, so use both.", 0),
      ], 0.6),
 
-    ("bul", "Finding 6: calibration is task-dependent; the blind spot is not", [
-        ("CIC-IDS-2017 within-split is easy and well-calibrated (accuracy 0.9998, ECE 0.0001) — "
-         "over-confidence is a property of the task, not an intrinsic flaw.", 0),
-        ("Cross-day drift: Web detection 0.98 → 0.79; abstention rejects 0.95 of unknown Web — "
-         "far more than R2L, because Web does not mimic benign.", 0),
-        ("Cross-corpus 2017→2018 (27 shared features): accuracy 0.96 → 0.67, ECE 0.26; "
-         "Infiltration (benign-mimicking) is again the blind spot (detected 0.14).", 0),
+    ("bul", "Finding 6: the need for calibration depends on the task; the blind spot does not", [
+        ("On CIC-IDS-2017 the within-day task is easy and already well-calibrated (accuracy 0.9998, "
+         "calibration error 0.0001) — so over-confidence is a property of the task, not a built-in flaw.", 0),
+        ("Train one day, test another (drift): Web detection 0.98 → 0.79, and abstaining now catches 0.95 "
+         "of unknown Web — far more than R2L, because Web does not look like normal traffic.", 0),
+        ("Across datasets (2017 → 2018, 27 shared features): accuracy 0.96 → 0.67, calibration error 0.26; "
+         "Infiltration — which again mimics normal traffic — is once more the blind spot (caught 0.14).", 0),
     ]),
 
-    ("bul", "Which uncertainty signal? Can we guarantee coverage?", [
-        ("Paired per-seed ΔAURC: max-softmax is statistically indistinguishable from richer signals; "
-         "Mahalanobis is marginally better at error-ranking but worse at unknown-attack detection.", 0),
-        ("On tabular flow data the cheap max-softmax is a strong, well-rounded default — the leverage "
-         "is in the abstention framework, not the estimator.", 0),
-        ("Split conformal: empirical coverage 0.93 in-distribution but 0.61 under shift (target 0.90) — "
-         "the guarantee erodes precisely when the deployment distribution moves.", 0),
+    ("bul", "Which confidence signal? Can we promise a hit-rate?", [
+        ("Comparing the signals fairly (same data, paired): the cheap top-probability is statistically "
+         "tied with the fancier ones; the distance score is slightly better at ranking errors but worse "
+         "at spotting unknown attacks.", 0),
+        ("So on this kind of tabular traffic data, plain confidence is a strong default — the value is "
+         "in the abstain framework, not the exact signal.", 0),
+        ("Conformal prediction’s promised 90% hit-rate holds on training-like data (0.93) but falls to "
+         "0.61 once the traffic shifts — the guarantee breaks exactly when deployment changes.", 0),
     ]),
 
-    ("bul", "Discussion: an operational recipe", [
-        ("Deploy a model whose confidence is informative (low validation AURC — a tree ensemble, not "
-         "the linear model).", 0),
-        ("Set the operating coverage from the risk–coverage curve; route the abstained minority to a "
-         "secondary control.", 0),
-        ("Monitor the abstention rate as a cheap, label-free drift signal.", 0),
-        ("Pair abstention with a benign-only novelty stage for the benign-mimicking attacks it cannot "
-         "catch.", 0),
+    ("bul", "Discussion: a practical recipe", [
+        ("Pick a model whose confidence is informative (good at ranking its own errors — a tree-based "
+         "model, not the linear one).", 0),
+        ("Choose how much to answer from the risk–coverage curve; send the refused cases to a human or a "
+         "backup check.", 0),
+        ("Watch the abstain rate as a cheap, label-free warning that the traffic is drifting.", 0),
+        ("Add a normal-only novelty check for the look-like-normal attacks abstaining cannot catch.", 0),
     ]),
 
-    ("bul", "Conclusions and future research", [
-        ("Selective prediction is a cheap, model-agnostic safety layer for ML intrusion detection, with "
-         "clearly characterized limits.", 0),
-        ("Strong when unknown attacks are statistically distinguishable from benign traffic; weak when "
-         "they mimic it.", 0),
-        ("On an easy modern corpus calibration is fine, so the need for it is task-dependent — the "
-         "blind spot is not.", 0),
-        ("Future: full time-ordered evaluation, the label-corrected CIC-2017, and standardized NetFlow-v2 "
-         "multi-network transfer.", 0),
+    ("bul", "Conclusions and future work", [
+        ("Letting a detector abstain is a cheap, model-independent safety layer for ML intrusion "
+         "detection, with clearly measured limits.", 0),
+        ("It helps a lot when unknown attacks look different from normal traffic, and little when they "
+         "mimic it.", 0),
+        ("On an easy modern dataset calibration is already fine, so the need for it depends on the task — "
+         "but the look-like-normal blind spot does not.", 0),
+        ("Future: a full time-ordered evaluation, the label-corrected CIC-2017, and a shared NetFlow "
+         "feature format for transfer across networks.", 0),
     ]),
 
     ("bul", "Selected references", [
