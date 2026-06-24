@@ -44,11 +44,12 @@ for Machine-Learning Network Intrusion Detection}
 \begin{abstract}
 A machine-learning intrusion detector that emits one hard label gives no signal of when to trust it and
 fails silently on attacks absent from training. We ask whether off-the-shelf detectors know when they
-are wrong---we propose no new detector. Under a controlled \emph{leave-one-family-out} (LOFO) protocol on
-the public NSL-KDD benchmark, detection of a held-out attack family collapses (e.g.\ DoS from
-\PH{det_seen_DoS} to \PH{det_unseen_DoS}); a confidence-based reject option recovers only part of the
-gap, and almost none when the attack mimics benign traffic (R2L), which a benign-only novelty detector
-also cannot cleanly separate---a \emph{structural} blind spot, not a tuning issue. The calibration
+are wrong---we propose no new detector. Under a controlled \emph{leave-one-family-out} (LOFO) protocol
+(hide one whole attack family during training, then test on it) on the public NSL-KDD benchmark,
+detection of that family collapses (e.g.\ DoS from \PH{det_seen_DoS} to \PH{det_unseen_DoS}); letting the
+model abstain recovers only part of the gap, and almost none when the attack mimics benign (normal)
+traffic (R2L), which a benign-only novelty detector (trained on normal traffic to flag the unusual) also
+cannot cleanly separate---a \emph{structural} blind spot, not a tuning issue. The calibration
 measurements support this picture: the three standard detectors are markedly over-confident under the
 benchmark's train--test shift (expected calibration error up to 0.22), post-hoc Platt scaling
 fitted on source data does not transfer, and split-conformal coverage falls from 0.93 to
@@ -126,10 +127,11 @@ this gap, and temperature/Platt scaling are common post-hoc fixes \cite{platt199
 analyses typically assume the evaluation data is drawn from the training distribution---an assumption
 that fails for intrusion detection.
 
-\textbf{Selective prediction.} A classifier with a reject option \cite{elyaniv2010selective} trades
-coverage for accuracy on what it does accept; the risk--coverage curve and its area
-\cite{geifman2017selective} quantify the trade-off. Maximum softmax/posterior probability is a strong
-baseline confidence score \cite{hendrycks2017baseline}.
+\textbf{Selective prediction.} A classifier with a \emph{reject option}~\cite{elyaniv2010selective}---it
+may decline to answer---trades coverage (the fraction of inputs it answers) for higher accuracy on what
+it does accept; the risk--coverage curve and its area \cite{geifman2017selective} quantify the
+trade-off. The model's highest class probability (its confidence) is a strong baseline
+score \cite{hendrycks2017baseline}.
 
 \textbf{ML for intrusion detection.} The limits of learned detectors---especially on novel attacks and
 under distribution shift---were argued early \cite{sommer2010outside} and remain a methodological
@@ -149,12 +151,13 @@ that the conclusions concern the \emph{evaluation} of detectors, not a new detec
 \textbf{Data.} NSL-KDD \cite{tavallaee2009nsl} provides \PH{n_train} training and \PH{n_test} test
 records with 41 features (three categorical) and a binary normal/attack label; each attack maps to one
 of four families (DoS, Probe, R2L, U2R). Its test split contains \PH{n_novel_types} attack \emph{types}
-(\PH{n_novel_rows} records) that never appear in training---a built-in open-set test. Numeric features
-are standardised and categorical features one-hot encoded; the encoder is fit on training data only.
+(\PH{n_novel_rows} records) that never appear in training---a built-in open-set test (the model must
+face attack kinds it never saw). Numeric features are standardised and categorical features one-hot
+encoded (turned into 0/1 indicator columns); the encoder is fit on training data only.
 
-\textbf{Models.} We use scikit-learn \cite{pedregosa2011scikit} logistic regression, a random forest,
-and histogram gradient boosting---deliberately standard detectors, since our subject is their
-confidence, not their architecture.
+\textbf{Models.} We use scikit-learn \cite{pedregosa2011scikit} logistic regression (a linear model), a
+random forest, and histogram gradient boosting (two ensembles of decision trees)---deliberately standard
+detectors, since our subject is their confidence, not their architecture.
 
 \textbf{Calibration.} For each model we report ECE (15 equal-width bins of the predicted class
 probability) before and after Platt scaling, the latter fitted on a 20\% held-out split of the

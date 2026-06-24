@@ -45,14 +45,15 @@
 \pagestyle{empty}
 
 \begin{abstract}
-We cryptanalyse a recently published image-encryption scheme that combines Lorenz/logistic chaotic
-maps with Fisher--Yates block shuffling (Jain \emph{et al.}, \emph{Optik}, 2025). We observe that the
+We break (cryptanalyse) a recently published image-encryption scheme that combines Lorenz/logistic
+chaotic maps with Fisher--Yates block shuffling (Jain \emph{et al.}, \emph{Optik}, 2025). We observe that the
 scheme's keystream and both permutations depend only on the secret key and never on the image, so the
 whole encryption is a fixed, plaintext-independent map. We reconstruct the cipher from its
 description---matching its reported near-ideal entropy (e.g.\ \PH{cam_ent_cipher} on the Cameraman
 image) and near-zero adjacent-pixel correlation---and then break it: an all-ones probe recovers the
-per-position keystream and a few index-digit probes recover the permutation, so an equivalent key is
-obtained in \PH{cam_cpt} chosen plaintexts and any ciphertext is decrypted pixel-exactly in
+per-position keystream and a few index-digit probes recover the permutation, so an equivalent key (a
+key-free decryptor for any image of this size) is obtained in \PH{cam_cpt} chosen plaintexts and any
+ciphertext is decrypted pixel-exactly in
 \PH{cam_attack_s}\,s without the key. We further show the scheme's headline differential metric is
 illusory: because it applies no plaintext diffusion, a one-pixel change alters exactly one ciphertext
 pixel, giving a true NPCR of \PH{cam_npcr1px}\,\% (i.e.\ 100/MN), not the reported 99.6\,\%
@@ -91,15 +92,16 @@ cryptanalysis side is that a large fraction of them succumb to the same structur
 a permutation--diffusion template: a confusion stage that rearranges pixels and a diffusion stage that
 masks pixel values with a chaotic keystream. When that keystream is a function of the secret key alone
 and not of the image, the entire cipher collapses to a \emph{fixed} permutation--substitution map,
-and an \emph{equivalent key}---a representation that decrypts every ciphertext under the same secret
-key---can be recovered from a handful of chosen
-plaintexts~\cite{li2019attacker,li2018entropy,arroyo2009,li2011optimal}. The defence is equally
+and an \emph{equivalent key}---a stand-in that decrypts every ciphertext under the same secret key,
+without being the key itself---can be recovered from a handful of chosen plaintexts (input images the
+attacker picks and has encrypted)~\cite{li2019attacker,li2018entropy,arroyo2009,li2011optimal}. The defence is equally
 well known: the keystream must depend on the plaintext, and the cipher must actually
 diffuse~\cite{alvarez2006}.
 
 A second, persistent problem is methodological. Authors validate schemes with statistical scores---%
-Shannon entropy, adjacent-pixel correlation, and the differential metrics NPCR and UACI---and treat
-near-ideal values as evidence of security. None of these scores measures resistance to a
+Shannon entropy (a measure of randomness), adjacent-pixel correlation (how alike neighbouring pixels
+are), and the differential metrics NPCR and UACI (how much the output changes when one input pixel
+changes)---and treat near-ideal values as evidence of security. None of these scores measures resistance to a
 chosen-plaintext attack, and, as we show, all of them can be near-ideal for a cipher that is broken in
 seconds.
 
@@ -108,7 +110,8 @@ from the Lorenz~\cite{lorenz1963} and logistic maps with Fisher--Yates block shu
 (Fig.~\ref{fig:schema}). Our contributions are:
 \begin{itemize}
 \item We identify that LLEO is entirely key-driven and therefore a fixed monomial map over
-$\mathbb{Z}_{256}$ (Section~\ref{sec:target}--\ref{sec:crypt}).
+$\mathbb{Z}_{256}$---each output pixel is one input pixel times a fixed multiplier, with all arithmetic
+taken modulo 256 (wrapping around like a clock) (Section~\ref{sec:target}--\ref{sec:crypt}).
 \item We give an equivalent-key chosen-plaintext attack that recovers the full map in
 $1+\lceil\log_{256} MN\rceil$ chosen plaintexts---\PH{cam_cpt} for a $512\times512$ image---and
 decrypts any image pixel-exactly without the key (Section~\ref{sec:crypt}).
@@ -160,7 +163,8 @@ eight even strips with a keystream $k_{\mathrm{lor}}$ produced by the Lorenz sys
 $\dot x=\sigma(y-x),\ \dot y=x(\rho-z)-y,\ \dot z=xy-\beta z$, through an invertible per-position
 operation; decryption uses the modular ``conjugate'' of the keystream, i.e.\ a multiplicative inverse.
 
-\emph{(2) Permutation 1.} The 16 horizontal strips are reordered by a Fisher--Yates shuffle.
+\emph{(2) Permutation 1.} The 16 horizontal strips are reordered by a Fisher--Yates shuffle (a
+standard method for randomly reordering a list).
 
 \emph{(3) Permutation 2.} The result is divided into 16 vertical strips and shuffled again, giving the
 ciphertext.
@@ -172,9 +176,10 @@ seeded from it; \emph{no quantity depends on the image $X$}. Although the scheme
 
 \section{Cryptanalysis}\label{sec:crypt}
 \subsection{Threat model}
-We work in the standard chosen-plaintext setting under Kerckhoffs's principle: the attacker knows the
-algorithm, has oracle access to encryption under a fixed unknown key, and seeks an \emph{equivalent
-key}---a procedure that decrypts any ciphertext of the probed size---not the chaotic secret seed itself.
+We work in the standard chosen-plaintext setting under Kerckhoffs's principle (the attacker knows the
+algorithm; only the key is secret): the attacker can obtain the ciphertext of any image it chooses under
+a fixed unknown key, and seeks an \emph{equivalent key}---a procedure that decrypts any ciphertext of
+the probed size---not the chaotic secret seed itself.
 Because the cipher is plaintext-independent, the same equivalent key also follows from enough known
 plaintext--ciphertext pairs~\cite{zhang2018improved}; we present the chosen-plaintext version as it is
 minimal.
@@ -374,7 +379,8 @@ images, which for LLEO is \PH{npcr_unrelated}\,\% (Fig.~\ref{fig:diffusion}, cen
 any cipher with a near-uniform
 output and says nothing about chosen-plaintext security. Table~\ref{tab:claims} contrasts each claimed
 property with what the cipher actually provides. Finally, the chaotic keystreams are themselves
-non-uniform (Fig.~\ref{fig:keystream}): a chi-square test rejects uniformity for the logistic keystream
+non-uniform (Fig.~\ref{fig:keystream}): a chi-square test (a standard check for whether values are
+evenly spread) rejects uniformity for the logistic keystream
 ($\chi^2=\PH{chi2_logistic}$, $p<10^{-300}$, numerically zero).
 
 \begin{figure}[t]
