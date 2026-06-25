@@ -55,9 +55,10 @@ miscalibrated under train--test shift and no post-hoc calibrator (Platt, isotoni
 whereas on two modern flow corpora (CIC-IDS-2017/2018) the same task is well calibrated (ECE and Brier
 agree). (ii) \emph{The blind spot is an operating-point failure}, not a representational one---the
 artifact above; we grade it, cleanest for the strongly scored R2L and weaker for the only-moderately-scored
-Infiltration. (iii) \emph{The operating point is the lever, not added machinery}: a budget-tuned threshold
-recovers most of what argmax misses, while an abstention/novelty stack gives no gain at matched analyst
-cost (three budgets, two corpora; bootstrap CI on the gap). Selective prediction cuts selective risk at
+Infiltration. (iii) \emph{The operating point is the lever, not added machinery.} On unknown R2L a
+budget-tuned threshold lifts recall from \PH{comb_recall_argmax} at argmax to \PH{comb_recall_tuned} at
+matched analyst cost, recovering most of what argmax misses. An added abstention/novelty stack gives no
+further gain at that cost. This holds across three review budgets and two corpora. Selective prediction cuts selective risk at
 fixed coverage, but only for models whose confidence ranks errors (tree ensembles, not logistic
 regression). We also flag that fixed-partition confidence intervals understate uncertainty---resampling
 the evaluation distribution widens them severalfold. Selective prediction is a cheap, model-agnostic
@@ -270,6 +271,11 @@ false-positive rate recovers \PH{r2l_recall_fpr10}. So R2L is the hardest family
 benign-mimicking family, not a representational dead end. This corrects an over-strong ``structural blind
 spot'' reading; the blind spot is real but it lives in the decision threshold.
 
+In plain terms: the detector can in fact tell this family from benign traffic---sort every record by its
+attack score and the family piles up near the top. The trouble is the single cut-off applied to everyone.
+It sits just above where this minority family lands, so almost all of them fall on the benign side even
+though the ordering was right. Move the cut-off for that family, and most come back.
+
 The same lens deflates ``detection collapse.'' Threshold-free, holding a family out of training costs
 little AUROC---DoS \PH{pf_auroc_seen_DoS}$\to$\PH{pf_auroc_unk_DoS} (a drop of \PH{pf_auroc_delta_DoS}),
 Probe \PH{pf_auroc_delta_Probe}, R2L \PH{pf_auroc_delta_R2L} (Table~\ref{tab:perfam})---even though
@@ -399,8 +405,10 @@ discriminable---most cleanly when that score is strong (R2L), less so when it is
 
 \begin{table}[t]
 \centering
-\caption{CIC-IDS-2017: replication (random split) and cross-day drift (train Friday, test Thursday).
-Means over $K{=}5$ seeds; 95\% CI half-width $\le\PH{cic_maxhw}$.}
+\caption{On a modern corpus the same task is near-perfectly calibrated (gradient boosting ECE
+\PH{cic_histgb_ece}), and abstention rejects \PH{cic_drift_reject_web} of the unknown Web family under
+cross-day drift. CIC-IDS-2017, random split and cross-day (train Friday, test Thursday); means over
+$K{=}5$ seeds, 95\% CI half-width $\le\PH{cic_maxhw}$.}
 \label{tab:cic}
 \begin{tabular}{lcccc}
 \toprule
@@ -469,11 +477,11 @@ budgets on both unknown R2L and cross-corpus Infiltration, with the same conclus
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.82\columnwidth]{figures/combined_pipeline.pdf}
-\caption{The operational recipe, re-baselined. On unknown (held-out) R2L at a matched analyst review
-budget, the argmax default is blind (\PH{comb_recall_argmax}); a single threshold \emph{tuned} to that
-budget recovers \PH{comb_recall_tuned}, which the full stack (argmax\,+\,abstention\,+\,novelty) does not
-beat (\PH{comb_recall_union}). Dashed line: the matched review load. The lever is the operating point,
-not the gates. Means over $K{=}6$ seeds, 95\% CIs.}
+\caption{\textbf{The paper's central negative result in one view.} On unknown (held-out) R2L at matched
+analyst cost, a single budget-tuned threshold recovers \PH{comb_recall_tuned} of the family---which the
+full abstention$+$novelty stack does not beat (\PH{comb_recall_union}); argmax alone is blind
+(\PH{comb_recall_argmax}). The operating point is the lever, not the gates. Means over $K{=}6$ seeds,
+95\% CIs; dashed line: the matched review load.}
 \label{fig:combined}
 \end{figure}
 

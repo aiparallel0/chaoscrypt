@@ -126,8 +126,10 @@ def _figure(flat: dict) -> None:
             f"matched review load {flat['comb_review']:.2f}", ha="right", va="bottom",
             fontsize=6.5, color=ps.C["vermillion"])
     ax.set_xticks(x); ax.set_xticklabels([s for s, _, _ in bars], fontsize=7)
-    ax.set_ylim(0, max(vals) * 1.25 + 0.05); ax.set_ylabel(f"recall on unknown {flat['comb_target']}")
+    ax.set_ylim(0, max(vals) * 1.32 + 0.05); ax.set_ylabel(f"recall on unknown {flat['comb_target']}")
     ax.grid(axis="x", visible=False)
+    ax.set_title("the tuned threshold recovers what the stack can't,\nat equal analyst cost",
+                 fontsize=8, fontweight="bold")
     fig.tight_layout(); fig.savefig(FIG / "combined_pipeline.pdf"); plt.close(fig)
 
 

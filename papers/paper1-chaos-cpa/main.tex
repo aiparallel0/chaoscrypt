@@ -49,36 +49,30 @@
 \pagestyle{empty}
 
 \begin{abstract}
-A 2025 chaos-based image cipher (Jain \emph{et al.}, \emph{Optik}; Lorenz/logistic maps with
-Fisher--Yates block shuffling, ``LLEO'') is completely broken: from \PH{cam_cpt} chosen plaintexts we
-recover a key-free decryptor for any $512{\times}512$ image and decrypt any ciphertext pixel-exactly in
-\PH{cam_attack_s}\,s, despite the scheme's near-ideal entropy (\PH{cam_ent_cipher}) and reported
-$99.6\%$ NPCR. The cause is structural: LLEO's keystream and both permutations depend only on the secret
-key, never on the image, so the whole cipher is a fixed, plaintext-independent map. We reconstruct it from
-its description (matching the reported entropy and near-zero pixel correlation), recover the per-position
-keystream with an all-ones probe and the permutation with $\lceil\log_{256}n\rceil$ index-digit probes,
-and show its headline differential metric is illusory: with no plaintext diffusion a one-pixel change
-alters exactly one ciphertext pixel, a \emph{true} NPCR of \PH{cam_npcr1px}\,\% ($100/MN$), not the
-reported $99.6\%$ (which is merely the difference between unrelated images, \PH{npcr_unrelated}\,\%).
+Good statistics are not security. A 2025 chaos-based image cipher (Jain \emph{et al.}, \emph{Optik};
+Lorenz/logistic maps with Fisher--Yates block shuffling, ``LLEO'') reports near-ideal entropy
+(\PH{cam_ent_cipher}) and a $99.6\%$ NPCR, yet we break it completely. From \PH{cam_cpt} chosen plaintexts
+we recover a key-free decryptor for any $512{\times}512$ image and decrypt any ciphertext pixel-exactly in
+\PH{cam_attack_s}\,s. The cause is structural: LLEO's keystream and both permutations depend only on the
+secret key, never on the image, so the whole cipher is one fixed map. Its headline differential metric is
+an illusion. With no plaintext diffusion, a one-pixel change alters exactly one ciphertext pixel, so the
+\emph{true} NPCR is \PH{cam_npcr1px}\,\% ($100/MN$), not $99.6\%$. The reported figure is merely the
+difference between unrelated images (\PH{npcr_unrelated}\,\%).
 
-This break stands on the real construction. We then ask how far it generalizes by distilling it into a
-black-box \emph{structural oracle} that, given only chosen-image encryption access, decides whether a
-cipher is a fixed plaintext-independent map and recovers an equivalent key, certifying each verdict by
-predicting held-out ciphertext (we prove the certificate sound). On a corpus of \PH{oracle_n_schemes}
-structural archetypes it breaks all \PH{oracle_n_keyonly_broken} fully key-only constructions in at most
-\PH{oracle_max_queries} chosen plaintexts, clears the \PH{oracle_n_bound_resist} that bind the keystream
-to the plaintext or a nonce, and degrades gracefully on a sixth, non-invertible key-only variant (the
-deliberate boundary); on \PH{pub_n_real} \emph{real} published 2023--2025 schemes
-(reconstructed from their equations, and shown to reproduce the originals' reported entropy and NPCR) it
-breaks the one key-only design and clears three that seed the keystream from the plaintext. Breaking the
-key-only scheme---an XOR keystream under a per-pixel cellular-automata stage---needed a GF(2)-affine
-(\emph{bitlinear}) extension of the recovery, sound and leaving every prior verdict unchanged. The oracle
-covers affine, monomial, XOR, and bit-level substitution families; a key-only but genuinely nonlinear byte
-S-box stays structurally broken yet outside this logarithmic-query regime. Finally we grade the binary
-verdict with a \emph{plaintext-keying capacity} $\beta$---the bits of plaintext entropy that key the
-cipher map, estimated black-box as a collision rate---which separates a fragile $256$-way scalar
-($\beta{=}\PH{beta_miea}$) from genuine SHA-256 binding ($\beta\!\ge\!\PH{beta_li}$), the two schemes the
-avalanche and recoverability signals could not tell apart. We close with the standard fixes.
+This break stands on the real construction. We then ask how far it reaches, distilling the attack into a
+black-box \emph{structural oracle} that decides plaintext-independence and recovers an equivalent key,
+certifying each verdict against held-out ciphertext (we prove the certificate sound). On
+\PH{oracle_n_schemes} structural archetypes it breaks all \PH{oracle_n_keyonly_broken} fully key-only
+ciphers in at most \PH{oracle_max_queries} chosen plaintexts and clears the \PH{oracle_n_bound_resist}
+bound to the plaintext or a nonce; a sixth, non-invertible variant degrades gracefully, the deliberate
+boundary. On \PH{pub_n_real} real published 2023--2025 schemes, reconstructed from their papers, it breaks
+the one key-only design and clears three that seed the keystream from the plaintext. Breaking that
+design---an XOR keystream under a per-pixel cellular-automata stage---needed a GF(2)-affine
+(\emph{bitlinear}) extension, which we prove sound. Finally we grade the verdict with a
+\emph{plaintext-keying capacity} $\beta$, the bits of plaintext entropy that key the map. Estimated
+black-box as a collision rate, $\beta$ separates a fragile $256$-way scalar ($\beta{=}\PH{beta_miea}$) from
+genuine SHA-256 binding ($\beta\!\ge\!\PH{beta_li}$)---the two schemes the avalanche and recoverability
+signals could not tell apart. We close with the standard fixes.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -161,8 +155,9 @@ key-free recoveries, each bit-identical to the original and obtained in \PH{cam_
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.92\textwidth]{figures/break_grid.pdf}
-\caption{LLEO original, ciphertext, and key-free recovery for four standard $512\times512$ images. Each
-recovery uses only \PH{cam_cpt} chosen plaintexts and no key, and is bit-identical to the original.}
+\caption{The whole break in one view: four standard $512\times512$ images, their LLEO ciphertexts, and our
+key-free recoveries---each bit-identical to the original, from \PH{cam_cpt} chosen plaintexts in
+\PH{cam_attack_s}\,s, without the key.}
 \label{fig:break}
 \end{figure*}
 
@@ -230,7 +225,7 @@ Because the cipher is plaintext-independent, the same equivalent key also follow
 plaintext--ciphertext pairs~\cite{zhang2018improved}; we present the chosen-plaintext version as it is
 minimal.
 
-\subsection{Structural observation}
+\subsection{The whole cipher is one fixed map}
 Index the image as a length-$n$ vector, $n=MN$. Each LLEO step is linear over $\mathbb{Z}_{256}$ and
 fixed by the key: substitution multiplies coordinate $p$ by a fixed unit $K[p]$ (odd, hence invertible
 mod 256), and the two block shuffles compose into one position permutation $P$. Therefore
@@ -280,8 +275,14 @@ with $b=E(\mathbf{0})$: the all-zeros query returns $b$ and the index-digit quer
 as in the CBC-like XOR cipher we break in Section~\ref{sec:oracle}.
 \end{proof}
 
-\subsection{Equivalent-key recovery}
-Because $K$ and $s$ are fixed, two kinds of chosen plaintext suffice.
+\subsection{Four images recover the full map}
+In plain terms: because nothing in the cipher depends on the picture, it always does the same two
+things---shuffle the pixel positions in one fixed way, and multiply each pixel by one fixed number. So
+feed it an all-ones image and it hands back the multipliers; feed it images whose pixels carry their own
+position numbers and it hands back the shuffle. About four such images, and the cipher is undone forever,
+without ever learning the key.
+
+Formally, because $K$ and $s$ are fixed, two kinds of chosen plaintext suffice.
 
 \emph{(a) Multiplier, one query.} Encrypting the all-ones image $\mathbf{1}$ gives, by
 \eqref{eq:monomial}, $C[j]=K[s(j)]\cdot 1=K[s(j)]$: the exact multiplier acting at every output
@@ -401,7 +402,8 @@ under a second. The key length the scheme advertises does not enter this cost.
 
 \begin{table}[t]
 \centering
-\caption{Attack cost vs.\ image size (random plaintext, single core).}
+\caption{Cost barely grows with image size: \PH{scale1024_cpt} chosen plaintexts still suffice at
+$1024{\times}1024$, each inverted in \PH{scale1024_s}\,s (random plaintext, single core).}
 \label{tab:scale}
 \begin{tabular}{lccc}
 \toprule
@@ -861,7 +863,7 @@ camera-ready. Our reproduction and attack code is available at \coderepo.
 \section{Conclusion}
 A 2025 chaos-based image cipher is completely broken by an equivalent-key chosen-plaintext attack in
 \PH{cam_cpt} chosen plaintexts and a fraction of a second, despite near-ideal entropy and a reported
-NPCR of $\approx$99.6\,\%. The break follows directly from the cipher being key-only; its differential
+NPCR of $\approx$99.6\,\%: good statistics are not security. The break follows directly from the cipher being key-only; its differential
 metric, measured correctly, is \PH{cam_npcr1px}\,\%. We recommend plaintext-dependent keystreams and
 real diffusion, and that statistical scores accompany---rather than replace---an explicit
 chosen-plaintext security argument. More broadly, the attack generalizes into a reusable structural audit

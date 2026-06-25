@@ -151,7 +151,11 @@ def main() -> None:
                 ax[r, c].set_title(labels[nm], fontsize=13)
     for r, lab in enumerate(rows):
         ax[r, 0].set_ylabel(lab, fontsize=13)
-    plt.tight_layout(); plt.savefig(FIG / "break_grid.pdf"); plt.close()
+    plt.tight_layout(rect=[0, 0.05, 1, 1])               # leave room for the on-figure punchline banner
+    fig.text(0.5, 0.018, f"{flat['cam_cpt']} chosen plaintexts   ·   {flat['cam_attack_s']} s   "
+             f"·   no key   ·   bit-identical recovery", ha="center", va="bottom", fontsize=15,
+             fontweight="bold")
+    plt.savefig(FIG / "break_grid.pdf"); plt.close()
     img, E2d, rec2d = store["cam"]  # Cameraman, for the histogram/correlation figures below
 
     # Figure 2: cipher histogram vs the uniform ideal (Cameraman)
