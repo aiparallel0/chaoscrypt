@@ -24,7 +24,7 @@
 \geometry{a4paper, top=2cm, bottom=2.5cm, left=1.6cm, right=1.6cm}
 % Code repository link. Replace the placeholder with an anonymized mirror (e.g. anonymous.4open.science)
 % for double-blind review, or the public repo URL otherwise, BEFORE submitting.
-\newcommand{\coderepo}{\texttt{[anonymized code repository URL---insert before submission]}}
+\newcommand{\coderepo}{\texttt{[anonymized code repository URL; insert before submission]}}
 \setlength{\parskip}{6pt}
 \setlength{\floatsep}{0pt}
 \setlength{\textfloatsep}{6pt}
@@ -51,7 +51,7 @@
 \begin{abstract}
 Chaos-based image ciphers are published at a high rate, and are validated almost entirely by statistical
 scores. Errors in that validation propagate: a cipher that scores well but protects an image badly can
-expose the data it was meant to hide---medical scans, identity documents, surveillance frames---long
+expose the data it was meant to hide (medical scans, identity documents, surveillance frames) long
 before anyone audits the math. Authors report near-ideal Shannon entropy, near-zero adjacent-pixel
 correlation, and a near-perfect NPCR (how much the output changes when one input pixel changes), and treat
 these as evidence of security; none measures resistance to a chosen-plaintext attack, the setting in which
@@ -67,13 +67,13 @@ certificate sound). On \PH{oracle_n_schemes} structural archetypes it breaks all
 fully key-only ciphers in at most \PH{oracle_max_queries} chosen plaintexts and clears the
 \PH{oracle_n_bound_resist} bound to the plaintext or a nonce; a non-invertible variant degrades gracefully,
 the deliberate boundary. On \PH{pub_n_real} real published 2023--2025 schemes, reconstructed from their
-papers, it breaks the one key-only design and clears three that seed the keystream from the plaintext---one
+papers, it breaks the one key-only design and clears three that seed the keystream from the plaintext, one
 break needing a GF(2)-affine (\emph{bitlinear}) extension we prove sound. LLEO's headline differential
 metric is then an illusion: with no plaintext diffusion a one-pixel change alters exactly one ciphertext
-pixel, so the \emph{true} NPCR is \PH{cam_npcr1px}\,\% ($100/MN$), not $99.6\%$---the reported figure is
+pixel, so the \emph{true} NPCR is \PH{cam_npcr1px}\,\% ($100/MN$), not $99.6\%$; the reported figure is
 merely the difference between unrelated images (\PH{npcr_unrelated}\,\%). Finally, a \emph{plaintext-keying
 capacity} $\beta$, estimated black-box as a collision rate, separates a fragile $256$-way scalar
-($\beta{=}\PH{beta_miea}$) from genuine SHA-256 binding ($\beta\!\ge\!\PH{beta_li}$)---the two schemes the
+($\beta{=}\PH{beta_miea}$) from genuine SHA-256 binding ($\beta\!\ge\!\PH{beta_li}$), the two schemes the
 avalanche and recoverability signals could not tell apart. Good statistics are not security.
 \end{abstract}
 
@@ -108,24 +108,24 @@ cryptanalysis side is that a large fraction of them succumb to the same structur
 a permutation--diffusion template: a confusion stage that rearranges pixels and a diffusion stage that
 masks pixel values with a chaotic keystream. When that keystream is a function of the secret key alone
 and not of the image, the entire cipher collapses to a \emph{fixed} permutation--substitution map,
-and an \emph{equivalent key}---a stand-in that decrypts every ciphertext under the same secret key,
-without being the key itself---can be recovered from a handful of chosen plaintexts (input images the
+and an \emph{equivalent key} (a stand-in that decrypts every ciphertext under the same secret key,
+without being the key itself) can be recovered from a handful of chosen plaintexts (input images the
 attacker picks and has encrypted)~\cite{li2019attacker,li2018entropy,arroyo2009,li2011optimal}. The defence is equally
 well known: the keystream must depend on the plaintext, and the cipher must actually
 diffuse~\cite{alvarez2006}.
 
-A second, persistent problem is methodological. Authors validate schemes with statistical scores---%
+A second, persistent problem is methodological. Authors validate schemes with statistical scores:
 Shannon entropy (a measure of randomness), adjacent-pixel correlation (how alike neighbouring pixels
 are), and the differential metrics NPCR and UACI (how much the output changes when one input pixel
-changes)---and treat near-ideal values as evidence of security. None of these scores measures resistance to a
+changes), and treat near-ideal values as evidence of security. None of these scores measures resistance to a
 chosen-plaintext attack, and, as we show, all of them can be near-ideal for a cipher that is broken in
 seconds.
 
-\emph{Why this matters operationally.} Image ciphers sit upstream of real decisions---protected medical
+\emph{Why this matters operationally.} Image ciphers sit upstream of real decisions: protected medical
 imaging, sealed evidence, access-controlled documents. A break is therefore not a per-image accuracy loss
 but a standing capability to decrypt every future ciphertext of the probed size, and a security argument
 should rest on an attack model, not a statistics table. The quantity that matters is not how noise-like a
-single ciphertext looks but whether \emph{any} value in the cipher depends on the image---the one binary
+single ciphertext looks but whether \emph{any} value in the cipher depends on the image, the one binary
 property that separates ``broken in \PH{cam_cpt} queries'' from ``resists.''
 
 This paper applies both lessons to a 2025 scheme~\cite{jain2025lleo} (which we abbreviate LLEO) built
@@ -133,10 +133,10 @@ from the Lorenz~\cite{lorenz1963} and logistic maps with Fisher--Yates block shu
 (Fig.~\ref{fig:schema}). Our contributions are:
 \begin{itemize}
 \item We identify that LLEO is entirely key-driven and therefore a fixed monomial map over
-$\mathbb{Z}_{256}$---each output pixel is one input pixel times a fixed multiplier, with all arithmetic
+$\mathbb{Z}_{256}$: each output pixel is one input pixel times a fixed multiplier, with all arithmetic
 taken modulo 256 (wrapping around like a clock) (Section~\ref{sec:target}--\ref{sec:crypt}).
 \item We give an equivalent-key chosen-plaintext attack that recovers the full map in
-$1+\lceil\log_{256} MN\rceil$ chosen plaintexts---\PH{cam_cpt} for a $512\times512$ image---and
+$1+\lceil\log_{256} MN\rceil$ chosen plaintexts (\PH{cam_cpt} for a $512\times512$ image) and
 decrypts any image pixel-exactly without the key (Section~\ref{sec:crypt}).
 \item We reproduce LLEO, confirm it matches the paper's reported statistics, and then show those
 statistics coexist with \emph{zero} plaintext diffusion: the true one-pixel NPCR is
@@ -145,13 +145,13 @@ statistics coexist with \emph{zero} plaintext diffusion: the true one-pixel NPCR
 decides plaintext-independence for any cipher, with a held-out certificate we prove sound
 (Proposition~\ref{prop:certificate}). It recovers an equivalent key from every key-only archetype and
 clears those that bind the keystream to the image or a nonce; on \PH{pub_n_real} \emph{real} published
-2023--2025 schemes---\emph{reconstructed from their papers}, and weighted accordingly---it breaks the one
+2023--2025 schemes (\emph{reconstructed from their papers}, and weighted accordingly) it breaks the one
 key-only design and clears three plaintext-bound ones (the LLEO break alone rests on the validated real
-construction; Section~\ref{sec:oracle}, Table~\ref{tab:published}). Breaking a real bit-level cipher required---and
-motivated---a GF(2)-affine extension of the recovery that widens its reach while leaving every prior
+construction; Section~\ref{sec:oracle}, Table~\ref{tab:published}). Breaking a real bit-level cipher required, and
+motivated, a GF(2)-affine extension of the recovery that widens its reach while leaving every prior
 verdict intact.
 \item We upgrade the binary verdict into a graded one with \emph{plaintext-keying capacity}
-$\beta=\log_2 N_{\mathrm{eff}}$---the bits of plaintext entropy that key the cipher map---estimated
+$\beta=\log_2 N_{\mathrm{eff}}$, the bits of plaintext entropy that key the cipher map, estimated
 black-box as a collision rate (a corollary of our certificate). $\beta$ resolves the audit's own blind
 spot: the two real schemes its avalanche/recoverability signals could not tell apart now separate, a
 fragile $256$-way scalar ($\beta{=}\PH{beta_miea}$) from genuine SHA-256 binding ($\beta\!\ge\!\PH{beta_li}$),
@@ -165,7 +165,7 @@ key-free recoveries, each bit-identical to the original and obtained in \PH{cam_
 \centering
 \includegraphics[width=0.92\textwidth]{figures/break_grid.pdf}
 \caption{The whole break in one view: four standard $512\times512$ images, their LLEO ciphertexts, and our
-key-free recoveries---each bit-identical to the original, from \PH{cam_cpt} chosen plaintexts in
+key-free recoveries: each bit-identical to the original, from \PH{cam_cpt} chosen plaintexts in
 \PH{scale512_s}\,s, without the key. Rendered in a perceptual colour map for legibility; the underlying
 images and every reported statistic are grayscale.}
 \label{fig:break}
@@ -178,7 +178,7 @@ keystream; Li \emph{et al.}~\cite{li2018entropy} recovered an equivalent key for
 cipher; and the survey of Li \emph{et al.}~\cite{li2019attacker} catalogues a year of such breaks,
 nearly all exploiting plaintext-independent diffusion. For the confusion stage alone, Li and
 Lo~\cite{li2011optimal} established the optimal number of known/chosen plaintexts needed to invert a
-permutation-only multimedia cipher, of order $\log_{L} (MN)$ for $L$ intensity levels---the same
+permutation-only multimedia cipher, of order $\log_{L} (MN)$ for $L$ intensity levels, the same
 logarithmic regime our attack achieves; the general quantitative theory of permutation-only
 cryptanalysis~\cite{Li2008general} bounds this effort, and recent chosen-plaintext breaks continue to
 recover equivalent keys from a handful of images~\cite{Ma2020cryptanalysis,Zhao2025cryptanalysis},
@@ -186,17 +186,17 @@ confirming the vulnerability remains a live concern. Alvarez and Li~\cite{alvare
 for chaos-based cryptosystems, including plaintext-dependent keystreams and sensitivity to the
 plaintext; LLEO violates these. The differential metrics we scrutinise were standardised by Wu
 \emph{et al.}~\cite{wu2011npcr}, who also note that NPCR/UACI quantify sensitivity to a one-pixel
-plaintext change---precisely the quantity LLEO fails to deliver despite its reported value.
+plaintext change, precisely the quantity LLEO fails to deliver despite its reported value.
 
 The pattern is structural, not incidental: when both confusion and diffusion are fixed by the key the
-cipher is---as a function of the plaintext---an affine or monomial map, and composing more such stages
+cipher is, as a function of the plaintext, an affine or monomial map, and composing more such stages
 changes only its coefficients~\cite{li2019attacker,li2011optimal}. The decisive question is binary: does
 any key material depend on the image? Schemes that answer ``no'' (LLEO included) fall to an equivalent
-key, while those that bind the keystream to a per-image value resist---both sides of which our positive
+key, while those that bind the keystream to a per-image value resist, both sides of which our positive
 control demonstrates on the same construction (Section~\ref{sec:results}).
 
-\emph{What is new here.} Prior equivalent-key cryptanalyses---Arroyo \emph{et al.}~\cite{arroyo2009}, Li
-\emph{et al.}~\cite{li2018entropy,li2019attacker}---break one named scheme at a time by hand, each analysis
+\emph{What is new here.} Prior equivalent-key cryptanalyses (Arroyo \emph{et al.}~\cite{arroyo2009}, Li
+\emph{et al.}~\cite{li2018entropy,li2019attacker}) break one named scheme at a time by hand, each analysis
 bespoke to its target. Our contribution is not another single break but its \emph{automation}: a black-box
 decision procedure that, knowing nothing of a cipher's internals, identifies the position-wise algebra
 (affine, XOR, or GF(2)-affine), recovers an equivalent key, and issues a held-out certificate we prove
@@ -229,8 +229,8 @@ seeded from it; \emph{no quantity depends on the image $X$}. Although the scheme
 \subsection{Threat model}
 We work in the standard chosen-plaintext setting under Kerckhoffs's principle (the attacker knows the
 algorithm; only the key is secret): the attacker can obtain the ciphertext of any image it chooses under
-a fixed unknown key, and seeks an \emph{equivalent key}---a procedure that decrypts any ciphertext of
-the probed size---not the chaotic secret seed itself.
+a fixed unknown key, and seeks an \emph{equivalent key}, a procedure that decrypts any ciphertext of
+the probed size, not the chaotic secret seed itself.
 Because the cipher is plaintext-independent, the same equivalent key also follows from enough known
 plaintext--ciphertext pairs~\cite{zhang2018improved}; we present the chosen-plaintext version as it is
 minimal.
@@ -245,7 +245,7 @@ C[j] \;=\; K[s(j)]\cdot X[s(j)] \pmod{256},\qquad s=P^{-1},
 a fixed \emph{monomial} map: every ciphertext pixel is a single plaintext pixel scaled by a fixed unit
 and relocated. Two consequences are immediate. There is no additive constant, since
 $E(\mathbf{0})=\mathbf{0}$. And there is no diffusion: $C[j]$ depends on exactly one input coordinate
-$s(j)$---so a one-pixel plaintext change alters exactly one ciphertext pixel, which we exploit in
+$s(j)$, so a one-pixel plaintext change alters exactly one ciphertext pixel, which we exploit in
 Section~\ref{sec:results} and visualize in Fig.~\ref{fig:diffusion}.
 
 \begin{figure}[t]
@@ -254,11 +254,11 @@ Section~\ref{sec:results} and visualize in Fig.~\ref{fig:diffusion}.
 \caption{The no-diffusion property, made visible (used quantitatively in Section~\ref{sec:results}): the
 absolute ciphertext difference $|C_0-C_1|$ (dark ${=}$ unchanged, bright ${=}$ changed), under one fixed
 key. \textbf{(left)} A one-pixel plaintext change alters \emph{exactly one} ciphertext pixel
-(ringed)---no diffusion---so the true one-pixel NPCR is $100/MN\approx\PH{cam_npcr1px}\,\%$, not the
+(ringed), no diffusion, so the true one-pixel NPCR is $100/MN\approx\PH{cam_npcr1px}\,\%$, not the
 reported ${\approx}99.6\,\%$. \textbf{(centre)} That ${\approx}99.6\,\%$ is really the difference between
 two \emph{unrelated} images (here \PH{npcr_unrelated}\,\%), which any near-uniform cipher attains.
 \textbf{(right)} Seeding the keystream from SHA-256 of the plaintext diffuses the \emph{same} one-pixel
-change into full noise---what a one-pixel NPCR should measure.}
+change into full noise, what a one-pixel NPCR should measure.}
 \label{fig:diffusion}
 \end{figure}
 
@@ -273,7 +273,7 @@ substitution at every output position, and $\lceil\log_{256}n\rceil$ index-digit
 permutation $s$.
 \end{proposition}
 \begin{proof}[Proof sketch]
-Each stage---multiplication by the key-derived $K$ and the two block shuffles---is a fixed function of
+Each stage, multiplication by the key-derived $K$ and the two block shuffles, is a fixed function of
 the key applied to pixel values or positions, so any composition is a fixed key-only map; over
 $\mathbb{Z}_{256}$ this is the monomial \eqref{eq:monomial}. The keystream is forced odd, so $K[p]$ is a
 unit and $x\mapsto K[p]\,x$ is a bijection with inverse $K[p]^{-1}$. Querying $X=\mathbf{1}$ gives
@@ -287,7 +287,7 @@ as in the CBC-like XOR cipher we break in Section~\ref{sec:oracle}.
 
 \subsection{Four images recover the full map}
 In plain terms: because nothing in the cipher depends on the picture, it always does the same two
-things---shuffle the pixel positions in one fixed way, and multiply each pixel by one fixed number. So
+things: shuffle the pixel positions in one fixed way, and multiply each pixel by one fixed number. So
 feed it an all-ones image and it hands back the multipliers; feed it images whose pixels carry their own
 position numbers and it hands back the shuffle. About four such images, and the cipher is undone forever,
 without ever learning the key.
@@ -310,11 +310,11 @@ $X[s(j)] = K[s(j)]^{-1}\,C[j]$. The total cost is
 \end{equation}
 i.e.\ \PH{cam_cpt} for a $512\times512$ image, independent of the nominal key length.
 
-Concretely, a $512\times512$ image needs four queries---one all-ones image and three index-digit
-images---after which Algorithm~\ref{alg:attack} returns the full map in a single pass.
+Concretely, a $512\times512$ image needs four queries, one all-ones image and three index-digit
+images, after which Algorithm~\ref{alg:attack} returns the full map in a single pass.
 Table~\ref{tab:complexity} states the complexity and compares it to the optimal permutation-only bound
 of Li and Lo~\cite{li2011optimal}: our query count is order-optimal and the cost is independent of the
-cipher's nominal key length, so the advertised keyspace is irrelevant---the equivalent key bypasses key
+cipher's nominal key length, so the advertised keyspace is irrelevant; the equivalent key bypasses key
 recovery entirely~\cite{Jolfaei2016permutation}.
 
 \begin{algorithm}[t]
@@ -374,7 +374,7 @@ cipher looks strong.
 \centering
 \includegraphics[width=0.95\columnwidth]{figures/correlation_scatter.pdf}
 \caption{Adjacent-pixel correlation as a hexbin density (every horizontal pixel pair, log counts): the
-plain image concentrates on the diagonal---neighbours are alike---while the LLEO cipher fills the plane
+plain image concentrates on the diagonal (neighbours are alike) while the LLEO cipher fills the plane
 uniformly (Cameraman).}
 \label{fig:corr}
 \end{figure}
@@ -432,7 +432,7 @@ $1024\times1024$ & \PH{scale1024_cpt} & \PH{scale1024_s} & exact \\
 LLEO reports NPCR $\approx$99.6\,\% as evidence of differential-attack resistance. But by
 \eqref{eq:monomial} flipping one plaintext pixel changes exactly one ciphertext pixel
 (Fig.~\ref{fig:diffusion}, left), so the true
-one-pixel NPCR is $100/MN=\PH{cam_npcr1px}\,\%$ (UACI \PH{cam_uaci1px}\,\%)---five orders of magnitude
+one-pixel NPCR is $100/MN=\PH{cam_npcr1px}\,\%$ (UACI \PH{cam_uaci1px}\,\%), five orders of magnitude
 below the reported value. The 99.6\,\% figure instead measures the difference between \emph{unrelated}
 images, which for LLEO is \PH{npcr_unrelated}\,\% (Fig.~\ref{fig:diffusion}, centre); this is achieved by
 any cipher with a near-uniform
@@ -445,8 +445,8 @@ evenly spread) rejects uniformity for the logistic keystream
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.86\columnwidth]{figures/keystream_ridgeline.pdf}
-\caption{Keystream byte distributions (ridgeline). The logistic keystream is sharply non-uniform---its
-invariant density spikes at the extremes---and even the Lorenz stream is measurably lumpy, whereas a
+\caption{Keystream byte distributions (ridgeline). The logistic keystream is sharply non-uniform (its
+invariant density spikes at the extremes) and even the Lorenz stream is measurably lumpy, whereas a
 secure stream cipher would match the flat uniform reference. A chi-square test rejects uniformity for
 both ($\chi^2$ annotated).}
 \label{fig:keystream}
@@ -472,8 +472,8 @@ Key type                   & ``asymmetric'' & symmetric \\
 \section{A structural oracle: from one break to a reusable audit}\label{sec:oracle}
 A single break is an exercise; a reusable test for the structural flaw is the contribution. We package the attack
 as a black-box \emph{structural oracle}. Given only encryption access to an unknown cipher on $M\times N$
-images---no key, no source---it fits three position-wise models---affine and XOR
-(Proposition~\ref{prop:monomial}) and a GF(2)-affine \emph{bitlinear} model (below)---from a handful of
+images (no key, no source) it fits three position-wise models, affine and XOR
+(Proposition~\ref{prop:monomial}) and a GF(2)-affine \emph{bitlinear} model (below), from a handful of
 chosen plaintexts and \emph{certifies} the result by predicting the ciphertext of fresh random plaintexts
 (Proposition~\ref{prop:certificate}). Two cheap signals drive the verdict:
 the \emph{avalanche} (fraction of ciphertext bytes a one-pixel plaintext flip changes; ${\approx}1/n$
@@ -490,8 +490,8 @@ cryptographic hash or a fresh nonce. The \textup{\textsc{broken}} verdict theref
 certificate; \textup{\textsc{resists}} is correct for plaintext- and nonce-bound constructions.
 \end{proposition}
 
-\textbf{The bitlinear model.} A key-only cipher can append a per-pixel \emph{bit-level} stage---a cellular
-automaton or a bit-sliced S-box---on an XOR/permutation core. Such a stage is a fixed GF(2)-affine byte map
+\textbf{The bitlinear model.} A key-only cipher can append a per-pixel \emph{bit-level} stage, a cellular
+automaton or a bit-sliced S-box, on an XOR/permutation core. Such a stage is a fixed GF(2)-affine byte map
 $g(y){=}My\oplus d$ with $M{\neq}I$ (it mixes bits \emph{within} a byte), so the composite is
 $C[j]{=}M\,P[s_j]\oplus B_j$. The plain-XOR model then reads $\mathrm{out}\oplus c_0{=}M\,D[s_j]$ instead of
 $D[s_j]$, the source index comes back bit-scrambled, and a key-only cipher is mislabelled \textsc{resists}.
@@ -505,19 +505,19 @@ this literature.
 (Table~\ref{tab:oracle}, Fig.~\ref{fig:oracle}), the oracle breaks all \PH{oracle_n_keyonly_broken}
 \emph{fully} key-only constructions at $R{=}1$ in at most \PH{oracle_max_queries} chosen plaintexts: LLEO's chaos
 monomial, a pure permutation, an additive stream, a general affine map, and a modern AES-CTR-style key
-stream. The chaos is incidental: an AES-CTR keystream \emph{reused} across images---a fixed key and
-counter for every image---is exactly as broken as LLEO. This is a keystream/counter-reuse failure, not
+stream. The chaos is incidental: an AES-CTR keystream \emph{reused} across images, a fixed key and
+counter for every image, is exactly as broken as LLEO. This is a keystream/counter-reuse failure, not
 any weakness of AES-CTR used correctly with a fresh per-image nonce (which our nonce-bound entry shows
 resists); the flaw is a reused plaintext-independent keystream, not the choice of map. The
-\PH{oracle_n_bound_resist} defended schemes---reseeding the keystream from SHA-256 of the plaintext, or
-from a per-image nonce---are correctly declined ($R{\approx}$ chance), and there a one-pixel change
+\PH{oracle_n_bound_resist} defended schemes (reseeding the keystream from SHA-256 of the plaintext, or
+from a per-image nonce) are correctly declined ($R{\approx}$ chance), and there a one-pixel change
 avalanches across the whole image. Beyond the corpus, the same equivalent-key CPA also breaks a chained
 CBC-like XOR cipher (a structurally different, non-position-wise construction not counted among the
 \PH{oracle_n_schemes}) in \PH{gen_cpt} chosen plaintexts, per Proposition~\ref{prop:monomial}. These are reconstructions of structural archetypes; we turn next to real
 published schemes.
 
 \textbf{Scope.} The cheap-query regime spans position-wise affine, monomial, XOR, \emph{and} GF(2)-affine
-(bitlinear) maps---the last costs only eight extra bit-basis probes (12 chosen plaintexts at $512^2$, as
+(bitlinear) maps; the last costs only eight extra bit-basis probes (12 chosen plaintexts at $512^2$, as
 for LSCM-CA below). The boundary it does not cross is a key-only but \emph{genuinely nonlinear} byte S-box
 (not GF(2)-affine): recovering it needs up to $L{=}256$ queries per position to tabulate, so such ciphers
 stay structurally broken but fall outside this logarithmic-query regime.
@@ -529,7 +529,7 @@ the held-out ciphertext-prediction rate of the recovered equivalent key; ``CP'' 
 break the identified algebra at $512^2$. The five fully key-only schemes are broken at $R{=}1$; binding
 the keystream to the plaintext or a nonce is what resists. $\dagger$: the even-multiplier affine is also
 key-only but does not force the multiplier odd, so ${\approx}$half its positions are non-invertible and
-recovery degrades \emph{gracefully} (marked PARTIAL, $R{=}\PH{orc_even_R}$) rather than failing---the
+recovery degrades \emph{gracefully} (marked PARTIAL, $R{=}\PH{orc_even_R}$) rather than failing: the
 deliberate boundary of the few-query attack, distinct from the genuine plaintext/nonce RESISTS. LLEO is the validated target of Section~\ref{sec:results} (its reconstruction
 reproduces the paper's reported statistics); the other rows are \emph{by-construction} archetypes, not
 reconstructions of any paper, so their verdicts carry no reconstruction-fidelity risk (contrast the real
@@ -565,11 +565,11 @@ nonce escapes to $R{\approx}$ chance.}
 
 \textbf{Real-literature audit.} We then ran the audit on \PH{pub_n_real} real, open-access 2023--2025
 chaos image ciphers, reconstructed faithfully from their published equations/pseudocode
-(Table~\ref{tab:published}, Fig.~\ref{fig:published}). The decisive question---does any chaotic seed,
-S-box, or permutation index depend on the plaintext?---separates them cleanly. \emph{LSCM-CA}%
+(Table~\ref{tab:published}, Fig.~\ref{fig:published}). The decisive question (does any chaotic seed,
+S-box, or permutation index depend on the plaintext?) separates them cleanly. \emph{LSCM-CA}%
 ~\cite{sun2025lscm}, whose keystream and permutation are key-only and which adds a per-pixel
 cellular-automata bit stage, is \textsc{broken} at $R{=}\PH{pub_lscm_R}$ in \PH{pub_lscm_q} chosen
-plaintexts---but \emph{only} via the bitlinear model: the affine/XOR model alone returns
+plaintexts, but \emph{only} via the bitlinear model: the affine/XOR model alone returns
 $R{=}\PH{pub_lscm_R_naive}$, a false negative its CA layer induces (the real scheme that motivated the
 model). The other three bind the keystream to the plaintext and correctly \textsc{resist}
 ($R{\approx}\PH{pub_li_R}$): \emph{Li--DNA}~\cite{li2024dnadual} seeds its logistic and Chen systems from
@@ -578,13 +578,13 @@ SHA-256 of the image, \emph{MILE}~\cite{mansour2025mile} from the sum of the fir
 scalar.
 
 Two of these resistances are \emph{thin}, and the oracle's two signals expose it. \emph{MILE} shows no
-diffusion---a one-pixel change outside its seed block moves one byte ($A{\cdot}n{\approx}1$)---yet
+diffusion, a one-pixel change outside its seed block moves one byte ($A{\cdot}n{\approx}1$), yet
 $R{\approx}$ chance, because its plaintext-dependence flows through only 64 pixels: hold that seed block
 constant (a legitimate chosen-plaintext sub-class) and $R$ rises to \PH{pub_mile_fix_off} off the block,
 collapsing it to a recovered fixed map. \emph{MIEA-PRHM} avalanches fully yet injects just 8 bits of
 plaintext entropy (a 256-way scalar). The oracle certifies ``\emph{not} a fixed plaintext-independent
 map,'' which is true; it does \emph{not} certify strength, and these two signals cannot separate
-MIEA-PRHM's near-miss from Li--DNA's genuine SHA-256 binding (Fig.~\ref{fig:published})---a boundary we
+MIEA-PRHM's near-miss from Li--DNA's genuine SHA-256 binding (Fig.~\ref{fig:published}), a boundary we
 mark rather than hide. Reconstructions are paper-only (no scheme released code); each verdict is
 nonetheless a falsifiable certificate of the reconstructed cipher. (Two further
 candidates~\cite{lone2023ahc,guvenoglu2024mlc} are deferred pending full text.)
@@ -592,7 +592,7 @@ candidates~\cite{lone2023ahc,guvenoglu2024mlc} are deferred pending full text.)
 \begin{table}[t]
 \centering
 \caption{Real-literature audit: the structural oracle on \PH{pub_n_real} published 2023--2025 chaos image
-ciphers. Seeding---not the diffusion algebra---decides the verdict; \PH{pub_n_broken} key-only scheme is
+ciphers. Seeding, not the diffusion algebra, decides the verdict; \PH{pub_n_broken} key-only scheme is
 broken, \PH{pub_n_resist} plaintext-bound ones resist. ``fid.'' is reconstruction confidence (H/M-H,
 Table~\ref{tab:fidelity}): all rows are paper-only reconstructions, hence reconstruction-dependent unlike
 the validated LLEO target (Table~\ref{tab:oracle}); each verdict is nonetheless a falsifiable certificate
@@ -618,7 +618,7 @@ MIEA-PRHM~\cite{feng2024miea}   & key-only ${+}$ scalar & H   & $\PH{beta_miea}$
 \includegraphics[width=0.96\columnwidth]{figures/published_audit.pdf}
 \caption{The real-corpus audit in the oracle's two signals (avalanche $A{\cdot}n$ vs.\ recoverability
 $R$). LSCM-CA (key-only) breaks top-left; the three plaintext-bound schemes sit at $R{\approx}0$. Li--DNA
-(genuine SHA-256 binding) and MIEA-PRHM (a 256-way scalar) coincide---the two signals cannot separate
+(genuine SHA-256 binding) and MIEA-PRHM (a 256-way scalar) coincide: the two signals cannot separate
 them. The dashed arrow shows MILE collapsing to a recovered fixed map once its 64-pixel seed block is held
 constant.}
 \label{fig:published}
@@ -626,15 +626,15 @@ constant.}
 
 \textbf{Reconstruction fidelity.} Each reconstruction is built from the paper's stated equations; where a
 constant is unspecified we choose conservatively (Table~\ref{tab:fidelity}), and because the verdict turns
-only on whether the plaintext enters the seed---which every paper states explicitly---these choices do not
+only on whether the plaintext enters the seed (which every paper states explicitly), these choices do not
 affect it. As evidence the rebuilds behave like the originals, all four reproduce the near-ideal
 statistics this literature reports as security: ciphertext entropy ${\approx}8$ and inter-image NPCR
 ${\approx}99.6\%$ (Table~\ref{tab:fidelity}; Cameraman, $512^2$). Matching these is necessary, not
-sufficient---our thesis---so we also report the \emph{true} 1-pixel-change NPCR, which flips one plaintext
+sufficient (our thesis), so we also report the \emph{true} 1-pixel-change NPCR, which flips one plaintext
 pixel and counts changed ciphertext bytes (${=}100/MN{=}\PH{pub_npcr_1px_512}\%$ when a one-pixel change
 stays local). It is ${\approx}99.6\%$ only when the keystream binds the whole plaintext (Li--DNA,
 MIEA-PRHM) and \PH{pub_npcr_1px_512}\% otherwise (LSCM-CA; MILE for a flip outside its $8{\times}8$ seed
-block)---the same split the oracle certifies, now visible in the very metric the originals report.
+block), the same split the oracle certifies, now visible in the very metric the originals report.
 
 \begin{table}[t]
 \centering
@@ -660,7 +660,7 @@ MIEA-PRHM & H   & \PH{pub_miea_ent} & \PH{pub_miea_npcrX} & \PH{pub_miea_npcr1} 
 \end{table}
 
 \textbf{Invertibility (the odd-multiplier question).} The recovery needs each multiplier $K[p]$ to be a
-unit mod 256---and this is \emph{guaranteed by LLEO}, not assumed by us: the scheme decrypts via a
+unit mod 256, and this is \emph{guaranteed by LLEO}, not assumed by us: the scheme decrypts via a
 modular conjugate, which forces the keystream odd. On the reconstruction every recovered multiplier is
 odd and $E(\mathbf 0){=}\mathbf 0$ holds exactly. Were even multipliers allowed, $x\mapsto K[p]\,x$ would
 be $2$-to-$1$ there; the oracle does not return a wrong inverse but degrades gracefully, reporting the
@@ -670,11 +670,11 @@ positions are invertible and $R{=}\PH{even_recoverability}$).
 \textbf{Falsifiability of the LLEO claim.} Our attack rests on the load-bearing claim that no LLEO quantity
 depends on the image; the oracle makes that claim \emph{falsifiable}, not merely asserted
 (Proposition~\ref{prop:certificate}). Matching the
-paper's entropy or correlation cannot establish it---countless ciphers hit those values---but the
+paper's entropy or correlation cannot establish it (countless ciphers hit those values), but the
 held-out test can: an equivalent key recovered from \PH{cam_cpt} chosen plaintexts predicts the
 ciphertext of fresh random images \emph{exactly}, which is possible only under plaintext-independence. If
 a reader's reading of the original differs (say, some keystream were image-seeded), the same oracle
-returns RESISTS on that variant, as it does for our SHA-256--seeded control---so the verdict is checkable
+returns RESISTS on that variant, as it does for our SHA-256--seeded control, so the verdict is checkable
 against any reimplementation, including the authors' own.
 
 \section{Plaintext-Keying Capacity: a Graded Security Metric}\label{sec:beta}
@@ -685,15 +685,15 @@ with three axes (Fig.~\ref{fig:beta_axes}), of which only the first is new.
 \item \textbf{Plaintext-keying capacity $\beta$} (security): $\beta=\log_2 N_{\mathrm{eff}}$, the effective
 entropy in bits that the plaintext injects into the cipher map with the secret key held fixed, where
 $N_{\mathrm{eff}}$ is the number of effectively distinct ciphertext maps the plaintext space induces.
-$\beta{=}0$ means the map is a single fixed transformation---\emph{exactly} the key-only case
+$\beta{=}0$ means the map is a single fixed transformation, \emph{exactly} the key-only case
 Section~\ref{sec:oracle} calls \textsc{broken}. So $\beta$ refines that verdict; it never re-judges it.
-\item \textbf{Recovery integrity $\rho$} (completeness): the invertible-position fraction---the quantity
+\item \textbf{Recovery integrity $\rho$} (completeness): the invertible-position fraction, the quantity
 the oracle already reports as \texttt{invertible\_frac}. For a clean key-only cipher $\rho{=}1$; the
 even-multiplier of Section~\ref{sec:oracle} has $\rho{=}0.51$. $\rho$ is the structural form of the
 recoverability $R$: on invertible positions the equivalent key predicts exactly, so $R\approx\rho$ (the
 even-multiplier's $R{=}0.523$ shadows $\rho{=}0.51$), and \textsc{partial} is precisely the $\rho<1$ case.
 We reuse $R$'s machinery and name its structural core $\rho$; no redundant symbol is introduced.
-\item \textbf{Query cost $q$} (price): the chosen-plaintext count---$4$--$5$ for the cheap families, $12$
+\item \textbf{Query cost $q$} (price): the chosen-plaintext count: $4$--$5$ for the cheap families, $12$
 for LSCM-CA's bitlinear recovery, up to $L{=}256$ per position for a key-only but genuinely nonlinear
 byte S-box. That S-box is thus $\beta{=}0,\rho{=}1,q{=}256$, ``broken but expensive,'' distinct from
 ``cheap-broken'' ($q{=}4$).
@@ -721,7 +721,7 @@ Two plaintexts $P,P'$ induce the \emph{same} map iff the equivalent key recovere
 \emph{map-collision rate} $a$; for $N_{\mathrm{eff}}$ equiprobable maps two draws collide with probability
 $\sim 1/N_{\mathrm{eff}}$, so $\beta=-\log_2 a$ is a birthday estimator. This is the \emph{exact}-prediction
 sharpening of the per-byte recoverability $R$ of Proposition~\ref{prop:certificate}: $R$ averages
-agreement, $a$ demands it on every invertible position at once---which is exactly what separates a single
+agreement, $a$ demands it on every invertible position at once, which is exactly what separates a single
 shared scalar (all positions agree together) from independent per-byte chance (the gap that left $R$
 blind in Section~\ref{sec:oracle}).
 
@@ -738,7 +738,7 @@ observable.
 \begin{proof}[Proof sketch]
 \emph{(i)} $a{=}1$ means the $P$-recovered key predicts every $C(P')$ exactly: one fixed map predicts all
 plaintexts, the certified equivalent key of Proposition~\ref{prop:certificate}. $a{<}1$ exhibits $P,P'$
-with differing maps---its plaintext-dependent case. \emph{(ii)} with $N_{\mathrm{eff}}$ equiprobable maps
+with differing maps, its plaintext-dependent case. \emph{(ii)} with $N_{\mathrm{eff}}$ equiprobable maps
 each pair collides independently w.p.\ $1/N_{\mathrm{eff}}$, so $\mathbb E[c]=\binom{k}{2}/N_{\mathrm{eff}}$
 and $\hat a$ is unbiased for $a$. \emph{(iii)} the $m=\binom{k}{2}$ pairs are $\mathrm{Bernoulli}(a)$;
 $(1-a)^m\le\delta$ gives $a\le \ln(1/\delta)/m$, whence the bound on $\beta=-\log_2 a$.
@@ -761,7 +761,7 @@ metric.}
 \includegraphics[width=0.96\columnwidth]{figures/beta_collision_curve.pdf}
 \caption{Observed map-collisions versus sample count $k$ (log--log). MIEA-PRHM's $256$-way scalar
 accumulates collisions along the $1/256$ ($\beta{=}8$) line within feasible $k$; Li-DNA (SHA-256) and MILE
-(random probing) show \emph{none}, so each only certifies the lower bound $\beta\ge 2\log_2 k$---the
+(random probing) show \emph{none}, so each only certifies the lower bound $\beta\ge 2\log_2 k$, the
 saturation of the secure regime made visual.}
 \label{fig:beta_collision}
 \end{figure}
@@ -772,7 +772,7 @@ Fig.~\ref{fig:beta_ladder}) sorts them into three bands: $\beta{=}0$ (\textsc{br
 $0<\beta\lesssim 40$ (\emph{fragile}, false assurance), and $\beta\ge 128$ (\emph{cryptographic},
 \textsc{resists}). This resolves the limitations Section~\ref{sec:oracle} admitted.
 \begin{enumerate}
-\item \emph{MIEA-PRHM vs.\ Li-DNA---the headline.} The two schemes the avalanche/recoverability plane could
+\item \emph{MIEA-PRHM vs.\ Li-DNA: the headline.} The two schemes the avalanche/recoverability plane could
 not separate (both at full avalanche, $R\approx$ chance) split cleanly along $\beta$
 (Fig.~\ref{fig:beta_beforeafter}). MIEA-PRHM keys its map with a single $256$-way additive scalar:
 collisions appear within $\sim\!256$ samples and $\hat\beta=\PH{beta_miea}$ (its \PH{miea_distinct_seeds}
@@ -783,13 +783,13 @@ genuine binding, now a measured gap.
 it plaintext-dependent'' becomes a quantity estimated black-box from chosen plaintexts
 (Corollary~\ref{cor:beta}).
 \item \emph{From a bit to a quantity.} ``Is the map fixed?'' becomes ``how many plaintext bits key the
-map?''---of which $\beta{=}0$ is the special case.
+map?'', of which $\beta{=}0$ is the special case.
 \item[4--5.] \emph{Splitting the broken cases.} $(\beta,\rho,q)$ separates insecure-but-lossy (the
 even-multiplier, $\rho{=}0.51$) from insecure-but-expensive (a nonlinear S-box, $q{=}256$), which the
 single flag conflated (Fig.~\ref{fig:beta_axes}).
 \end{enumerate}
-Crucially, $\beta$ depends only on the seeding structure---whether the plaintext enters, and with how many
-bits---not on fine chaotic parameters, so measuring it is exactly as reconstruction-robust as the
+Crucially, $\beta$ depends only on the seeding structure (whether the plaintext enters, and with how many
+bits), not on fine chaotic parameters, so measuring it is exactly as reconstruction-robust as the
 seeding-determined verdict of Section~\ref{sec:oracle}.
 
 \begin{figure*}[t]
@@ -821,19 +821,19 @@ mechanism (placed individually in Fig.~\ref{fig:beta_plane}).}
 \includegraphics[width=0.92\textwidth]{figures/beta_before_after.pdf}
 \caption{The payoff in one figure. \textbf{(left)} the avalanche-vs-recoverability plane of
 Section~\ref{sec:oracle}: MIEA-PRHM and Li-DNA \emph{overlap} (both full avalanche, $R\approx$ chance), the
-limitation the paper admitted. \textbf{(right)} the $\beta$ axis separates them---fragile ($\beta{=}8$)
+limitation the paper admitted. \textbf{(right)} the $\beta$ axis separates them: fragile ($\beta{=}8$)
 versus genuine (certified $\beta\ge\PH{beta_li}$).}
 \label{fig:beta_beforeafter}
 \end{figure*}
 
 \subsection{Limitations of $\beta$}\label{sec:beta_lim}
 \emph{(i) Necessary, not sufficient.} $\beta{=}0$ certifies broken, but large $\beta$ does \emph{not}
-imply secure: $\beta$ shares the scope of \textsc{resists}---now graded and falsifiable---not a proof of
+imply secure: $\beta$ shares the scope of \textsc{resists}, now graded and falsifiable, not a proof of
 security. \emph{(ii) Saturation.} In the secure regime $\beta$ is only lower-bounded; feasible samples
 cannot separate $2^{40}$ from $2^{256}$ maps (Fig.~\ref{fig:beta_collision}), a harmless one-sided
 blindness. \emph{(iii) Structured dependence needs the right probe.} MILE keys its map from a $64$-pixel
 seed block: random-direction probing finds no collision ($\beta\ge\PH{beta_mile}$, apparently safe), yet
-\emph{holding that block fixed}---a structurally-disclosed probe---collapses $\beta$ to $0$ (the cipher
+\emph{holding that block fixed}, a structurally-disclosed probe, collapses $\beta$ to $0$ (the cipher
 becomes key-only), the formal analogue of the by-hand fixed-block attack of Section~\ref{sec:oracle}. The
 formal estimator probes random \emph{and} structurally-disclosed directions; random-only under-reports the
 vulnerability.
@@ -843,9 +843,9 @@ LLEO illustrates a persistent failure mode: \emph{good statistics are not securi
 near-ideal entropy, near-zero correlation, and a large inter-image NPCR are all satisfied by our fixed,
 key-only map, which we nonetheless break in \PH{cam_cpt} queries; testing plaintext sensitivity
 directly~\cite{alvarez2006,wu2011npcr} is what catches this. (The scheme's ``asymmetric'' label is also a
-misnomer---the same keys encrypt and decrypt---but that is cosmetic.)
+misnomer, the same keys encrypt and decrypt, but that is cosmetic.)
 
-The remedies are standard. (i) Make the keystream depend on the plaintext---e.g.\ derive the chaotic
+The remedies are standard. (i) Make the keystream depend on the plaintext, e.g.\ derive the chaotic
 initial conditions from a SHA-256 hash of the image, so a different plaintext yields an unrelated
 keystream. (ii) Add genuine diffusion, e.g.\ a chaining rule $C[i]=f(X[i],k[i],C[i-1])$, so one
 plaintext change propagates. With either, \eqref{eq:monomial} is no longer fixed across images and the
@@ -854,11 +854,11 @@ attack fails: it recovers \PH{keyonly_match_pct}\,\% of pixels against the key-o
 
 \subsection{Limitations}
 Three bounds on our claims. \emph{(i) Equivalent key, not the seed.} We recover an equivalent key that
-decrypts any ciphertext of the probed size, not the underlying chaotic secret seed---the standard,
+decrypts any ciphertext of the probed size, not the underlying chaotic secret seed, the standard,
 defensible claim in this literature~\cite{li2019attacker}. \emph{(ii) The real-corpus verdicts are
 reconstruction-dependent.} The LLEO break uses the real construction and is validated against the paper's
 reported statistics (Section~\ref{sec:results}); the four real-corpus verdicts (Table~\ref{tab:published})
-rest on paper-only reconstructions---no scheme released code---at the confidence marked per row
+rest on paper-only reconstructions (no scheme released code) at the confidence marked per row
 (Table~\ref{tab:fidelity}), and two further candidates are deferred pending full text. Each is a
 falsifiable certificate of the \emph{reconstructed} cipher, checkable against any reimplementation
 including the authors' own (Proposition~\ref{prop:certificate}). \emph{(iii) The cheap-query regime has a
@@ -866,7 +866,7 @@ boundary.} It covers affine, XOR, and GF(2)-affine maps; a key-only but genuinel
 stays structurally broken but needs up to $256$ queries per position, outside the logarithmic regime.
 
 \emph{Disclosure.} Consistent with responsible-disclosure practice, we emailed the authors of every scheme
-we break---LLEO~\cite{jain2025lleo} and the reconstructed LSCM-CA~\cite{sun2025lscm}---at submission, ahead
+we break (LLEO~\cite{jain2025lleo} and the reconstructed LSCM-CA~\cite{sun2025lscm}) at submission, ahead
 of publication; for LSCM-CA we additionally invited the authors to confirm our reconstruction of their
 seeding. We had received no response at the time of writing, and will incorporate any correction in the
 camera-ready. Our reproduction and attack code is available at \coderepo.
@@ -876,12 +876,12 @@ A 2025 chaos-based image cipher is completely broken by an equivalent-key chosen
 \PH{cam_cpt} chosen plaintexts and a fraction of a second, despite near-ideal entropy and a reported
 NPCR of $\approx$99.6\,\%: good statistics are not security. The break follows directly from the cipher being key-only; its differential
 metric, measured correctly, is \PH{cam_npcr1px}\,\%. We recommend plaintext-dependent keystreams and
-real diffusion, and that statistical scores accompany---rather than replace---an explicit
+real diffusion, and that statistical scores accompany, rather than replace, an explicit
 chosen-plaintext security argument. More broadly, the attack generalizes into a reusable structural audit
 that decides plaintext-independence, with a held-out certificate we prove sound: it recovers an
 equivalent key from every key-only archetype, and on four real published 2023--2025 schemes (reconstructed
 from their papers) it breaks the one key-only design and clears three that bind the keystream to the
-plaintext---one break needing a
+plaintext, one break needing a
 GF(2)-affine extension that widens the audit to bit-level diffusion.
 
 \section*{Acknowledgment}
