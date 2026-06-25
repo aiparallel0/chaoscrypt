@@ -250,7 +250,8 @@ def im(name):
 P1 = [
     ("title",
      "An Equivalent-Key Chosen-Plaintext Break of a 2025 Chaos-Based Image Cipher",
-     ["UBMK’25 · International Conference on Computer Science and Engineering",
+     ["Good statistics are not security: a 2025 cipher broken in 4 chosen plaintexts",
+      "UBMK’25 · International Conference on Computer Science and Engineering",
       "Track: Computer and Data Security",
       "Author(s) and affiliation withheld for review"]),
 
@@ -290,7 +291,7 @@ P1 = [
          "only one input pixel).", 0),
     ]),
 
-    ("bul", "Equivalent-key chosen-plaintext attack", [
+    ("bul", "Four images recover the full map", [
         ("(a) The multiplier — 1 query: encrypt an all-ones image; the output directly reveals K at "
          "every position.", 0),
         ("(b) The reordering — a few queries: encrypt images whose pixels carry their own position "
@@ -425,7 +426,8 @@ P1 = [
 P2 = [
     ("title",
      "Knowing When to Abstain: Calibration and Selective Prediction for ML Network Intrusion Detection",
-     ["UBMK’25 · International Conference on Computer Science and Engineering",
+     ["The much-cited 'detection collapse' on unknown attacks is mostly a thresholding artifact",
+      "UBMK’25 · International Conference on Computer Science and Engineering",
       "Track: Computer and Data Security",
       "Author(s) and affiliation withheld for review"]),
 
