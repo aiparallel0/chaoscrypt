@@ -316,7 +316,7 @@ P1 = [
      "Original → LLEO ciphertext → key-free recovery (bit-identical), four images.", [
         ("Only 4 chosen plaintexts per image.", 0),
         ("Recovery is bit-identical to the original.", 0),
-        ("Decryption in a fraction of a second — no key used.", 0),
+        ("Decryption in 0.037 s at 512x512 (single core) — no key used.", 0),
      ], 0.7),
 
     ("fig2", "Good statistics are not security",
