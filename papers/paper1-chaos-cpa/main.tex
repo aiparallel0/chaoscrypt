@@ -852,9 +852,11 @@ including the authors' own (Proposition~\ref{prop:certificate}). \emph{(iii) The
 boundary.} It covers affine, XOR, and GF(2)-affine maps; a key-only but genuinely nonlinear byte S-box
 stays structurally broken but needs up to $256$ queries per position, outside the logarithmic regime.
 
-\emph{Disclosure.} Consistent with responsible-disclosure practice, the authors of every scheme we
-break---LLEO~\cite{jain2025lleo} and the reconstructed LSCM-CA~\cite{sun2025lscm}---are notified at
-submission, ahead of publication; our reproduction and attack code is available at \coderepo.
+\emph{Disclosure.} Consistent with responsible-disclosure practice, we emailed the authors of every scheme
+we break---LLEO~\cite{jain2025lleo} and the reconstructed LSCM-CA~\cite{sun2025lscm}---at submission, ahead
+of publication; for LSCM-CA we additionally invited the authors to confirm our reconstruction of their
+seeding. We had received no response at the time of writing, and will incorporate any correction in the
+camera-ready. Our reproduction and attack code is available at \coderepo.
 
 \section{Conclusion}
 A 2025 chaos-based image cipher is completely broken by an equivalent-key chosen-plaintext attack in

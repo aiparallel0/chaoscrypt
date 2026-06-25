@@ -394,8 +394,8 @@ P1 = [
          "of pixels against the key-only cipher but only 0.25% (chance) once the keystream is "
          "image-seeded.", 0),
         ("Statistical scores should support -- not replace -- an explicit chosen-plaintext argument. "
-         "Authors of both broken schemes (LLEO and LSCM-CA) notified at submission (responsible "
-         "disclosure).", 0),
+         "Authors of both broken schemes (LLEO and LSCM-CA) emailed at submission; no response yet "
+         "(responsible disclosure).", 0),
     ]),
 
     ("bul", "Appendix: why the break is sound (invertibility & fidelity)", [
