@@ -470,6 +470,11 @@ Key type                   & ``asymmetric'' & symmetric \\
 \end{table}
 
 \section{A structural oracle: from one break to a reusable audit}\label{sec:oracle}
+\emph{In plain terms.} The oracle needs no knowledge of a cipher's internals: from a few chosen images it
+recovers a candidate decryptor, then checks whether that decryptor predicts the ciphertext of fresh images
+exactly. If it does, the cipher's scrambling never depended on the picture and it is broken; if not, the
+cipher resists.
+
 A single break is an exercise; a reusable test for the structural flaw is the contribution. We package the attack
 as a black-box \emph{structural oracle}. Given only encryption access to an unknown cipher on $M\times N$
 images (no key, no source) it fits three position-wise models, affine and XOR
@@ -678,6 +683,11 @@ returns RESISTS on that variant, as it does for our SHA-256--seeded control, so 
 against any reimplementation, including the authors' own.
 
 \section{Plaintext-Keying Capacity: a Graded Security Metric}\label{sec:beta}
+\emph{In plain terms.} The new axis, $\beta$, counts how many genuinely different ciphers the plaintext can
+switch the map between: a key-only design offers exactly one ($\beta{=}0$, broken), while binding every image
+to its own unrelated map offers astronomically many ($\beta$ large, resistant). It is estimated black-box from
+a handful of chosen plaintexts, and grades the one-bit verdict rather than replacing it.
+
 The verdict of Section~\ref{sec:oracle} is one bit, and that bit silently conflates three independent
 questions: \emph{is} the cipher broken, \emph{how completely}, and \emph{how cheaply}? We separate them
 with three axes (Fig.~\ref{fig:beta_axes}), of which only the first is new.
