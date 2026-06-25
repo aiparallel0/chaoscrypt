@@ -40,55 +40,67 @@ def _legend(ax, loc="lower right", fs=6.0):
 
 def f1_phase_plane():
     """F1 (headline): the (beta, rho) phase plane in three bands, every audited scheme placed, with the
-    MIEA-PRHM -> Li-DNA dashed arrow showing the two formerly-overlapping points separated along beta."""
+    MIEA-PRHM -> Li-DNA dashed arrow showing the two formerly-overlapping points separated along beta.
+    Layout: band descriptors live in a clear top strip (above a faint rule); every point callout is routed
+    DOWN into the empty orange/gray bands so nothing overprints the strip or the legend."""
     ps.use()
-    fig, ax = ps.fig(7.0, 3.6)
+    fig, ax = ps.fig(7.2, 4.1)
     # bands
-    ax.axvspan(-3, 1.5, color=ps.C["vermillion"], alpha=0.10, zorder=0)
+    ax.axvspan(-4, 1.5, color=ps.C["vermillion"], alpha=0.10, zorder=0)
     ax.axvspan(1.5, 40, color=ps.C["orange"], alpha=0.10, zorder=0)
     ax.axvspan(40, 118, color="0.5", alpha=0.08, hatch="//", zorder=0)
-    ax.axvspan(118, 145, color=ps.C["green"], alpha=0.10, zorder=0)
-    for x, t in [(-1.5, "beta = 0\nBROKEN"), (20, "0 < beta <~ 40\nfragile (false assurance)"),
-                 (79, "lower-bound only\n(saturation)"), (131, "beta >= 128\ncryptographic (RESISTS)")]:
-        ax.text(x, 1.085, t, ha="center", va="bottom", fontsize=6.6, fontweight="bold")
+    ax.axvspan(118, 146, color=ps.C["green"], alpha=0.10, zorder=0)
     ax.axvline(0, color=ps.C["vermillion"], lw=1.2, ls=":", zorder=1)
+
+    # band descriptors: a dedicated strip at the top, separated from the plot body by a faint rule, so
+    # they never collide with the point callouts (which all sit at/below the y=1.0 data row).
+    ax.axhline(1.12, color="0.8", lw=0.5, zorder=1)
+    # staggered at two heights so wide neighbours (the narrow "BROKEN" band vs. the long "fragile"
+    # label) never overprint each other.
+    for x, y, t in [(-1, 1.19, "beta = 0\nBROKEN"), (23, 1.275, "0 < beta <~ 40\nfragile (false assurance)"),
+                    (79, 1.19, "lower-bound only\n(saturation)"), (132, 1.275, "beta >= 128\ncryptographic (RESISTS)")]:
+        ax.text(x, y, t, ha="center", va="center", fontsize=6.6, fontweight="bold")
 
     def mark(x, y, verdict):
         m, c = MK[verdict]
         ax.scatter([x], [y], s=85, marker=m, facecolor=c, edgecolor="k", lw=0.7, zorder=5)
 
     def lab(x, y, tx, ty, t, ha="left", color="k"):
-        ax.annotate(t, (x, y), xytext=(tx, ty), fontsize=6.5, ha=ha, va="center", color=color,
-                    arrowprops=dict(arrowstyle="-", lw=0.5, color="0.4"), zorder=6)
+        ax.annotate(t, (x, y), xytext=(tx, ty), fontsize=6.4, ha=ha, va="center", color=color,
+                    arrowprops=dict(arrowstyle="-", lw=0.5, color="0.45"), zorder=6)
 
-    # BROKEN cluster at beta=0, rho=1 (cheap) + LSCM-CA + even-multiplier (lossy)
-    mark(0, 1.0, "BROKEN"); lab(0, 1.0, 4, 1.10, "LLEO, perm-only, AES-CTR (q=4-5);\nLSCM-CA (q=12, bitlinear)")
-    mark(0, 0.515, "PARTIAL"); lab(0, 0.515, 5, 0.515, "even-multiplier (lossy, rho=0.51)")
-    # MIEA-PRHM: measured beta = 8 (collision observed)
-    mark(float(B["beta_miea"]), 1.0, "FRAGILE")
-    lab(float(B["beta_miea"]), 1.0, 12, 0.70, "MIEA-PRHM:  beta=8,\ncollision observed", color=ps.C["blue"])
-    # MILE: naive lower-bound beta, collapses to 0 under the seed-block probe
-    mark(float(B["beta_mile"]), 0.96, "FRAGILE")
+    # --- markers (data) ---
+    mark(0, 1.0, "BROKEN")
+    mark(0, 0.515, "PARTIAL")
+    mark(float(B["beta_miea"]), 1.0, "FRAGILE")     # MIEA-PRHM, beta=8
+    mark(float(B["beta_mile"]), 0.96, "FRAGILE")    # MILE (naive lower bound)
+    mark(125, 1.0, "GENUINE")                        # Li-DNA (structural)
+    mark(136, 0.93, "GENUINE")                       # SHA-256 + nonce
+
+    # --- callouts, all routed DOWN into empty band space (none rise above the y=1.0 data row) ---
+    lab(0, 1.0, 4, 0.65, "LLEO, perm-only, AES-CTR,\nLSCM-CA (q=4-5; LSCM-CA q=12)")
+    lab(0, 0.515, 5, 0.47, "even-multiplier\n(lossy, rho=0.51)")
+    lab(float(B["beta_miea"]), 1.0, 21, 0.86, "MIEA-PRHM: beta=8,\ncollision observed", color=ps.C["blue"])
+    lab(float(B["beta_mile"]), 0.96, 47, 0.78, "MILE: fix seed block\n-> beta collapses to 0", color=ps.C["blue"])
+    lab(125, 1.0, 84, 0.87, "Li-DNA: SHA-256, genuine binding\n(measured >= %.0f, structural 256)"
+        % float(B["beta_li"]))
+    lab(136, 0.93, 98, 0.61, "SHA-256 + nonce:\nno collision -> beta large")
+
+    # MILE collapses to the broken edge under the seed-block probe
     ax.add_patch(FancyArrowPatch((float(B["beta_mile"]) - 0.5, 0.96), (1.0, 0.985),
                  arrowstyle="-|>", mutation_scale=11, lw=1.1, ls="--", color=ps.C["blue"], zorder=4))
-    lab(float(B["beta_mile"]), 0.96, 40, 0.72, "MILE: fix seed block\n-> beta collapses to 0",
-        color=ps.C["blue"])
-    # Li-DNA: certified lower bound (>=32) extending to structural beta=256 (right arrow)
+    # Li-DNA certified lower bound (>=32) extending to the structural beta=256 (right arrow)
     xlb = float(B["beta_li"])
     ax.add_patch(FancyArrowPatch((xlb, 1.0), (143, 1.0), arrowstyle="-|>", mutation_scale=11, lw=1.0,
                  color=ps.C["green"], zorder=4))
-    mark(125, 1.0, "GENUINE"); lab(125, 1.0, 92, 1.10, "Li-DNA: SHA-256, genuine binding\n"
-        "(measured >= %.0f, structural 256)" % xlb, ha="left")
-    mark(136, 0.93, "GENUINE"); lab(136, 0.93, 104, 0.80, "SHA-256 + nonce:\nno collision -> beta large",
-        ha="left")
-    # headline arrow: the two points the old (A,R) plane overlapped
-    ax.add_patch(FancyArrowPatch((float(B["beta_miea"]) + 1, 0.965), (118, 0.965), arrowstyle="-|>",
-                 mutation_scale=12, lw=1.3, ls="--", color="k", zorder=4))
-    ax.text(63, 0.57, "the two points the old (A, R) plane overlapped\nnow separate along beta",
-            ha="center", va="center", fontsize=6.8, style="italic",
-            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="0.6", lw=0.5))
+    # headline dashed arrow: the two points the old (A,R) plane overlapped now separate along beta
+    ax.add_patch(FancyArrowPatch((float(B["beta_miea"]) + 1, 0.965), (117, 0.965), arrowstyle="-|>",
+                 mutation_scale=12, lw=1.1, ls="--", color="k", zorder=3))
+    ax.text(62, 0.51, "the two points the old (A, R) plane overlapped\nnow separate along beta",
+            ha="center", va="center", fontsize=6.6, style="italic",
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="0.6", lw=0.5), zorder=6)
 
-    ax.set_xlim(-4, 146); ax.set_ylim(0.45, 1.17)
+    ax.set_xlim(-4, 146); ax.set_ylim(0.42, 1.34)
     ax.set_xlabel("beta  =  plaintext-keying capacity (bits, PKC)")
     ax.set_ylabel("rho  =  invertible-position fraction")
     ax.set_yticks([0.5, 0.75, 1.0])
@@ -96,9 +108,11 @@ def f1_phase_plane():
     h = [Line2D([0], [0], marker=m, color="none", markerfacecolor=c, markeredgecolor="k", markersize=7,
                 label=l) for (m, c), l in zip(MK.values(),
                 ["BROKEN (beta=0)", "PARTIAL (rho<1)", "fragile RESISTS", "genuine RESISTS"])]
-    ax.legend(handles=h, loc="center", bbox_to_anchor=(0.60, 0.52), fontsize=6.2, frameon=True,
-              framealpha=0.95, labelspacing=0.35, ncol=2, columnspacing=1.0)
-    fig.tight_layout(); fig.savefig(FIG / "beta_phase_plane.pdf"); plt.close(fig)
+    # legend as a single row beneath the axes (savefig bbox='tight' keeps it from being clipped), so it
+    # never competes with the band-label strip or the callouts.
+    ax.legend(handles=h, loc="upper center", bbox_to_anchor=(0.5, -0.14), fontsize=6.6, frameon=True,
+              framealpha=0.95, ncol=4, columnspacing=1.5, handletextpad=0.3)
+    fig.savefig(FIG / "beta_phase_plane.pdf"); plt.close(fig)
 
 
 def f2_ladder():
@@ -185,8 +199,8 @@ def f4_collision_curve():
 def f5_three_axis():
     """F5: the (beta, rho, q) decomposition -- the four corner cases the old single bit conflated."""
     ps.use()
-    fig, ax = ps.fig(4.8, 3.0); ax.axis("off"); ax.set_xlim(0, 10); ax.set_ylim(0, 6)
-    ax.text(5, 5.7, "one bit  ->  three axes", ha="center", fontsize=8, fontweight="bold")
+    fig, ax = ps.fig(4.8, 3.1); ax.axis("off"); ax.set_xlim(0, 10); ax.set_ylim(0, 6.6)
+    ax.text(5, 6.35, "one bit  ->  three axes", ha="center", fontsize=8, fontweight="bold")
     cases = [
         (0.6, 3.7, "cheap-broken", "beta=0, rho=1, q=4-5", "BROKEN", "LLEO, perm, AES-CTR, LSCM-CA"),
         (5.2, 3.7, "expensive-broken", "beta=0, rho=1, q=256/pos", "BROKEN", "key-only nonlinear S-box"),

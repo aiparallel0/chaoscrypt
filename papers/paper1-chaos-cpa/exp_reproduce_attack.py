@@ -143,9 +143,10 @@ def main() -> None:
     labels = {"cam": "Cameraman", "moon": "Moon", "grv": "Gravel", "brk": "Brick"}
     rows = ["original", "encrypted", "recovered (no key)"]
     fig, ax = plt.subplots(3, 4, figsize=(8.6, 6.7))
+    _cmap = _seq("batlow", "viridis")                  # perceptual colour map (display only; data unchanged)
     for c, nm in enumerate(cols4):
         for r, im in enumerate(store[nm]):  # (original, encrypted, recovered)
-            ax[r, c].imshow(im, cmap="gray", vmin=0, vmax=255)
+            ax[r, c].imshow(im, cmap=_cmap, vmin=0, vmax=255)
             ax[r, c].set_xticks([]); ax[r, c].set_yticks([])
             if r == 0:
                 ax[r, c].set_title(labels[nm], fontsize=13)
