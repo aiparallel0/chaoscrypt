@@ -267,6 +267,10 @@ P1 = [
          "neighbouring-pixel correlation, NPCR/UACI — and near-ideal values are treated as proof of "
          "security.", 0),
         ("But none of those scores tests resistance to a chosen-plaintext attack.", 1),
+        ("Why this matters operationally: image ciphers protect real data — medical scans, sealed "
+         "evidence, access-controlled documents. A break is not a per-image slip but a standing ability "
+         "to decrypt every future ciphertext of that size, so security must rest on an attack model, "
+         "not a statistics table.", 0),
         ("We apply both lessons to a 2025 scheme — “LLEO” (Jain et al., Optik, 2025).", 0),
     ]),
 
@@ -435,6 +439,8 @@ P2 = [
      "The selective-prediction (“reject-option”) wrapper we evaluate.", [
         ("A detector that outputs a single hard label (“attack” or “normal”) gives no signal of when to "
          "trust it — and stays silent on attacks it never saw in training.", 0),
+        ("Why it matters: a missed novel attack reaches production before any analyst reviews it — "
+         "exactly the case a single hard label handles worst.", 0),
         ("Better: let it abstain — say “I’m not sure” on low-confidence inputs and pass them to an "
          "analyst or a backup check. This is called selective prediction.", 0),
         ("Question: do ordinary, off-the-shelf detectors know when they are wrong?", 0),
