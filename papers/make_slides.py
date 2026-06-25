@@ -49,7 +49,7 @@ L_TITLE, L_TITLECONTENT, L_TITLEONLY, L_BLANK = 0, 1, 5, 6
 _SUB = {c: d for c, d in zip("₀₁₂₃₄₅₆₇₈₉", "0123456789")}
 _SUP = {c: d for c, d in zip("⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺", "0123456789-+")}
 _REPL = {"ℤ": "Z", "⌈": "ceil(", "⌉": ")", "≈": "~", "≲": "<=", "≤": "<=", "≥": ">=",
-         "→": " -> ", "−": "-", "χ": "chi", "Δ": "Delta ", "≠": "!="}
+         "→": " -> ", "−": "-", "χ": "chi", "β": "beta", "Δ": "Delta ", "≠": "!="}
 _SUBRE = re.compile("[" + "".join(_SUB) + "]+")
 _SUPRE = re.compile("[" + "".join(re.escape(c) for c in _SUP) + "]+")
 
@@ -376,6 +376,17 @@ P1 = [
          "fully-validated break.", 0),
      ], 0.6),
 
+    ("fig", "The graded fix: plaintext-keying capacity β", im("p1_beta_before_after.png"),
+     "Left: the two cheap signals overlap. Right: the β axis separates fragile from genuine.", [
+        ("The avalanche and recoverability signals cannot tell a fragile near-miss from genuine binding: "
+         "the two schemes overlap (left). So we add a graded capacity β: how many genuinely different "
+         "ciphers the plaintext can switch the cipher's map between.", 0),
+        ("β = 0 means one fixed map (key-only, BROKEN); a large β means every image gets its own unrelated "
+         "map (RESISTS). It is estimated black-box from chosen plaintexts as a collision rate.", 0),
+        ("So β separates the schemes the two signals could not: a fragile 256-way scalar (β = 8) from "
+         "genuine SHA-256 binding (β >= 32), turning the one-bit verdict into a measured, falsifiable gap.", 0),
+     ], 0.6),
+
     ("bul", "Discussion: good statistics are not security", [
         ("A flat histogram, ideal entropy, near-zero correlation, and a large inter-image NPCR all hold "
          "for our fixed, key-only map, yet it is broken in 4 queries.", 0),
@@ -491,7 +502,8 @@ P2 = [
 
     ("bul", "Experimental setup: datasets", [
         ("NSL-KDD: a public benchmark of network connections (~126k train / 22.5k test, 41 measured "
-         "features each); attacks fall into four families (DoS, Probe, R2L, U2R). Its test set deliberately "
+         "features each); attacks fall into four families: DoS (denial of service), Probe (network "
+         "scanning), R2L (remote-to-local intrusion), and U2R (user-to-root escalation). Its test set deliberately "
          "includes attack types missing from training, a built-in unknown-attack test.", 0),
         ("CIC-IDS-2017: a newer dataset of network “flows” (per-connection summaries, 78 features), over "
          "three days (DDoS, PortScan, Web attacks).", 0),
