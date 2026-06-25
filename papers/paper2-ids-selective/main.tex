@@ -166,7 +166,8 @@ that the conclusions concern the \emph{evaluation} of detectors, not a new detec
 \section{Methodology}
 \textbf{Data.} NSL-KDD \cite{tavallaee2009nsl} provides \PH{n_train} training and \PH{n_test} test
 records with 41 features (three categorical) and a binary normal/attack label; each attack maps to one
-of four families (DoS, Probe, R2L, U2R). Its test split contains \PH{n_novel_types} attack \emph{types}
+of four families: DoS (denial of service), Probe (network scanning), R2L (remote-to-local
+intrusion), and U2R (user-to-root escalation). Its test split contains \PH{n_novel_types} attack \emph{types}
 (\PH{n_novel_rows} records) that never appear in training, a built-in open-set test (the model must
 face attack kinds it never saw). Numeric features are standardised and categorical features one-hot
 encoded (turned into 0/1 indicator columns); the encoder is fit on training data only. We retain NSL-KDD
@@ -440,17 +441,17 @@ phenomena transfer but the guarantees do not. Accuracy falls to \PH{xfer_acc}, c
 
 \subsection{Which signal, and can coverage be guaranteed?}
 Is max-softmax (MSP) the right abstention signal, and can abstention carry a formal guarantee? On NSL-KDD,
-MSP is a strong, well-rounded default among classical signals: random-forest ensemble disagreement is
+MSP is a strong, well-rounded default among classical signals. Random-forest ensemble disagreement is
 statistically indistinguishable from it (paired $\Delta$AURC \PH{ms_dmsp_rf_disagreement}, CI includes
-0), Mahalanobis distance ranks errors marginally better (\PH{ms_dmsp_mahalanobis}) but separates unknown
-attacks worse, and $k$NN is worse on both (\PH{ms_dmsp_knn}); the leverage is in the abstention framework,
+0). Mahalanobis distance ranks errors marginally better (\PH{ms_dmsp_mahalanobis}) but separates unknown
+attacks worse, and $k$NN is worse on both (\PH{ms_dmsp_knn}). The leverage is in the abstention framework,
 not the estimator. We compare classical signals only: energy- and ODIN-style scores assume a neural net,
 which we deliberately do not use, so our claim is scoped to off-the-shelf tabular models. For a guarantee,
 split conformal prediction~\cite{angelopoulos2023conformal} attains target $0.90$ coverage
 in-distribution (\PH{ms_conf_indist}) but only \PH{ms_conf_shift} under the train--test
-shift~\cite{tibshirani2019}, the conformal analogue of the Section~\ref{sec:cal} calibration failure;
-restoring it needs shift-aware weighting with estimable likelihood ratios, impractical for genuine
-zero-days.
+shift~\cite{tibshirani2019}. This is the conformal analogue of the Section~\ref{sec:cal} calibration
+failure. Restoring it needs shift-aware weighting with estimable likelihood ratios, impractical for
+genuine zero-days.
 
 \subsection{A benign-only novelty stage partially closes the blind spot}\label{sec:novelty}
 Confidence-based abstention barely flags R2L (Section~\ref{sec:openset}) because such attacks lie on the
@@ -472,8 +473,8 @@ threshold for a minority family. We instead compare three policies on held-out (
 \emph{same} review budget (\PH{comb_review}): argmax, a global threshold \emph{tuned} to that budget, and
 the full stack (argmax/abstention/novelty). Argmax is blind (\PH{comb_recall_argmax}); a tuned threshold
 recovers \PH{comb_recall_tuned}; the full stack reaches only \PH{comb_recall_union}, \emph{below} the
-tuned threshold at matched cost. Two distinct resamplings agree on no gain: the seed-paired gap is
-\PH{comb_delta_union_tuned} (over the six training seeds), and resampling the evaluation distribution of a
+tuned threshold at matched cost. Two distinct resamplings agree on no gain. The seed-paired gap is
+\PH{comb_delta_union_tuned} (over the six training seeds). Resampling the evaluation distribution of a
 fixed model gives a gap of \PH{comb_delta_boot_mid} (95\% CI
 $[\PH{comb_delta_boot_lo},\PH{comb_delta_boot_hi}]$, upper bound ${\approx}0$; Fig.~\ref{fig:combined}).
 The recovery is the operating point, not the
