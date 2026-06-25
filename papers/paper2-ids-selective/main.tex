@@ -45,24 +45,31 @@ for Machine-Learning Network Intrusion Detection}
 \pagestyle{empty}
 
 \begin{abstract}
-The widely reported ``detection collapse'' of ML intrusion detectors on unknown attack families is mostly
-a \emph{thresholding artifact}: minority benign-mimicking families (NSL-KDD R2L, CIC Infiltration) keep a
-discriminable attack score but are nearly missed at the global argmax threshold, and a per-family
-threshold recovers much of the recall. Proposing no new detector, we evaluate whether off-the-shelf
-detectors know when they are wrong---the diagnosis itself is the contribution---and report three findings.
-(i) \emph{Over-confidence is task-dependent}: on dated NSL-KDD the three standard detectors are badly
-miscalibrated under train--test shift and no post-hoc calibrator (Platt, isotonic, temperature) transfers,
-whereas on two modern flow corpora (CIC-IDS-2017/2018) the same task is well calibrated (ECE and Brier
-agree). (ii) \emph{The blind spot is an operating-point failure}, not a representational one---the
-artifact above; we grade it, cleanest for the strongly scored R2L and weaker for the only-moderately-scored
-Infiltration. (iii) \emph{The operating point is the lever, not added machinery.} On unknown R2L a
-budget-tuned threshold lifts recall from \PH{comb_recall_argmax} at argmax to \PH{comb_recall_tuned} at
-matched analyst cost, recovering most of what argmax misses. An added abstention/novelty stack gives no
-further gain at that cost. This holds across three review budgets and two corpora. Selective prediction cuts selective risk at
-fixed coverage, but only for models whose confidence ranks errors (tree ensembles, not logistic
-regression). We also flag that fixed-partition confidence intervals understate uncertainty---resampling
-the evaluation distribution widens them severalfold. Selective prediction is a cheap, model-agnostic
-safety layer whose limits we measure rather than assume.
+Machine-learning network intrusion detectors are routinely deployed against attack families they never saw
+in training---open-set distribution shift. When that shift is mishandled the cost propagates: a missed
+novel attack reaches production before any analyst reviews it, and the much-reported ``detection collapse''
+on unknown families has been read as a representational dead end. In standard practice a detector emits
+only ``attack'' or ``benign'' and leans on a single confidence score to flag uncertain cases, but that
+signal cannot tell a confident verdict from a guess, and nothing makes the detector behave safely on inputs
+unlike its training data. We propose no new detector---the diagnosis itself is the contribution---and
+instead ask whether off-the-shelf detectors know when they are wrong, on dated NSL-KDD (whose test split
+deliberately contains attack types absent from training) and on two modern flow corpora (CIC-IDS-2017/2018)
+under cross-day and cross-corpus drift, and report three findings. (i) \emph{Over-confidence is
+task-dependent}: on NSL-KDD the three standard detectors are badly miscalibrated under train--test shift
+and no post-hoc calibrator (Platt, isotonic, temperature) transfers, whereas on the two modern corpora the
+same task is well calibrated (ECE and Brier agree). (ii) \emph{The blind spot is an operating-point
+failure}, not a representational one---minority benign-mimicking families (NSL-KDD R2L, CIC Infiltration)
+keep a discriminable attack score but are nearly missed at the global argmax threshold, so the much-cited
+collapse is \emph{mostly} a thresholding artifact; we grade it, cleanest for the strongly scored R2L and
+weaker for the only-moderately-scored Infiltration, whose score is partly representational. (iii) \emph{The
+operating point is the lever, not added machinery}: on unknown R2L a budget-tuned threshold lifts recall
+from \PH{comb_recall_argmax} at argmax to \PH{comb_recall_tuned} at matched analyst cost, recovering most of
+what argmax misses, while an added abstention/novelty stack gives no further gain at that cost---and this
+holds across three review budgets and two corpora. Selective prediction thus cuts selective risk at fixed
+coverage, but only for models whose confidence ranks errors (tree ensembles, not logistic regression); and
+fixed-partition confidence intervals understate uncertainty, since resampling the evaluation distribution
+widens them severalfold. It is a cheap, model-agnostic safety layer whose limits we measure rather than
+assume.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -97,13 +104,13 @@ cases a static classifier is least equipped to label. A detector that could say 
 these inputs, and defer them to a human or a secondary control (Fig.~\ref{fig:pipeline}), would be more
 useful than one forced to commit.
 
-This paper asks a narrow, practical question: do off-the-shelf machine-learning intrusion detectors know
+\textbf{The narrow, practical question.} Do off-the-shelf machine-learning intrusion detectors know
 when they are wrong---producing confidence scores trustworthy enough to drive an abstention policy, and
 behaving safely on attacks they have never seen? \emph{We propose no new detector; we evaluate existing
 ones.} We answer empirically on NSL-KDD \cite{tavallaee2009nsl}, whose published test split deliberately
 contains attack types absent from training, and on two modern flow corpora (CIC-IDS-2017 and
-CIC-IDS-2018) under cross-day and cross-corpus drift (Section~\ref{sec:cic}). Our finding is a
-\emph{dissociation} between two failure modes, which we make precise with threshold-free analysis:
+CIC-IDS-2018) under cross-day and cross-corpus drift (Section~\ref{sec:cic}). \textbf{The contribution is a
+dissociation between two failure modes}, which we make precise with threshold-free analysis:
 \begin{itemize}
 \item \textbf{Over-confidence is task-dependent.} The three standard detectors are badly miscalibrated
 under NSL-KDD's shift, and \emph{no} post-hoc calibrator---Platt \cite{platt1999probabilistic},

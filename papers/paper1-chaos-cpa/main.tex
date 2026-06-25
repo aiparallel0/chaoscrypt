@@ -49,30 +49,32 @@
 \pagestyle{empty}
 
 \begin{abstract}
-Good statistics are not security. A 2025 chaos-based image cipher (Jain \emph{et al.}, \emph{Optik};
-Lorenz/logistic maps with Fisher--Yates block shuffling, ``LLEO'') reports near-ideal entropy
-(\PH{cam_ent_cipher}) and a $99.6\%$ NPCR, yet we break it completely. From \PH{cam_cpt} chosen plaintexts
-we recover a key-free decryptor for any $512{\times}512$ image and decrypt any ciphertext pixel-exactly in
-\PH{scale512_s}\,s. The cause is structural: LLEO's keystream and both permutations depend only on the
-secret key, never on the image, so the whole cipher is one fixed map. Its headline differential metric is
-an illusion. With no plaintext diffusion, a one-pixel change alters exactly one ciphertext pixel, so the
-\emph{true} NPCR is \PH{cam_npcr1px}\,\% ($100/MN$), not $99.6\%$. The reported figure is merely the
-difference between unrelated images (\PH{npcr_unrelated}\,\%).
-
-This break stands on the real construction. We then ask how far it reaches, distilling the attack into a
-black-box \emph{structural oracle} that decides plaintext-independence and recovers an equivalent key,
-certifying each verdict against held-out ciphertext (we prove the certificate sound). On
-\PH{oracle_n_schemes} structural archetypes it breaks all \PH{oracle_n_keyonly_broken} fully key-only
-ciphers in at most \PH{oracle_max_queries} chosen plaintexts and clears the \PH{oracle_n_bound_resist}
-bound to the plaintext or a nonce; a sixth, non-invertible variant degrades gracefully, the deliberate
-boundary. On \PH{pub_n_real} real published 2023--2025 schemes, reconstructed from their papers, it breaks
-the one key-only design and clears three that seed the keystream from the plaintext. Breaking that
-design---an XOR keystream under a per-pixel cellular-automata stage---needed a GF(2)-affine
-(\emph{bitlinear}) extension, which we prove sound. Finally we grade the verdict with a
-\emph{plaintext-keying capacity} $\beta$, the bits of plaintext entropy that key the map. Estimated
-black-box as a collision rate, $\beta$ separates a fragile $256$-way scalar ($\beta{=}\PH{beta_miea}$) from
-genuine SHA-256 binding ($\beta\!\ge\!\PH{beta_li}$)---the two schemes the avalanche and recoverability
-signals could not tell apart. We close with the standard fixes.
+Chaos-based image ciphers are published at a high rate, and are validated almost entirely by statistical
+scores. Errors in that validation propagate: a cipher that scores well but protects an image badly can
+expose the data it was meant to hide---medical scans, identity documents, surveillance frames---long
+before anyone audits the math. Authors report near-ideal Shannon entropy, near-zero adjacent-pixel
+correlation, and a near-perfect NPCR (how much the output changes when one input pixel changes), and treat
+these as evidence of security; none measures resistance to a chosen-plaintext attack, the setting in which
+an adversary encrypts images of its own choosing. To make the gap concrete we break a 2025 chaos-based
+image cipher (Jain \emph{et al.}, \emph{Optik}; Lorenz/logistic maps with Fisher--Yates block shuffling,
+``LLEO'') that reports near-ideal entropy (\PH{cam_ent_cipher}) and a $99.6\%$ NPCR. From \PH{cam_cpt}
+chosen plaintexts we recover a key-free decryptor for any $512{\times}512$ image and decrypt any ciphertext
+pixel-exactly in \PH{scale512_s}\,s, without ever learning the key. The cause is structural: LLEO's
+keystream and both permutations depend only on the secret key, never on the image, so the whole cipher is
+one fixed map. We distil the break into a reusable, black-box \emph{structural audit} that decides
+plaintext-independence for any cipher and certifies each verdict against held-out ciphertext (we prove the
+certificate sound). On \PH{oracle_n_schemes} structural archetypes it breaks all \PH{oracle_n_keyonly_broken}
+fully key-only ciphers in at most \PH{oracle_max_queries} chosen plaintexts and clears the
+\PH{oracle_n_bound_resist} bound to the plaintext or a nonce; a non-invertible variant degrades gracefully,
+the deliberate boundary. On \PH{pub_n_real} real published 2023--2025 schemes, reconstructed from their
+papers, it breaks the one key-only design and clears three that seed the keystream from the plaintext---one
+break needing a GF(2)-affine (\emph{bitlinear}) extension we prove sound. LLEO's headline differential
+metric is then an illusion: with no plaintext diffusion a one-pixel change alters exactly one ciphertext
+pixel, so the \emph{true} NPCR is \PH{cam_npcr1px}\,\% ($100/MN$), not $99.6\%$---the reported figure is
+merely the difference between unrelated images (\PH{npcr_unrelated}\,\%). Finally, a \emph{plaintext-keying
+capacity} $\beta$, estimated black-box as a collision rate, separates a fragile $256$-way scalar
+($\beta{=}\PH{beta_miea}$) from genuine SHA-256 binding ($\beta\!\ge\!\PH{beta_li}$)---the two schemes the
+avalanche and recoverability signals could not tell apart. Good statistics are not security.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -118,6 +120,13 @@ are), and the differential metrics NPCR and UACI (how much the output changes wh
 changes)---and treat near-ideal values as evidence of security. None of these scores measures resistance to a
 chosen-plaintext attack, and, as we show, all of them can be near-ideal for a cipher that is broken in
 seconds.
+
+\emph{Why this matters operationally.} Image ciphers sit upstream of real decisions---protected medical
+imaging, sealed evidence, access-controlled documents. A break is therefore not a per-image accuracy loss
+but a standing capability to decrypt every future ciphertext of the probed size, and a security argument
+should rest on an attack model, not a statistics table. The quantity that matters is not how noise-like a
+single ciphertext looks but whether \emph{any} value in the cipher depends on the image---the one binary
+property that separates ``broken in \PH{cam_cpt} queries'' from ``resists.''
 
 This paper applies both lessons to a 2025 scheme~\cite{jain2025lleo} (which we abbreviate LLEO) built
 from the Lorenz~\cite{lorenz1963} and logistic maps with Fisher--Yates block shuffling
