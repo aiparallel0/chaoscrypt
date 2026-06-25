@@ -152,9 +152,10 @@ def main() -> None:
     for r, lab in enumerate(rows):
         ax[r, 0].set_ylabel(lab, fontsize=13)
     plt.tight_layout(rect=[0, 0.05, 1, 1])               # leave room for the on-figure punchline banner
-    fig.text(0.5, 0.018, f"{flat['cam_cpt']} chosen plaintexts   ·   {flat['cam_attack_s']} s   "
-             f"·   no key   ·   bit-identical recovery", ha="center", va="bottom", fontsize=15,
-             fontweight="bold")
+    _sf = RES / "scaling.json"                            # canonical 512^2 decrypt time (= Table III's row);
+    t512 = json.loads(_sf.read_text())["scale512_s"] if _sf.exists() else flat["cam_attack_s"]  # overlay must match
+    fig.text(0.5, 0.018, f"{flat['cam_cpt']} chosen plaintexts   ·   {t512} s   ·   no key   "
+             f"·   bit-identical recovery", ha="center", va="bottom", fontsize=15, fontweight="bold")
     plt.savefig(FIG / "break_grid.pdf"); plt.close()
     img, E2d, rec2d = store["cam"]  # Cameraman, for the histogram/correlation figures below
 

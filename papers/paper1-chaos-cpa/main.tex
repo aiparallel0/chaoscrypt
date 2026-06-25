@@ -53,7 +53,7 @@ Good statistics are not security. A 2025 chaos-based image cipher (Jain \emph{et
 Lorenz/logistic maps with Fisher--Yates block shuffling, ``LLEO'') reports near-ideal entropy
 (\PH{cam_ent_cipher}) and a $99.6\%$ NPCR, yet we break it completely. From \PH{cam_cpt} chosen plaintexts
 we recover a key-free decryptor for any $512{\times}512$ image and decrypt any ciphertext pixel-exactly in
-\PH{cam_attack_s}\,s. The cause is structural: LLEO's keystream and both permutations depend only on the
+\PH{scale512_s}\,s. The cause is structural: LLEO's keystream and both permutations depend only on the
 secret key, never on the image, so the whole cipher is one fixed map. Its headline differential metric is
 an illusion. With no plaintext diffusion, a one-pixel change alters exactly one ciphertext pixel, so the
 \emph{true} NPCR is \PH{cam_npcr1px}\,\% ($100/MN$), not $99.6\%$. The reported figure is merely the
@@ -157,7 +157,7 @@ key-free recoveries, each bit-identical to the original and obtained in \PH{cam_
 \includegraphics[width=0.92\textwidth]{figures/break_grid.pdf}
 \caption{The whole break in one view: four standard $512\times512$ images, their LLEO ciphertexts, and our
 key-free recoveries---each bit-identical to the original, from \PH{cam_cpt} chosen plaintexts in
-\PH{cam_attack_s}\,s, without the key.}
+\PH{scale512_s}\,s, without the key.}
 \label{fig:break}
 \end{figure*}
 
@@ -389,8 +389,9 @@ Brick     & \PH{brk_ent_plain} & \PH{brk_ent_cipher} & \PH{brk_corr_cipher} & \P
 
 \subsection{The break}
 The attack of Section~\ref{sec:crypt} recovers the equivalent key in \PH{cam_cpt} chosen plaintexts and
-decrypts a fresh ciphertext pixel-exactly in \PH{cam_attack_s}\,s (Cameraman, single core; the random
-$512^2$ entry in Table~\ref{tab:scale} is \PH{scale512_s}\,s), using no key.
+decrypts a fresh ciphertext pixel-exactly in \PH{scale512_s}\,s at $512^2$ (single core,
+Table~\ref{tab:scale}; recovery is image-content-independent, so this time holds for any image), using no
+key.
 Fig.~\ref{fig:break} shows the original, the LLEO ciphertext, and the key-free recovery, which is
 identical to the original.
 
