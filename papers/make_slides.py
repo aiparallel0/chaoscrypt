@@ -35,9 +35,9 @@ TEMPLATE = Path("/root/.claude/uploads/12438de2-6e29-57ba-95f0-c12f8bed9348/5099
 IMG = Path("/tmp/claude-0/-home-user/12438de2-6e29-57ba-95f0-c12f8bed9348/scratchpad/slides_img")
 
 SW, SH = Inches(13.333), Inches(7.5)
-NAVY = RGBColor(0x1F, 0x33, 0x55)
-ACCENT = RGBColor(0xD5, 0x5E, 0x00)
-GREY = RGBColor(0x55, 0x55, 0x55)
+NAVY = RGBColor(0x1F, 0x4E, 0x6B)
+ACCENT = RGBColor(0xB0, 0x8A, 0x3E)
+GREY = RGBColor(0x6B, 0x70, 0x79)
 L_TITLE, L_TITLECONTENT, L_TITLEONLY, L_BLANK = 0, 1, 5, 6
 
 
