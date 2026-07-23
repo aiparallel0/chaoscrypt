@@ -67,7 +67,7 @@ measure resistance to a chosen-plaintext attack. We break a 2025 chaos-based ima
 (\PH{cam_ent_cipher}) and a $99.6\%$ NPCR. From \PH{cam_cpt} chosen plaintexts we recover a key-free
 decryptor and decrypt any $512{\times}512$ ciphertext pixel-exactly in \PH{scale512_s}\,s, without the key. The cause is structural: LLEO's keystream and both
 permutations depend only on the secret key, never on the image, so the whole cipher is one fixed map. Its
-headline differential metric is then an illusion: with no plaintext diffusion the \emph{true} one-pixel
+reported differential metric is then an illusion: with no plaintext diffusion the \emph{true} one-pixel
 NPCR is \PH{cam_npcr1px}\,\% ($100/MN$), not $99.6\%$. A reusable structural audit and a graded security
 metric are developed in an extended version. Good statistics are not security.
 \end{abstract}
@@ -116,28 +116,24 @@ changes), and treat near-ideal values as evidence of security. None of these sco
 chosen-plaintext attack, and, as we show, all of them can be near-ideal for a cipher that is broken in
 seconds; these statistical tests are known to be necessary but not sufficient~\cite{preishuber2018}.
 
-\emph{Why this matters operationally.} Image ciphers sit upstream of real decisions: protected medical
-imaging, sealed evidence, access-controlled documents. Chaos-based image ciphers in particular are advanced
+\emph{Why this matters operationally.} Image ciphers sit in the middle of real decisions: protected medical
+imaging, sealed evidence, access-controlled documents. Chaos-based image ciphers in particular are proposed
 as the confidentiality layer for exactly these sensitive streams, most prominently telemedicine and DICOM
-medical imaging~\cite{alnassan2024dicom}. A break is therefore not a per-image accuracy loss
-but a standing capability to decrypt every future ciphertext of the probed size, and a security argument
-should rest on an attack model, not a statistics table. The quantity that matters is not how noise-like a
+medical imaging~\cite{alnassan2024dicom}. A break is therefore a standing capability to decrypt every future ciphertext of the probed size, so a security argument should rest on an attack model rather than a statistics table. The quantity that matters is not how noise-like a
 single ciphertext looks but whether \emph{any} value in the cipher depends on the image, the one binary
-property that separates ``broken in \PH{cam_cpt} queries'' from ``resists.''
+property that separates ``broken in \PH{cam_cpt} queries'' from ``resisting ones.''
 
 \subsection{Real-world stakes}
-Chaos-based image encryption is not a niche curiosity but a large, active design literature, published at
+Chaos-based image encryption is a large, active design literature, published at
 high volume and aimed at the most sensitive, most resource-constrained image streams: medical and DICOM
 imaging, the Internet of Medical Things, IoT-edge and surveillance pipelines, and satellite links, with
 real-time FPGA and hardware realisations reaching multi-gigabit
 throughput~\cite{alnassan2024dicom,chaosfpga2025}. No publicly documented product is yet known to rely on
 such a cipher, these designs are not standardised by ISO/IEEE/NIST~\cite{teh2020practical}, and mainstream
-systems still use vetted primitives such as AES; they are advanced \emph{as lightweight replacements} for
+systems still use vetted primitives such as AES; they are proposed \emph{as lightweight replacements} for
 exactly those settings, on a motivation whose security benefit has itself been
 questioned~\cite{preishuber2018}, which makes their security a practical question rather than an academic
-one. A structural, few-query break is therefore a warning about
-a technology being pushed toward the field, and a concrete reminder that a cipher must be judged by an
-attack model, not a statistics table.
+one. A structural, few-query break shows that this class of cipher is not yet ready to be pushed toward the field, and that security here should be argued from an attack model rather than a statistics table.
 
 This paper applies both lessons to a 2025 scheme~\cite{jain2025lleo} (which we abbreviate LLEO) built
 from the Lorenz~\cite{lorenz1963} and logistic maps with Fisher--Yates block shuffling
@@ -180,8 +176,7 @@ Lo~\cite{li2011optimal} established the optimal number of known/chosen plaintext
 permutation-only multimedia cipher, of order $\log_{L} (MN)$ for $L$ intensity levels, the same
 logarithmic regime our attack achieves; the general quantitative theory of permutation-only
 cryptanalysis~\cite{Li2008general} bounds this effort, and recent chosen-plaintext breaks continue to
-recover equivalent keys from a handful of images~\cite{Ma2020cryptanalysis,Zhao2025cryptanalysis},
-confirming the vulnerability remains a live concern. Alvarez and Li~\cite{alvarez2006} set out basic requirements
+recover equivalent keys from a handful of images~\cite{Ma2020cryptanalysis,Zhao2025cryptanalysis}. Alvarez and Li~\cite{alvarez2006} set out basic requirements
 for chaos-based cryptosystems, including plaintext-dependent keystreams and sensitivity to the
 plaintext; LLEO violates these. The differential metrics we scrutinise were standardised by Wu
 \emph{et al.}~\cite{wu2011npcr}, who also note that NPCR/UACI quantify sensitivity to a one-pixel
@@ -196,7 +191,7 @@ control demonstrates on the same construction (Section~\ref{sec:results}).
 
 \emph{What is new here.} Prior equivalent-key cryptanalyses (Arroyo \emph{et al.}~\cite{arroyo2009}, Li
 \emph{et al.}~\cite{li2018entropy,li2019attacker}) break one named scheme at a time by hand, each analysis
-bespoke to its target. Our contribution is not another single break but its \emph{automation}: a black-box
+bespoke to its target. Our contribution automates this process: a black-box
 decision procedure that, knowing nothing of a cipher's internals, identifies the position-wise algebra
 (affine, XOR, or GF(2)-affine), recovers an equivalent key, and issues a held-out certificate we prove
 sound, and the few-query bound matches the Li--Lo permutation-only optimum~\cite{li2011optimal}. The automated audit that runs this procedure across a corpus and real published schemes is developed in the extended version.
@@ -496,8 +491,7 @@ metric separating fragile from genuine plaintext binding are developed in an ext
 LLEO illustrates a persistent failure mode: \emph{good statistics are not security}. A flat histogram,
 near-ideal entropy, near-zero correlation, and a large inter-image NPCR are all satisfied by our fixed,
 key-only map, which we nonetheless break in \PH{cam_cpt} queries; testing plaintext sensitivity
-directly~\cite{alvarez2006,wu2011npcr} is what catches this. (The scheme's ``asymmetric'' label is also a
-misnomer, the same keys encrypt and decrypt, but that is cosmetic.)
+directly~\cite{alvarez2006,wu2011npcr} is what catches this. The scheme's ``asymmetric'' label is also a misnomer: the same keys encrypt and decrypt, which is a labeling error rather than a structural one.
 
 The remedies are standard. (i) Make the keystream depend on the plaintext, e.g.\ derive the chaotic
 initial conditions from a SHA-256 hash of the image, so a different plaintext yields an unrelated
@@ -519,7 +513,7 @@ camera-ready. Our reproduction and attack code is available at \coderepo.
 \section{Conclusion}
 A 2025 chaos-based image cipher is completely broken by an equivalent-key chosen-plaintext attack in
 \PH{cam_cpt} chosen plaintexts and a fraction of a second, despite near-ideal entropy and a reported
-NPCR of $\approx$99.6\,\%: good statistics are not security. The break follows directly from the cipher being key-only; its differential
+NPCR of $\approx$99.6\,\%. The break follows directly from the cipher being key-only, and it is a concrete instance of a general principle for this literature: good statistics are not security; its differential
 metric, measured correctly, is \PH{cam_npcr1px}\,\%. We recommend plaintext-dependent keystreams and
 real diffusion, and that statistical scores accompany, rather than replace, an explicit
 chosen-plaintext security argument. More broadly, the attack generalizes into a reusable structural audit
