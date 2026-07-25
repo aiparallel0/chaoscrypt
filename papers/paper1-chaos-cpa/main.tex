@@ -23,9 +23,6 @@
 \titlespacing*{\subsubsection}{0pt}{4pt}{2pt}
 \usepackage{geometry}
 \geometry{a4paper, top=2cm, bottom=2.5cm, left=1.6cm, right=1.6cm}
-% Code repository link. Replace the placeholder with an anonymized mirror (e.g. anonymous.4open.science)
-% for double-blind review, or the public repo URL otherwise, BEFORE submitting.
-\newcommand{\coderepo}{\texttt{[anonymized code repository URL; insert before submission]}}
 \setlength{\parskip}{6pt}
 \setlength{\floatsep}{8pt}
 \setlength{\textfloatsep}{6pt}
@@ -54,8 +51,17 @@
 \title{An Equivalent-Key Chosen-Plaintext Break of a\\
 2025 Chaos-Based Image Cipher}
 
-\author{\IEEEauthorblockN{Anonymous (single author)}
-\IEEEauthorblockA{Affiliation withheld for review \\ \texttt{author@example.org}}}
+% ============================================================================
+% AUTHOR BLOCK -- FILL IN BEFORE SUBMISSION (single author).
+% Replace every [BRACKETED] field with the real value, then compile.
+% For more than one author, duplicate the \IEEEauthorblockN + \IEEEauthorblockA
+% pair and separate authors with \and.
+% ============================================================================
+\author{\IEEEauthorblockN{[AUTHOR NAME]}
+\IEEEauthorblockA{\textit{[Department / Unit]} \\
+\textit{[Institution]} \\
+{[City, Country]} \\
+\texttt{[email@domain]}}}
 
 \maketitle
 \thispagestyle{empty}
@@ -515,7 +521,7 @@ literature~\cite{li2019attacker}.
 \emph{Disclosure.} Consistent with responsible-disclosure practice, we emailed the authors of every scheme
 we break (LLEO~\cite{jain2025lleo}) at submission, ahead
 of publication. We had received no response at the time of writing, and will incorporate any correction in the
-camera-ready. Our reproduction and attack code is available at \coderepo.
+camera-ready.
 
 \section{Conclusion}
 A 2025 chaos-based image cipher is completely broken by an equivalent-key chosen-plaintext attack in
