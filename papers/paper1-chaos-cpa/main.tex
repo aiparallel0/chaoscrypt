@@ -27,7 +27,7 @@
 % for double-blind review, or the public repo URL otherwise, BEFORE submitting.
 \newcommand{\coderepo}{\texttt{[anonymized code repository URL; insert before submission]}}
 \setlength{\parskip}{6pt}
-\setlength{\floatsep}{0pt}
+\setlength{\floatsep}{8pt}
 \setlength{\textfloatsep}{6pt}
 \setlength{\intextsep}{6pt}
 % Float packing: after the section cut the paper is short, so let floats fill pages
@@ -65,11 +65,11 @@
 Chaos-based image ciphers are published at a high rate and validated by statistical scores that do not
 measure resistance to a chosen-plaintext attack. We break a 2025 chaos-based image cipher (Jain
 \emph{et al.}, \emph{Optik}; Lorenz/logistic maps, ``LLEO'') that reports near-ideal entropy
-(\PH{cam_ent_cipher}) and a $99.6\%$ NPCR. From \PH{cam_cpt} chosen plaintexts we recover a key-free
+(\PH{cam_ent_cipher}) and a $99.6\,\%$ NPCR. From \PH{cam_cpt} chosen plaintexts we recover a key-free
 decryptor and decrypt any $512{\times}512$ ciphertext pixel-exactly in \PH{scale512_s}\,s, without the key. The cause is structural: LLEO's keystream and both
 permutations depend only on the secret key, never on the image, so the whole cipher is one fixed map. Its
 reported differential metric is then an illusion: with no plaintext diffusion the \emph{true} one-pixel
-NPCR is \PH{cam_npcr1px}\,\% ($100/MN$), not $99.6\%$. A reusable structural audit and a graded security
+NPCR is \PH{cam_npcr1px}\,\% ($100/MN$), not $99.6\,\%$. A reusable structural audit and a graded security
 metric are developed in an extended version. Good statistics are not security.
 \end{abstract}
 
@@ -266,7 +266,7 @@ a fixed \emph{monomial} map: every ciphertext pixel is a single plaintext pixel 
 and relocated. Two consequences are immediate. There is no additive constant, since
 $E(\mathbf{0})=\mathbf{0}$. And there is no diffusion: $C[j]$ depends on exactly one input coordinate
 $s(j)$, so a one-pixel plaintext change alters exactly one ciphertext pixel, which we exploit in
-Section~\ref{sec:results} and visualize in Fig.~\ref{fig:diffusion}.
+Section~\ref{sec:results} and visualise in Fig.~\ref{fig:diffusion}.
 
 \begin{figure}[t]
 \centering
@@ -489,7 +489,7 @@ Key type                   & ``asymmetric'' & symmetric \\
 \end{tabular}
 \end{table}
 
-The single break generalizes. Treated as a black-box structural audit, the same equivalent-key recovery
+The single break generalises. Treated as a black-box structural audit, the same equivalent-key recovery
 decides plaintext-independence for an unknown cipher and certifies each verdict against held-out ciphertext;
 that audit, its application to real published 2023--2025 schemes, and a graded plaintext-keying-capacity
 metric separating fragile from genuine plaintext binding are developed in an extended version.
@@ -523,7 +523,7 @@ A 2025 chaos-based image cipher is completely broken by an equivalent-key chosen
 NPCR of $\approx$99.6\,\%: good statistics are not security, and the cipher's differential metric,
 measured correctly, is \PH{cam_npcr1px}\,\%. We recommend plaintext-dependent keystreams and
 real diffusion, and that statistical scores accompany, rather than replace, an explicit
-chosen-plaintext security argument. More broadly, the attack generalizes into a reusable structural audit
+chosen-plaintext security argument. More broadly, the attack generalises into a reusable structural audit
 that decides plaintext-independence, with a held-out certificate we prove sound; its application to real
 published schemes and a graded plaintext-keying-capacity metric are developed in an extended version.
 
