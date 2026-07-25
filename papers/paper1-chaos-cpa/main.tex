@@ -17,6 +17,7 @@
 \usepackage{textcomp}
 \usepackage[font=footnotesize,labelsep=period]{caption} % IEEE caption format: ``Fig. 1.'' /
 \captionsetup[table]{labelsep=newline}                  % ``TABLE I'' above its title
+\captionsetup[algorithm]{labelsep=period}               % ``Algorithm 1.'' to match ``Fig. 1.''
 \usepackage{titlesec}
 \titlespacing*{\section}{0pt}{8pt}{4pt}
 \titlespacing*{\subsection}{0pt}{6pt}{3pt}
@@ -432,10 +433,11 @@ Fig.~\ref{fig:break} shows the original, the LLEO ciphertext, and the key-free r
 identical to the original.
 
 \subsection{Cost scales logarithmically}
-Because the attack needs only $1+\lceil\log_{256} MN\rceil$ chosen plaintexts, its cost is nearly flat
-as the image grows (Table~\ref{tab:scale}): \PH{scale128_cpt} plaintexts at $128^2$,
-\PH{scale512_cpt} at $512^2$, and still \PH{scale1024_cpt} at $1024^2$, each recovered exactly in well
-under a second. The key length the scheme advertises does not enter this cost.
+Table~\ref{tab:scale} reports how the attack's cost scales with image size. Because it needs only
+$1+\lceil\log_{256} MN\rceil$ chosen plaintexts, the count stays nearly flat as the image grows:
+\PH{scale128_cpt} plaintexts at $128^2$, \PH{scale512_cpt} at $512^2$, and still \PH{scale1024_cpt}
+at $1024^2$, each recovered exactly in well under a second. The key length the scheme advertises does
+not enter this cost.
 
 \begin{table}[t]
 \centering
@@ -463,8 +465,8 @@ below the reported value. The 99.6\,\% figure instead measures the difference be
 images, which for LLEO is \PH{npcr_unrelated}\,\% (Fig.~\ref{fig:diffusion}, centre); this is achieved by
 any cipher with a near-uniform
 output and says nothing about chosen-plaintext security. Table~\ref{tab:claims} contrasts each claimed
-property with what the cipher actually provides. Finally, the chaotic keystreams are themselves
-non-uniform (Fig.~\ref{fig:keystream}): a chi-square test (a standard check for whether values are
+property with what the cipher actually provides. Finally, Fig.~\ref{fig:keystream} shows the chaotic keystreams are
+themselves non-uniform: a chi-square test (a standard check for whether values are
 evenly spread) rejects uniformity for the logistic keystream
 ($\chi^2=\PH{chi2_logistic}$, $p<10^{-300}$, numerically zero).
 
