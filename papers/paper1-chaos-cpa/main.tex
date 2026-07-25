@@ -15,7 +15,8 @@
 
 % --- UBMK official formatting (UBMK-Template-A4): geometry, spacing, captions, keyword label ---
 \usepackage{textcomp}
-\usepackage[font=footnotesize]{caption}
+\usepackage[font=footnotesize,labelsep=period]{caption} % IEEE caption format: ``Fig. 1.'' /
+\captionsetup[table]{labelsep=newline}                  % ``TABLE I'' above its title
 \usepackage{titlesec}
 \titlespacing*{\section}{0pt}{8pt}{4pt}
 \titlespacing*{\subsection}{0pt}{6pt}{3pt}
@@ -137,8 +138,9 @@ being advanced toward that field, and a reminder that security here should be ar
 model, not a statistics table.
 
 This paper applies both lessons to a 2025 scheme~\cite{jain2025lleo} (which we abbreviate LLEO) built
-from the Lorenz~\cite{lorenz1963} and logistic maps with Fisher--Yates block shuffling
-(Fig.~\ref{fig:schema}). Our contributions are:
+from the Lorenz~\cite{lorenz1963} and logistic maps with Fisher--Yates block shuffling;
+Fig.~\ref{fig:schema} sketches both its three-step encryption and our equivalent-key attack. Our
+contributions are:
 \begin{itemize}
 \item We identify that LLEO is entirely key-driven and therefore a fixed monomial map over
 $\mathbb{Z}_{256}$: each output pixel is one input pixel times a fixed multiplier, with all arithmetic
@@ -195,9 +197,11 @@ control demonstrates on the same construction (Section~\ref{sec:results}).
 bespoke to its target. Our contribution automates this process: a black-box
 decision procedure that, knowing nothing of a cipher's internals, identifies the position-wise algebra
 (affine, XOR, or GF(2)-affine), recovers an equivalent key, and issues a held-out certificate we prove
-sound, and the few-query bound matches the Li--Lo permutation-only optimum~\cite{li2011optimal}
-(Table~\ref{tab:compare}). The automated audit that runs this procedure across a corpus and real published
-schemes is developed in the extended version.
+sound, and the few-query bound matches the Li--Lo permutation-only optimum~\cite{li2011optimal}.
+Table~\ref{tab:compare} places our break beside prior equivalent-key cryptanalyses: like them it recovers
+an equivalent key from a handful of chosen plaintexts, and only this work additionally distils the single
+break into a reusable audit and a graded plaintext-dependence metric. The automated audit that runs this
+procedure across a corpus and real published schemes is developed in the extended version.
 
 \begin{table}[t]
 \centering
