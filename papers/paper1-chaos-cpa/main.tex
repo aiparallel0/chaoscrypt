@@ -9,8 +9,6 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning}
 \usepackage{amsthm}
-\usepackage{algorithm}
-\usepackage{algpseudocode}
 \usepackage{flafter} % floats appear at/after their definition (keeps the page-1 teaser below the abstract)
 
 % --- UBMK official formatting (UBMK-Template-A4): geometry, spacing, captions, keyword label ---
@@ -18,7 +16,6 @@
 \usepackage[font=footnotesize,labelsep=period]{caption} % IEEE caption format: ``Fig. 1.''
 \captionsetup[table]{labelsep=newline,font={footnotesize,sc},justification=centering} % ``TABLE I''
                                                         % above a centred small-caps title
-\captionsetup[algorithm]{labelsep=period}               % ``Algorithm 1.'' to match ``Fig. 1.''
 \usepackage{titlesec}
 \titlespacing*{\section}{0pt}{8pt}{4pt}
 \titlespacing*{\subsection}{0pt}{6pt}{3pt}
@@ -348,25 +345,25 @@ $X[s(j)] = K[s(j)]^{-1}\,C[j]$. The total cost is
 i.e.\ \PH{cam_cpt} for a $512\times512$ image, independent of the nominal key length.
 
 Concretely, a $512\times512$ image needs four queries, one all-ones image and three index-digit
-images, after which Algorithm~\ref{alg:attack} returns the full map in a single pass.
+images, after which the following procedure returns the full map in a single pass. Write
+$T=\lceil\log_{256} n\rceil$ for the number of index-digit queries.
+
+\begin{enumerate}
+\setlength{\itemsep}{0pt}
+\setlength{\parskip}{0pt}
+\item Query the all-ones image, $\hat{K} \gets \mathrm{Enc}(\mathbf{1})$; then $\hat{K}[j]=K[s(j)]$ is
+the multiplier acting at output position $j$.
+\item For $t=0,\dots,T-1$, query $C \gets \mathrm{Enc}(P_t)$ and divide out that multiplier:
+$d_t[j] \gets C[j]\cdot \hat{K}[j]^{-1} \bmod 256$ for all $j$.
+\item Reassemble the digits into the permutation: $s[j] \gets \sum_t d_t[j]\,256^{t}$ is the source
+index feeding output $j$.
+\item Return the decryptor: $X[s(j)] \gets \hat{K}[j]^{-1} C[j] \bmod 256$ inverts any ciphertext $C$.
+\end{enumerate}
+
 Table~\ref{tab:complexity} states the complexity and compares it to the optimal permutation-only bound
 of Li and Lo~\cite{li2011optimal}: our query count is order-optimal and the cost is independent of the
 cipher's nominal key length, so the advertised keyspace is irrelevant; the equivalent key bypasses key
 recovery entirely~\cite{Jolfaei2016permutation}.
-
-\begin{algorithm}[t]
-\caption{Equivalent-key recovery for LLEO}
-\label{alg:attack}
-\begin{algorithmic}[1]
-\State $\hat{K} \gets \mathrm{Enc}(\mathbf{1})$ \Comment{$\hat{K}[j]=K[s(j)]$: multiplier at output $j$}
-\For{$t \gets 0$ \textbf{to} $\lceil\log_{256} n\rceil-1$}
-  \State $C \gets \mathrm{Enc}(P_t)$ \Comment{$P_t[i]={}$ the $t$-th base-256 digit of index $i$}
-  \State $d_t[j] \gets C[j]\cdot \hat{K}[j]^{-1} \bmod 256$ \textbf{for all} $j$
-\EndFor
-\State $s[j] \gets \sum_t d_t[j]\,256^{t}$ \Comment{source index for each output $j$}
-\State \Return $\mathrm{Dec}(C):\ X[s(j)] \gets \hat{K}[j]^{-1} C[j] \bmod 256$
-\end{algorithmic}
-\end{algorithm}
 
 \begin{table}[t]
 \centering
