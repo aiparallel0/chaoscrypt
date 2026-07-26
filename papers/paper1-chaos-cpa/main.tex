@@ -76,8 +76,9 @@ measure resistance to a chosen-plaintext attack. We break a 2025 chaos-based ima
 decryptor and decrypt any $512{\times}512$ ciphertext pixel-exactly in \PH{scale512_s}\,s, without the key. The cause is structural: LLEO's keystream and both
 permutations depend only on the secret key, never on the image, so the whole cipher is one fixed map. Its
 reported differential metric is then an illusion: with no plaintext diffusion the \emph{true} one-pixel
-NPCR is \PH{cam_npcr1px}\,\% ($100/MN$), not $99.6\,\%$. A reusable structural audit and a graded security
-metric are developed in an extended version. Good statistics are not security.
+NPCR is \PH{cam_npcr1px}\,\% ($100/MN$), not $99.6\,\%$. The break is structural, not incidental: any
+cipher whose keystream is fixed by the key alone falls to the same recovery. Good statistics are not
+security.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -158,10 +159,10 @@ decrypts any image pixel-exactly without the key (Section~\ref{sec:crypt}).
 \item We reproduce LLEO, confirm it matches the paper's reported statistics, and then show those
 statistics coexist with \emph{zero} plaintext diffusion: the true one-pixel NPCR is
 \PH{cam_npcr1px}\,\%, not 99.6\,\% (Section~\ref{sec:results}).
-\item Most importantly, we distil the attack into a reusable, black-box \emph{structural audit} that
-decides plaintext-independence for any cipher, with a held-out certificate we prove sound; the audit, its
-application to real published 2023--2025 schemes, and a graded plaintext-keying-capacity metric are
-developed in an extended version.
+\item Most importantly, we show this failure is structural, not incidental to LLEO: by
+Proposition~\ref{prop:monomial}, \emph{any} cipher whose keystream and permutations are fixed by the key
+alone collapses to the same monomial or affine map, so extra rounds, chaotic maps, or block shuffles
+cannot help and only a plaintext-dependent keystream defeats the attack (Section~\ref{sec:crypt}).
 \end{itemize}
 Fig.~\ref{fig:break} previews the outcome: four standard images, their LLEO ciphertexts, and our
 key-free recoveries, each bit-identical to the original and obtained in \PH{cam_cpt} chosen plaintexts.
@@ -201,21 +202,21 @@ control demonstrates on the same construction (Section~\ref{sec:results}).
 
 \emph{What is new here.} Prior equivalent-key cryptanalyses (Arroyo \emph{et al.}~\cite{arroyo2009}, Li
 \emph{et al.}~\cite{li2018entropy,li2019attacker}) break one named scheme at a time by hand, each analysis
-bespoke to its target. Our contribution automates this process: a black-box
-decision procedure that, knowing nothing of a cipher's internals, identifies the position-wise algebra
-(affine, XOR, or GF(2)-affine), recovers an equivalent key, and issues a held-out certificate we prove
-sound, and the few-query bound matches the Li--Lo permutation-only optimum~\cite{li2011optimal}.
+bespoke to its target. This paper makes the analysis structural rather than bespoke: we identify the position-wise algebra of
+LLEO (a monomial map over $\mathbb{Z}_{256}$), recover an equivalent key from a few chosen plaintexts,
+confirm it on held-out ciphertext, and show by Proposition~\ref{prop:monomial} that the same argument
+covers any cipher whose keystream and permutations are fixed by the key. The few-query bound matches the
+Li--Lo permutation-only optimum~\cite{li2011optimal}.
 Table~\ref{tab:compare} places our break beside prior equivalent-key cryptanalyses: like them it recovers
-an equivalent key from a handful of chosen plaintexts, and only this work additionally distils the single
-break into a reusable audit and a graded plaintext-dependence metric. The automated audit that runs this
-procedure across a corpus and real published schemes is developed in the extended version.
+an equivalent key from a handful of chosen plaintexts, and here that recovery reconstructs the full map
+rather than the permutation alone.
 
 \begin{table}[t]
 \centering
 \caption{This break in the context of prior equivalent-key cryptanalyses of chaos / permutation image
 ciphers. ``Chosen PT'' is the number of chosen (or known) plaintexts; ``equiv.\ key'' means a key-free
-decryptor is recovered. Only this work distils the single break into a reusable audit and a graded
-plaintext-dependence metric (extended version).}
+decryptor is recovered; only this work recovers the full map (permutation and multiplier) rather than the
+permutation alone.}
 \label{tab:compare}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lccc@{}}
@@ -309,7 +310,7 @@ $C[j]=K[s(j)]\,\mathrm{digit}_t(s(j))$, and dividing by the recovered $K[s(j)]$ 
 $\mathrm{digit}_t(s(j))$; collecting all digits reconstructs $s$. If instead the substitution is XOR
 with a key-only keystream, the same argument over $\mathrm{GF}(2)$ gives an affine map $C=Mx\oplus b$
 with $b=E(\mathbf{0})$: the all-zeros query returns $b$ and the index-digit queries return $s$, exactly
-as in a CBC-like XOR cipher (extended version).
+as in a CBC-like XOR cipher.
 \end{proof}
 
 \subsection{Four images recover the full map}
@@ -497,10 +498,10 @@ Key type                   & ``asymmetric'' & symmetric \\
 \end{tabular}
 \end{table}
 
-The single break generalises. Treated as a black-box structural audit, the same equivalent-key recovery
-decides plaintext-independence for an unknown cipher and certifies each verdict against held-out ciphertext;
-that audit, its application to real published 2023--2025 schemes, and a graded plaintext-keying-capacity
-metric separating fragile from genuine plaintext binding are developed in an extended version.
+The single break generalises. The same equivalent-key recovery applies to any cipher whose keystream and
+permutations are fixed by the key: a handful of chosen plaintexts either reconstruct a key-free decryptor,
+which we then confirm against held-out ciphertext, or they do not, and that binary outcome is exactly a
+decision of plaintext-independence.
 
 \section{Discussion}
 LLEO illustrates a persistent failure mode: \emph{good statistics are not security}. A flat histogram,
@@ -520,6 +521,16 @@ One bound on our claims: we recover an \emph{equivalent key} that decrypts any c
 size, not the underlying chaotic secret seed itself, the standard, defensible claim in this
 literature~\cite{li2019attacker}.
 
+\subsection{Future work}
+The recovery of Section~\ref{sec:crypt} is demonstrated on LLEO and justified structurally, but not yet
+automated. Three extensions follow directly. First, it can be packaged as a black-box \emph{structural
+audit} that, given only oracle access to an unknown cipher, decides plaintext-independence and returns a
+key-free decryptor confirmed on held-out ciphertext. Second, running that audit across a corpus of
+recently published 2023--2025 chaos and permutation image ciphers would measure how widespread this
+failure mode is. Third, the binary verdict can be refined into a graded plaintext-keying-capacity metric
+that quantifies how much of a cipher's output genuinely depends on the plaintext, separating fragile
+designs from those with real diffusion. We develop these directions in an extended version.
+
 \emph{Disclosure.} Consistent with responsible-disclosure practice, we emailed the authors of every scheme
 we break (LLEO~\cite{jain2025lleo}) at submission, ahead
 of publication. We had received no response at the time of writing, and will incorporate any correction in the
@@ -531,9 +542,9 @@ A 2025 chaos-based image cipher is completely broken by an equivalent-key chosen
 NPCR of $\approx$99.6\,\%: good statistics are not security, and the cipher's differential metric,
 measured correctly, is \PH{cam_npcr1px}\,\%. We recommend plaintext-dependent keystreams and
 real diffusion, and that statistical scores accompany, rather than replace, an explicit
-chosen-plaintext security argument. More broadly, the attack generalises into a reusable structural audit
-that decides plaintext-independence, with a held-out certificate we prove sound; its application to real
-published schemes and a graded plaintext-keying-capacity metric are developed in an extended version.
+chosen-plaintext security argument. More broadly, the attack is not specific to LLEO:
+any cipher whose keystream is fixed by the key alone admits the same equivalent-key recovery, so
+plaintext-independence, not statistical uniformity, is the property a designer must test.
 
 \section*{Acknowledgment}
 The author used a large language model (Anthropic Claude) to assist with code, reproduction, and
