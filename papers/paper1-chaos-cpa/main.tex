@@ -69,6 +69,7 @@
 \pagestyle{empty}
 
 \begin{abstract}
+\boldmath
 Chaos-based image ciphers are published at a high rate and validated by statistical scores that do not
 measure resistance to a chosen-plaintext attack. We break a 2025 chaos-based image cipher (Jain
 \emph{et al.}, \emph{Optik}; Lorenz/logistic maps, ``LLEO'') that reports near-ideal entropy
@@ -82,7 +83,7 @@ security.
 \end{abstract}
 
 \begin{IEEEkeywords}
-cryptanalysis, image encryption, chaotic cipher, chosen-plaintext attack, equivalent key, NPCR
+\itshape cryptanalysis, image encryption, chaotic cipher, chosen-plaintext attack, equivalent key, NPCR
 \end{IEEEkeywords}
 
 \section{Introduction}
@@ -132,7 +133,7 @@ medical imaging~\cite{alnassan2024dicom}. A break is therefore a standing capabi
 single ciphertext looks but whether \emph{any} value in the cipher depends on the image, the one binary
 property that separates ``broken in \PH{cam_cpt} queries'' from ``resists.''
 
-\subsection{Real-world stakes}
+\subsection{Real-World Stakes}
 Chaos-based image encryption is a large, active design literature, published at
 high volume and aimed at the most sensitive, most resource-constrained image streams: medical and DICOM
 imaging, the Internet of Medical Things, IoT-edge and surveillance pipelines, and satellite links, with
@@ -254,7 +255,7 @@ seeded from it; \emph{no quantity depends on the image $X$}. Although the scheme
 ``asymmetric,'' the same four keys both encrypt and decrypt: it is a symmetric cipher.
 
 \section{Cryptanalysis}\label{sec:crypt}
-\subsection{Threat model}
+\subsection{Threat Model}
 We work in the standard chosen-plaintext setting under Kerckhoffs's principle (the attacker knows the
 algorithm; only the key is secret): the attacker can obtain the ciphertext of any image it chooses under
 a fixed unknown key, and seeks an \emph{equivalent key}, a procedure that decrypts any ciphertext of
@@ -263,7 +264,7 @@ Because the cipher is plaintext-independent, the same equivalent key also follow
 plaintext--ciphertext pairs~\cite{zhang2018improved}; we present the chosen-plaintext version as it is
 minimal.
 
-\subsection{The whole cipher is one fixed map}
+\subsection{The Whole Cipher Is One Fixed Map}
 Index the image as a length-$n$ vector, $n=MN$. Each LLEO step is linear over $\mathbb{Z}_{256}$ and
 fixed by the key: substitution multiplies coordinate $p$ by a fixed unit $K[p]$ (odd, hence invertible
 mod 256), and the two block shuffles compose into one position permutation $P$. Therefore
@@ -313,7 +314,7 @@ with $b=E(\mathbf{0})$: the all-zeros query returns $b$ and the index-digit quer
 as in a CBC-like XOR cipher.
 \end{proof}
 
-\subsection{Four images recover the full map}
+\subsection{Four Images Recover the Full Map}
 In plain terms: because nothing in the cipher depends on the picture, it always does the same two
 things: shuffle the pixel positions in one fixed way, and multiply each pixel by one fixed number. So
 feed it an all-ones image and it hands back the multipliers; feed it images whose pixels carry their own
@@ -374,7 +375,7 @@ Memory & $O(n)$ & $O(n)$ \\
 \end{tabular}
 \end{table}
 
-\subsection{Why extra structure does not help}
+\subsection{Why Extra Structure Does Not Help}
 A composition of fixed key-only maps is again one, so extra rounds, chaotic maps, or block shuffles leave
 \eqref{eq:monomial} intact (only $K,s$ change) and the attack applies unchanged; it is moreover a
 \emph{known}-plaintext attack whenever the available plaintexts span the index digits. The single
@@ -425,7 +426,7 @@ Brick     & \PH{brk_ent_plain} & \PH{brk_ent_cipher} & \PH{brk_corr_cipher} & \P
 \end{tabular}
 \end{table}
 
-\subsection{The break}
+\subsection{The Break}
 The attack of Section~\ref{sec:crypt} recovers the equivalent key in \PH{cam_cpt} chosen plaintexts and
 decrypts a fresh ciphertext pixel-exactly in \PH{scale512_s}\,s at $512^2$ (single core,
 Table~\ref{tab:scale}; recovery is image-content-independent, so this time holds for any image), using no
@@ -433,7 +434,7 @@ key.
 Fig.~\ref{fig:break} shows the original, the LLEO ciphertext, and the key-free recovery, which is
 identical to the original.
 
-\subsection{Cost scales logarithmically}
+\subsection{Cost Scales Logarithmically}
 Table~\ref{tab:scale} reports how the attack's cost scales with image size. Because it needs only
 $1+\lceil\log_{256} MN\rceil$ chosen plaintexts, the count stays nearly flat as the image grows:
 \PH{scale128_cpt} plaintexts at $128^2$, \PH{scale512_cpt} at $512^2$, and still \PH{scale1024_cpt}
@@ -457,7 +458,7 @@ $1024\times1024$ & \PH{scale1024_cpt} & \PH{scale1024_s} & exact \\
 \end{tabular}
 \end{table}
 
-\subsection{The differential metric is illusory}
+\subsection{The Differential Metric Is Illusory}
 LLEO reports NPCR $\approx$99.6\,\% as evidence of differential-attack resistance. But by
 \eqref{eq:monomial} flipping one plaintext pixel changes exactly one ciphertext pixel
 (Fig.~\ref{fig:diffusion}, left), so the true
@@ -521,7 +522,7 @@ One bound on our claims: we recover an \emph{equivalent key} that decrypts any c
 size, not the underlying chaotic secret seed itself, the standard, defensible claim in this
 literature~\cite{li2019attacker}.
 
-\subsection{Future work}
+\subsection{Future Work}
 The recovery of Section~\ref{sec:crypt} is demonstrated on LLEO and justified structurally, but not yet
 automated. Three extensions follow directly. First, it can be packaged as a black-box \emph{structural
 audit} that, given only oracle access to an unknown cipher, decides plaintext-independence and returns a
