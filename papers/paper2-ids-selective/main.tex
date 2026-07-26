@@ -12,20 +12,31 @@
 
 % --- UBMK official formatting (UBMK-Template-A4): geometry, spacing, captions, keyword label ---
 \usepackage{textcomp}
-\usepackage[font=footnotesize]{caption}
+\usepackage[font=footnotesize,labelsep=period]{caption} % IEEE caption format: ``Fig. 1.''
+\captionsetup[table]{labelsep=newline,font={footnotesize,sc},justification=centering} % ``TABLE I''
+                                                        % above a centred small-caps title
 \usepackage{titlesec}
 \titlespacing*{\section}{0pt}{8pt}{4pt}
 \titlespacing*{\subsection}{0pt}{6pt}{3pt}
 \titlespacing*{\subsubsection}{0pt}{4pt}{2pt}
 \usepackage{geometry}
 \geometry{a4paper, top=2cm, bottom=2.5cm, left=1.6cm, right=1.6cm}
-% Code repository link. Replace the placeholder with an anonymized mirror (e.g. anonymous.4open.science)
-% for double-blind review, or the public repo URL otherwise, BEFORE submitting.
-\newcommand{\coderepo}{\texttt{[anonymized code repository URL; insert before submission]}}
 \setlength{\parskip}{6pt}
-\setlength{\floatsep}{0pt}
+\setlength{\floatsep}{6pt} % template says 0pt, but that collides when two floats stack in one
+                           % column; 6pt matches the template's own \textfloatsep/\intextsep
 \setlength{\textfloatsep}{6pt}
 \setlength{\intextsep}{6pt}
+% Float packing: the paper is float-dense (11 floats), so let floats fill pages
+% instead of stranding white space ahead of the bibliography.
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.06}
+\renewcommand{\floatpagefraction}{0.75}
+\renewcommand{\dbltopfraction}{0.95}
+\renewcommand{\dblfloatpagefraction}{0.75}
+\setcounter{totalnumber}{6}
+\setcounter{topnumber}{4}
+\setcounter{bottomnumber}{3}
 \renewcommand{\IEEEkeywordsname}{Keywords}
 
 % Placeholders (PH of a key) are replaced by scripts/fill_tex.py from results/*.json.
@@ -37,14 +48,24 @@
 \title{Knowing When to Abstain: Calibration and Selective Prediction\\
 for Machine-Learning Network Intrusion Detection}
 
-\author{\IEEEauthorblockN{Anonymous (single author)}
-\IEEEauthorblockA{Affiliation withheld for review \\ \texttt{author@example.org}}}
+% ============================================================================
+% AUTHOR BLOCK -- FILL IN BEFORE SUBMISSION (single author).
+% Replace every [BRACKETED] field with the real value, then compile.
+% For more than one author, duplicate the \IEEEauthorblockN + \IEEEauthorblockA
+% pair and separate authors with \and.
+% ============================================================================
+\author{\IEEEauthorblockN{[AUTHOR NAME]}
+\IEEEauthorblockA{\textit{[Department / Unit]} \\
+\textit{[Institution]} \\
+{[City, Country]} \\
+\texttt{[email@domain]}}}
 
 \maketitle
 \thispagestyle{empty}
 \pagestyle{empty}
 
 \begin{abstract}
+\boldmath
 Machine-learning intrusion detectors face attack families absent from training (open-set shift), where
 ``detection collapse'' reads as a representational dead end. We propose no new detector and ask whether
 off-the-shelf detectors know when they are wrong, on NSL-KDD and two modern flow corpora
@@ -60,7 +81,7 @@ uncertainty severalfold.
 \end{abstract}
 
 \begin{IEEEkeywords}
-intrusion detection, selective prediction, calibration, uncertainty, open-set recognition, NSL-KDD
+\itshape intrusion detection, selective prediction, calibration, uncertainty, open-set recognition, NSL-KDD
 \end{IEEEkeywords}
 
 \section{Introduction}
@@ -86,10 +107,12 @@ novelty stage. We ask whether $p$ is trustworthy, and what becomes of attacks th
 \end{figure}
 A network intrusion detector that emits only ``attack'' or ``benign'' gives an operator no way to tell
 a confident verdict from a guess. In practice this matters twice over: alerts compete for scarce
-analyst attention, and genuinely novel attacks, absent from any training corpus, are exactly the
-cases a static classifier is least equipped to label. A detector that could say ``I am not sure'' on
-these inputs, and defer them to a human or a secondary control (Fig.~\ref{fig:pipeline}), would be more
-useful than one forced to commit.
+analyst attention, and genuinely novel attacks are exactly what a static classifier is least equipped to
+label. A detector that could say ``I am not sure'' on
+these inputs, and defer them to a human or a secondary control, would be more useful than one forced to
+commit. Fig.~\ref{fig:pipeline} sketches the reject-option wrapper we evaluate: the detector's label is
+accepted when its confidence clears a threshold, and otherwise routed to an analyst or a benign-only
+novelty stage.
 
 \textbf{The narrow, practical question.} Do off-the-shelf machine-learning intrusion detectors know
 when they are wrong: producing confidence scores trustworthy enough to drive an abstention policy, and
@@ -107,12 +130,12 @@ discriminative (AUROC well above chance) yet are missed at the global threshold,
 Selective prediction \cite{elyaniv2010selective,geifman2017selective} cuts selective risk only for models
 whose confidence ranks errors, and on the blind spot the lever is the operating point, not an added
 abstention/novelty stack (Sections~\ref{sec:sp},~\ref{sec:novelty}).
-Our protocol and code are available at \coderepo (anonymized, reusable, open-licensed). Throughout we
-follow the evaluation guidance of Arp \emph{et al.}\ \cite{arp2022dodos}: calibrators are fit only on
-held-out training data, and no test information leaks into model selection. Unless stated otherwise,
-NSL-KDD metrics are means over multiple seeds with 95\% CIs; because the canonical test partition is
-\emph{fixed}, those CIs reflect only train/model variance, and we report separately a bootstrap over the
-evaluation distribution that is roughly fivefold wider (Section~\ref{sec:cal}).
+Throughout we
+follow the evaluation guidance of Arp \emph{et al.}~\cite{arp2022dodos}: no test information leaks into
+model selection. Unless stated otherwise,
+NSL-KDD metrics are means over multiple seeds with 95\% CIs, which on this fixed test partition capture
+only train/model variance; we report a bootstrap over the evaluation distribution separately
+(Section~\ref{sec:cal}).
 
 \section{Related Work}
 \textbf{Calibration.} Modern classifiers often output probabilities that do not match empirical
@@ -131,8 +154,8 @@ under distribution shift, were argued early \cite{sommer2010outside} and remain 
 hazard \cite{arp2022dodos}.
 
 \textbf{Unknown attacks and shift.} The failure of closed-world classifiers on inputs unlike their
-training data motivates out-of-distribution and open-set detection, for which the maximum softmax
-probability is the standard baseline \cite{hendrycks2017baseline}. Our family-holdout protocol
+training data motivates out-of-distribution and open-set
+detection~\cite{hendrycks2017baseline}. Our family-holdout protocol
 complements NSL-KDD's built-in novelty with a controlled version that makes the ``unknown'' condition
 causal.
 
@@ -143,15 +166,16 @@ of four families: DoS (denial of service), Probe (network scanning), R2L (remote
 intrusion), and U2R (user-to-root escalation). Its test split contains \PH{n_novel_types} attack \emph{types}
 (\PH{n_novel_rows} records) that never appear in training, a built-in open-set test (the model must
 face attack kinds it never saw). Numeric features are standardised and categorical features one-hot
-encoded; the encoder is fit on training data only. We retain dated NSL-KDD, the most-reported IDS
-benchmark, and pair it with two modern flow corpora (Section~\ref{sec:cic}).
+encoded; the encoder is fit on training data only. We pair NSL-KDD with two modern flow corpora
+(Section~\ref{sec:cic}).
 
 \textbf{Models.} We use scikit-learn \cite{pedregosa2011scikit} logistic regression (a linear model), a
 random forest, and histogram gradient boosting (two ensembles of decision trees), deliberately standard
 detectors, since our subject is their confidence, not their architecture. The calibration analysis
-(Section~\ref{sec:cal}) is on these three; the model summary (Table~\ref{tab:main}) adds a fourth family,
-a neural MLP, to test whether informative confidence (low AURC) generalizes beyond trees and the linear
-model.
+(Section~\ref{sec:cal}) is on these three. Table~\ref{tab:main} summarises all of them and adds a fourth
+family, a neural MLP, to test whether informative confidence (low AURC) generalizes beyond trees and the
+linear model; it reports accuracy, ECE, Brier, AURC, and $r(0.8)$ over $K{=}15$ seeds that resample the
+fit/calibration split and model randomness, with lower ECE, Brier, and AURC all better.
 
 \textbf{Calibration.} For each model we report ECE (15 equal-width bins of the predicted class
 probability) raw and after three post-hoc calibrators: Platt (sigmoid) scaling, isotonic regression,
@@ -166,11 +190,12 @@ and at a per-family 10\% benign-FPR threshold, plus a bootstrap over the \emph{t
 
 \textbf{Selective prediction.} The confidence of a prediction is its maximum class probability. Sorting
 the test set by confidence and accepting the most-confident fraction $c$ yields the selective risk
-$r(c)$; we report the area under $r(c)$ (AURC) and $r(0.8)$ (Fig.~\ref{fig:rc}).
+$r(c)$; we report the area under $r(c)$ (AURC) and $r(0.8)$. Fig.~\ref{fig:rc} plots these
+risk--coverage curves for the three detectors.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.68\columnwidth]{figures/risk_coverage.pdf}
+\includegraphics[width=0.64\columnwidth]{figures/risk_coverage.pdf}
 \caption{Risk--coverage on NSL-KDD; the ring marks the 80\%-coverage operating point and the shaded
 areas are the AURC (area under the curve) for the two extremes. Accepting only the most-confident inputs
 lowers selective risk sharply for the tree ensembles but barely for logistic regression, whose confidence
@@ -182,10 +207,10 @@ does not rank its errors (nearly flat, and worst at the very top).}
 leave-one-family-out protocol removes one attack family entirely from training (keeping benign traffic
 and the other families), retrains, and measures detection and confidence on that family's test records.
 We also report, at a global threshold giving 80\% coverage, the fraction of unknown-family records that
-abstention rejects. Reported metrics are means over multiple seeds with 95\% confidence intervals.
+abstention rejects.
 
 \section{Results}
-\subsection{Over-confidence under shift, and no calibrator fixes it}\label{sec:cal}
+\subsection{Over-Confidence Under Shift, and No Calibrator Fixes It}\label{sec:cal}
 All three detectors are markedly over-confident on the benchmark's shifted test set, with ECE from
 $\approx$0.16 (random forest) to $\approx$0.22 (logistic regression) (Table~\ref{tab:main}). This is
 induced by distribution shift, not intrinsic: on a held-out \emph{in-distribution} split the same models
@@ -193,12 +218,13 @@ are nearly perfectly calibrated (ECE $\lesssim 0.01$). No post-hoc
 calibrator fit on source data removes the shift-induced miscalibration: Platt, isotonic, and temperature
 scaling all leave test ECE essentially where it was (gradient boosting \PH{histgb_ece_raw} raw vs.\
 \PH{histgb_ece_cal}/\PH{histgb_ece_iso}/\PH{histgb_ece_temp}; the random forest is slightly
-\emph{worse} after every one), even though each drives in-distribution ECE below 0.01
-(Fig.~\ref{fig:calmethods}). The Brier score (Table~\ref{tab:main}), a proper scoring rule, tells the same
+\emph{worse} after every one). Fig.~\ref{fig:calmethods} makes the pattern visible: for every model the
+raw, Platt, isotonic, and temperature markers cluster high on the shifted test set, even though each
+method drives in-distribution ECE below 0.01. The Brier score (Table~\ref{tab:main}), a proper scoring
+rule, tells the same
 story (it too barely improves under calibration and \emph{worsens} for the random forest), so the
-over-confidence is a property of the scores under shift, not a binning artefact of ECE. Calibrating to source
-data does not certify probabilities once the distribution moves, so we turn to abstention, which needs only
-a usable confidence \emph{ranking}.
+over-confidence is a property of the scores under shift, not a binning artefact of ECE. So we turn to
+abstention, which needs only a usable confidence \emph{ranking}.
 
 \emph{How precise are these numbers?} Because the canonical KDDTest+ partition is held fixed, our seed
 CIs (Table~\ref{tab:main}) capture only train/model variance and look reassuringly tight. They understate
@@ -209,36 +235,33 @@ benchmark.
 
 \begin{table*}[tb]
 \centering
-\caption{NSL-KDD test metrics: mean $\pm$ 95\% CI over $K{=}15$ seeds (resampling the
-fit/calibration split and model randomness), for the three standard detectors plus a supplementary neural
-MLP (fourth family). Lower ECE,
-Brier, and AURC are better. Low AURC (confidence ranks errors) is strongest for the tree ensembles, still
-useful for the MLP, and poor for logistic regression (a spectrum, not a linear/nonlinear split), which is
-the property abstention needs.}
+\caption{NSL-KDD test metrics (mean $\pm$ 95\% CI, $K{=}15$ seeds)}
 \label{tab:main}
 \setlength{\tabcolsep}{6pt}
-\begin{tabular}{lccccc}
-\toprule
-Model & Acc. & ECE & Brier & AURC & $r(0.8)$ \\
-\midrule
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+\textbf{Model} & \textbf{Acc.} & \textbf{ECE} & \textbf{Brier} & \textbf{AURC} & \textbf{$r(0.8)$} \\
+\hline
 Logistic reg.        & \PH{ms_logreg_acc} & \PH{ms_logreg_ece} & \PH{ms_logreg_brier} & \PH{ms_logreg_aurc} & \PH{ms_logreg_risk80} \\
+\hline
 Random forest        & \PH{ms_rf_acc}     & \PH{ms_rf_ece}     & \PH{ms_rf_brier}     & \PH{ms_rf_aurc}     & \PH{ms_rf_risk80} \\
+\hline
 Hist.\ grad.\ boost. & \PH{ms_histgb_acc} & \PH{ms_histgb_ece} & \PH{ms_histgb_brier} & \PH{ms_histgb_aurc} & \PH{ms_histgb_risk80} \\
+\hline
 MLP (neural)         & \PH{ms_mlp_acc}    & \PH{ms_mlp_ece}    & \PH{ms_mlp_brier}    & \PH{ms_mlp_aurc}    & \PH{ms_mlp_risk80} \\
-\bottomrule
+\hline
 \end{tabular}
 \end{table*}
 
-\subsection{The benign-mimicry blind spot is an operating-point failure}\label{sec:blindspot}
+\subsection{The Benign-Mimicry Blind Spot Is an Operating-Point Failure}\label{sec:blindspot}
 The most attackable reading of the blind spot is that R2L's near-zero detection is just an unbalanced
 classifier cut at argmax (the default 0.5 decision boundary). It is not class imbalance, but it \emph{is} largely the
 threshold. The attack score separates R2L from benign well above chance (AUROC \PH{pf_auroc_seen_R2L}
-when R2L is seen in training, \PH{pf_auroc_unk_R2L} when it is held out; Fig.~\ref{fig:perfam}), yet at
+when R2L is seen in training, \PH{pf_auroc_unk_R2L} when it is held out), yet at
 the global argmax cut only \PH{r2l_recall_argmax} of R2L is flagged.\footnote{R2L's recall at the global
 argmax cut is one quantity measured in three independent experiments: \PH{r2l_recall_argmax} here,
 \PH{pf_recall_seen_R2L} in the per-family panel (Table~\ref{tab:perfam}), and \PH{det_seen_R2L} under LOFO
-(Table~\ref{tab:openset}); the ${\sim}0.01$ spread is random-seed and train-split variation, not a
-methodological discrepancy.} Training with
+(Table~\ref{tab:openset}); the ${\sim}0.01$ spread is seed and train-split variation, not a discrepancy.} Training with
 \texttt{class\_weight="balanced"} barely moves this (\PH{r2l_recall_balanced}), expected, since the
 binary attack/normal task is already near-balanced, whereas a per-family threshold at a 10\% benign
 false-positive rate recovers \PH{r2l_recall_fpr10}. So R2L is the hardest family, but it is
@@ -246,97 +269,105 @@ false-positive rate recovers \PH{r2l_recall_fpr10}. So R2L is the hardest family
 benign-mimicking family, not a representational dead end. This corrects an over-strong ``structural blind
 spot'' reading; the blind spot is real but it lives in the decision threshold.
 
-The threshold-free view also accounts for ``detection collapse'': holding a family out of training costs
-little AUROC: DoS \PH{pf_auroc_seen_DoS}$\to$\PH{pf_auroc_unk_DoS} (a drop of \PH{pf_auroc_delta_DoS}),
-Probe \PH{pf_auroc_delta_Probe}, R2L \PH{pf_auroc_delta_R2L} (Table~\ref{tab:perfam}), even though
-operating-point recall falls steeply. The much-cited recall collapse on unknown families is therefore
-mostly the global threshold mismatching the now-unknown family, not the score losing discriminative
-power. Operationally this matters: the fix is a better operating point or abstention, not richer features.
+Table~\ref{tab:perfam} gives the threshold-free view that also accounts for ``detection collapse''. For
+each family it reports the attack-score AUROC when the family is seen in training and when it is held
+out, the change $\Delta$ between them, and operating-point recall at the global argmax cut (means over
+$K{=}6$ seeds; AUROC CI half-width $\le\PH{pf_auroc_maxhw}$). Holding a family out costs little AUROC:
+DoS \PH{pf_auroc_seen_DoS}$\to$\PH{pf_auroc_unk_DoS} (a drop of \PH{pf_auroc_delta_DoS}),
+Probe \PH{pf_auroc_delta_Probe}, R2L \PH{pf_auroc_delta_R2L}, even though
+operating-point recall falls steeply. The score stays discriminative for every family (AUROC $\gg 0.5$)
+while argmax recall is low for the minority ones: the global cut, not the score, is what misses them.
+Fig.~\ref{fig:perfam} plots the same seen-versus-held-out AUROCs, where every family stays well above
+chance and R2L is lowest but never near 0.5. The much-cited recall collapse on unknown families is
+therefore mostly the global threshold mismatching the now-unknown family, not the score losing
+discriminative power. Operationally this matters: the fix is a better operating point or abstention, not
+richer features.
 
 \begin{table}[t]
 \centering
-\caption{Threshold-free per-family detection on NSL-KDD: attack-score AUROC (benign vs.\ family) when the
-family is seen vs.\ held out, its change $\Delta$, and operating-point recall at the global argmax cut.
-The score is discriminative for every family (AUROC $\gg 0.5$), yet argmax recall is low for the minority
-families: the global cut, not the score, is what misses them. Means over $K{=}6$ seeds; AUROC CI
-half-width $\le\PH{pf_auroc_maxhw}$.}
+\caption{Threshold-free per-family detection on NSL-KDD ($K{=}6$ seeds)}
 \label{tab:perfam}
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{lcccc}
-\toprule
-Family & AUROC (seen) & AUROC (unk.) & $\Delta$ & recall @argmax \\
-\midrule
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Family} & \textbf{AUROC (seen)} & \textbf{AUROC (unk.)} & \textbf{$\Delta$} & \textbf{recall @argmax} \\
+\hline
 DoS   & \PH{pf_auroc_seen_DoS}   & \PH{pf_auroc_unk_DoS}   & \PH{pf_auroc_delta_DoS}   & \PH{pf_recall_seen_DoS} \\
+\hline
 Probe & \PH{pf_auroc_seen_Probe} & \PH{pf_auroc_unk_Probe} & \PH{pf_auroc_delta_Probe} & \PH{pf_recall_seen_Probe} \\
+\hline
 R2L   & \PH{pf_auroc_seen_R2L}   & \PH{pf_auroc_unk_R2L}   & \PH{pf_auroc_delta_R2L}   & \PH{pf_recall_seen_R2L} \\
+\hline
 U2R   & \PH{pf_auroc_seen_U2R}   & \PH{pf_auroc_unk_U2R}   & \PH{pf_auroc_delta_U2R}   & \PH{pf_recall_seen_U2R} \\
-\bottomrule
+\hline
 \end{tabular}
 \end{table}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.68\columnwidth]{figures/perfamily_auroc.pdf}
+\includegraphics[width=0.64\columnwidth]{figures/perfamily_auroc.pdf}
 \caption{Per-family detection AUROC (threshold-free), family seen vs.\ held out of training. Every family
 stays well above chance, R2L lowest but never near 0.5; the small seen$\to$unknown gaps are the honest
 size of ``detection collapse'' once the decision threshold is taken out of the picture.}
 \label{fig:perfam}
 \end{figure}
 
-\subsection{Abstention helps, if confidence is informative}\label{sec:sp}
-Abstaining on the least-confident inputs lowers selective risk, but only when the model's confidence
-ranks its errors (Fig.~\ref{fig:rc}). For gradient boosting, rejecting the least-confident
+\subsection{Abstention Helps, If Confidence Is Informative}\label{sec:sp}
+Fig.~\ref{fig:rc} shows that abstaining on the least-confident inputs lowers selective risk, but only
+when the model's confidence ranks its errors. For gradient boosting, rejecting the least-confident
 20\% of inputs lowers selective risk to \PH{ms_histgb_risk80} (AURC \PH{ms_histgb_aurc}); the random
 forest is similar (AURC \PH{ms_rf_aurc}). Logistic regression is the cautionary case: its confidence
 barely ranks its errors (AURC \PH{ms_logreg_aurc}), so abstention buys little (\PH{ms_logreg_risk80}).
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.68\columnwidth]{figures/calibration_methods.pdf}
+\includegraphics[width=0.64\columnwidth]{figures/calibration_methods.pdf}
 \caption{No post-hoc calibrator survives the shift. Per model, ECE on the shifted test set under raw,
 Platt, isotonic, and temperature scaling; all four markers cluster high. Each method reaches ECE below
 0.01 in-distribution, so the failure is the shift, not the calibrator.}
 \label{fig:calmethods}
 \end{figure}
 
-\subsection{Leave-one-family-out (LOFO): the operating-point view}\label{sec:openset}
+\subsection{Leave-One-Family-Out (LOFO): The Operating-Point View}\label{sec:openset}
 Section~\ref{sec:blindspot} measured detection threshold-free; here is what an operator sees at a fixed
-operating point under the same LOFO protocol. At argmax, detection of DoS falls from
-\PH{det_seen_DoS} (seen) to \PH{det_unseen_DoS} (unknown) and Probe from \PH{det_seen_Probe} to
-\PH{det_unseen_Probe} (Table~\ref{tab:openset}); abstention at 80\% coverage then rejects
+operating point under the same LOFO protocol. Table~\ref{tab:openset} reports the deployment-time
+consequences of those threshold-free AUROCs: per family, argmax detection when it is seen in training,
+when it is held out, and the fraction of unknown-family records abstention rejects at 80\% coverage
+(means over $K{=}10$ seeds; 95\% CI half-width $\le\PH{openset_maxhw}$). At argmax, detection of DoS
+falls from \PH{det_seen_DoS} (seen) to \PH{det_unseen_DoS} (unknown) and Probe from \PH{det_seen_Probe}
+to \PH{det_unseen_Probe}; abstention at 80\% coverage then rejects
 \PH{reject_unseen_DoS} and \PH{reject_unseen_Probe} of the unknown family, recovering part of the gap.
 R2L is the worst case (\PH{det_unseen_R2L} detected when unknown, only \PH{reject_unseen_R2L} rejected by
 abstention) because R2L overlaps the benign feature manifold for two independent benign-only detectors
 alike (Fig.~\ref{fig:manifold}), and confidence abstention fires on \emph{unusual} inputs, which R2L is
 not. As Section~\ref{sec:blindspot} established, this is an operating-point and manifold-overlap effect,
-not an uninformative score (R2L still scores AUROC \PH{pf_auroc_unk_R2L} when unknown); the recalls here
-are the deployment-time consequence of that mismatch.\footnote{U2R (train $n{=}52$, test $n{=}67$) is too
+not an uninformative score (R2L still scores AUROC \PH{pf_auroc_unk_R2L} when unknown).\footnote{U2R (train $n{=}52$, test $n{=}67$) is too
 rare for its per-seed estimates to support qualitative claims; we list it in Table~\ref{tab:openset} for
-completeness only and draw no conclusions from it.} The two modern-corpus studies below repeat the
-protocol with the Web (CIC-2017) and Infiltration (CIC-2018) families held out.
+completeness only and draw no conclusions from it.}
 
 \begin{table}[t]
 \centering
-\caption{Leave-one-family-out (LOFO) on NSL-KDD, \emph{operating-point} (argmax) recall: detection when a
-family is seen in training vs.\ held out (unknown), and the fraction of unknown-family records abstention
-rejects at 80\% coverage. These are the deployment-time consequences of the threshold-free AUROCs in
-Table~\ref{tab:perfam}. Means over $K{=}10$ seeds; 95\% CI half-width $\le\PH{openset_maxhw}$.}
+\caption{Leave-one-family-out (LOFO) argmax recall on NSL-KDD ($K{=}10$ seeds)}
 \label{tab:openset}
-\begin{tabular}{lccc}
-\toprule
-Family & det.\ (seen) & det.\ (unknown) & rejected by abstention \\
-\midrule
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Family} & \textbf{det.\ (seen)} & \textbf{det.\ (unknown)} & \textbf{rejected by abstention} \\
+\hline
 DoS   & \PH{det_seen_DoS}   & \PH{det_unseen_DoS}   & \PH{reject_unseen_DoS} \\
+\hline
 Probe & \PH{det_seen_Probe} & \PH{det_unseen_Probe} & \PH{reject_unseen_Probe} \\
+\hline
 R2L   & \PH{det_seen_R2L}   & \PH{det_unseen_R2L}   & \PH{reject_unseen_R2L} \\
+\hline
 U2R   & \PH{det_seen_U2R}   & \PH{det_unseen_U2R}   & \PH{reject_unseen_U2R} \\
-\bottomrule
+\hline
 \end{tabular}
 \end{table}
 
 \begin{figure*}[tb]
 \centering
-\includegraphics[width=0.94\textwidth]{figures/benign_manifold.pdf}
+\includegraphics[width=0.84\textwidth]{figures/benign_manifold.pdf}
 \caption{Why R2L is the blind spot. \textbf{(a)} The joint novelty space: each NSL-KDD test record placed
 by how anomalous the two benign-only detectors find it, z-scored so benign sits near the origin (dashed
 box $=$ central 95\% of benign). \textbf{(b)} A ridgeline of the per-family Isolation-Forest anomaly. Both
@@ -346,12 +377,14 @@ benign-mimicking R2L.}
 \label{fig:manifold}
 \end{figure*}
 
-\subsection{Two modern corpora: calibration recovers, the blind spot recurs}\label{sec:cic}
+\subsection{Two Modern Corpora: Calibration Recovers, the Blind Spot Recurs}\label{sec:cic}
 The dissociation holds across two further corpora, taking the benign-mimicry result beyond $n{=}2$.
 \textbf{CIC-IDS-2017.} Within a random split this flow-based corpus (78 features; DDoS, PortScan, Web) is
 far easier than NSL-KDD (gradient boosting reaches accuracy \PH{cic_histgb_acc} at ECE
 \PH{cic_histgb_ece}) so over-confidence simply disappears: calibration quality is a property of the
-task, not an intrinsic flaw (Table~\ref{tab:cic}). Abstention's value persists under drift: with a
+task, not an intrinsic flaw. Table~\ref{tab:cic} reports all three detectors on this corpus under both a
+random split and the cross-day split below ($K{=}5$ seeds; 95\% CI half-width $\le\PH{cic_maxhw}$).
+Abstention's value persists under drift: with a
 cross-day split (train Friday DDoS/PortScan, test Thursday with Web unknown), which avoids the optimistic
 bias of a random split~\cite{pendlebury2019tesseract}, Web detection falls from \PH{cic_web_seen} to
 \PH{cic_web_unseen} and abstention rejects \PH{cic_drift_reject_web} of unknown Web, more than NSL-KDD's
@@ -366,28 +399,26 @@ Infiltration's threshold-free score is only \emph{moderately} discriminative (AU
 well below R2L's \PH{r2l_auroc_seen}, and its recovered recall trails R2L's \PH{r2l_recall_fpr10}. So the
 operating-point reading is cleanest for R2L; for Infiltration part of the miss is \emph{representational}
 (the score itself is weaker), not purely a thresholding artifact. The honest three-corpus picture is
-therefore a \emph{graded} dissociation: calibration failure is task-specific, and a single global
-operating point under-detects minority benign-mimicking families whose score stays at least partly
-discriminable: most cleanly when that score is strong (R2L), less so when it is weak (Infiltration).
+therefore a \emph{graded} dissociation, not a uniform one.
 
 \begin{table}[t]
 \centering
-\caption{On a modern corpus the same task is near-perfectly calibrated (gradient boosting ECE
-\PH{cic_histgb_ece}), and abstention rejects \PH{cic_drift_reject_web} of the unknown Web family under
-cross-day drift. CIC-IDS-2017, random split and cross-day (train Friday, test Thursday); means over
-$K{=}5$ seeds, 95\% CI half-width $\le\PH{cic_maxhw}$.}
+\caption{CIC-IDS-2017 metrics, random split and cross-day ($K{=}5$ seeds)}
 \label{tab:cic}
-\begin{tabular}{lcccc}
-\toprule
-Model & Acc. & ECE & AURC & $r(0.8)$ \\
-\midrule
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Model} & \textbf{Acc.} & \textbf{ECE} & \textbf{AURC} & \textbf{$r(0.8)$} \\
+\hline
 Logistic reg.        & \PH{cic_logreg_acc} & \PH{cic_logreg_ece} & \PH{cic_logreg_aurc} & \PH{cic_logreg_risk80} \\
+\hline
 Random forest        & \PH{cic_rf_acc}     & \PH{cic_rf_ece}     & \PH{cic_rf_aurc}     & \PH{cic_rf_risk80} \\
+\hline
 Hist.\ grad.\ boost. & \PH{cic_histgb_acc} & \PH{cic_histgb_ece} & \PH{cic_histgb_aurc} & \PH{cic_histgb_risk80} \\
-\midrule
-\multicolumn{5}{l}{\footnotesize Cross-day: Web detection \PH{cic_web_seen}$\to$\PH{cic_web_unseen} (unknown);} \\
-\multicolumn{5}{l}{\footnotesize abstention rejects \PH{cic_drift_reject_web} of unknown Web at 80\% coverage.} \\
-\bottomrule
+\hline
+\multicolumn{5}{|l|}{\footnotesize Cross-day: Web detection \PH{cic_web_seen}$\to$\PH{cic_web_unseen} (unknown);} \\
+\multicolumn{5}{|l|}{\footnotesize abstention rejects \PH{cic_drift_reject_web} of unknown Web at 80\% coverage.} \\
+\hline
 \end{tabular}
 \end{table}
 
@@ -398,7 +429,7 @@ phenomena transfer but the guarantees do not. Accuracy falls to \PH{xfer_acc}, c
 \PH{xfer_risk_full}$\to$\PH{xfer_risk80}), with Infiltration again the blind spot (detected
 \PH{xfer_infil_detect}; $K{=}5$ seeds, CI half-width $\le\PH{xfer_maxhw}$).
 
-\subsection{Which signal, and can coverage be guaranteed?}
+\subsection{Which Signal, and Can Coverage Be Guaranteed?}
 Is max-softmax (MSP) the right abstention signal, and can abstention carry a formal guarantee? On NSL-KDD,
 MSP is a strong, well-rounded default among classical signals. Random-forest ensemble disagreement is
 statistically indistinguishable from it (paired $\Delta$AURC \PH{ms_dmsp_rf_disagreement}, CI includes
@@ -408,23 +439,26 @@ not the estimator. We compare classical signals only: energy- and ODIN-style sco
 which we deliberately do not use, so our claim is scoped to off-the-shelf tabular models. For a guarantee,
 split conformal prediction~\cite{angelopoulos2023conformal} attains target $0.90$ coverage
 in-distribution (\PH{ms_conf_indist}) but only \PH{ms_conf_shift} under the train--test
-shift~\cite{tibshirani2019}. This is the conformal analogue of the Section~\ref{sec:cal} calibration
-failure. Restoring it needs shift-aware weighting with estimable likelihood ratios, impractical for
+shift~\cite{tibshirani2019}, the conformal analogue of the Section~\ref{sec:cal} calibration failure.
+Restoring it needs shift-aware weighting with estimable likelihood ratios, impractical for
 genuine zero-days.
 
-\subsection{A benign-only novelty stage partially closes the blind spot}\label{sec:novelty}
+\subsection{A Benign-Only Novelty Stage Partially Closes the Blind Spot}\label{sec:novelty}
 Confidence-based abstention barely flags R2L (Section~\ref{sec:openset}) because such attacks lie on the
-benign feature manifold (Fig.~\ref{fig:manifold}). The apt detector for that regime is a \emph{benign-only} density model, a
+benign feature manifold. Fig.~\ref{fig:manifold} shows why: in the joint novelty space of two
+benign-only detectors, and in the per-family anomaly ridgeline beside it, R2L's distribution sits on top
+of benign's while DoS, Probe, and U2R separate.
+The apt detector for that regime is a \emph{benign-only} density model, a
 one-class novelty detector, distinct from the two-class Mahalanobis used above for error ranking. We fit
 an Isolation Forest~\cite{liu2008isolation} and a one-class SVM~\cite{scholkopf2001oneclass} on benign
 records only. At a 10\% benign false-positive budget the Isolation Forest recovers
 \PH{nov_if_rec_U2R_fp10} of U2R and \PH{nov_if_rec_R2L_fp10} of R2L (the one-class SVM
 \PH{nov_ocsvm_rec_U2R_fp10} and \PH{nov_ocsvm_rec_R2L_fp10}; means over $K{=}8$ seeds, 95\% CI
 half-width $\le\PH{nov_maxhw}$), against abstention's $\approx\PH{reject_unseen_R2L}$ for unknown R2L,
-a clear if partial gain. The AUROC ceilings
-(Fig.~\ref{fig:novelty}: R2L \PH{nov_if_auroc_R2L}, U2R \PH{nov_if_auroc_U2R}) show the limit is real but
-not absolute: R2L is hardest because its support most overlaps benign, so no benign-only detector fully
-recovers it, yet a novelty stage is a cheap, measured complement: abstention and novelty catch
+a clear if partial gain. Fig.~\ref{fig:novelty} orders the families by how cleanly a benign-only model
+separates them from benign, and its AUROC ceilings (R2L \PH{nov_if_auroc_R2L}, U2R
+\PH{nov_if_auroc_U2R}) show the limit is real but not absolute: R2L is hardest because its support most overlaps benign, so no benign-only detector fully
+recovers it, yet a novelty stage remains a cheap complement, since abstention and novelty catch
 different failure modes (confident errors vs.\ benign-mimicking attacks).
 
 \emph{The recipe, re-baselined honestly.} Stacking looks like a win only against the argmax cut, a bad
@@ -435,7 +469,8 @@ recovers \PH{comb_recall_tuned}; the full stack reaches only \PH{comb_recall_uni
 tuned threshold at matched cost. Two distinct resamplings agree on no gain. The seed-paired gap is
 \PH{comb_delta_union_tuned} (over the six training seeds). Resampling the evaluation distribution of a
 fixed model gives a gap of \PH{comb_delta_boot_mid} (95\% CI
-$[\PH{comb_delta_boot_lo},\PH{comb_delta_boot_hi}]$, upper bound ${\approx}0$; Fig.~\ref{fig:combined}).
+$[\PH{comb_delta_boot_lo},\PH{comb_delta_boot_hi}]$, upper bound ${\approx}0$).
+Fig.~\ref{fig:combined} sets the three policies side by side at matched analyst cost.
 The recovery is the operating point, not the
 gates; even so, the tuned threshold still misses about half of unknown R2L (the stack about 60\%). This is
 not a single-corpus result: Section~\ref{sec:validatefix} repeats the comparison across three review
@@ -443,7 +478,7 @@ budgets on both unknown R2L and cross-corpus Infiltration, with the same conclus
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.68\columnwidth]{figures/combined_pipeline.pdf}
+\includegraphics[width=0.64\columnwidth]{figures/combined_pipeline.pdf}
 \caption{\textbf{The paper's central negative result in one view.} On unknown (held-out) R2L at matched
 analyst cost, a single budget-tuned threshold recovers \PH{comb_recall_tuned} of the family, which the
 full abstention$+$novelty stack does not beat (\PH{comb_recall_union}); argmax alone is blind
@@ -454,7 +489,7 @@ full abstention$+$novelty stack does not beat (\PH{comb_recall_union}); argmax a
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.68\columnwidth]{figures/novelty_auroc.pdf}
+\includegraphics[width=0.64\columnwidth]{figures/novelty_auroc.pdf}
 \caption{Benign-only novelty detection (one-class models trained on benign records only): AUROC
 separating each attack family from benign, ordered by difficulty. DoS/Probe are easy; U2R/R2L, the
 abstention blind spot, are only partially recoverable, R2L the hardest. Markers are means over
@@ -462,7 +497,7 @@ $K{=}8$ seeds, whiskers 95\% CIs; the dashed line is chance.}
 \label{fig:novelty}
 \end{figure}
 
-\subsection{Validating the fix across budgets and corpora}\label{sec:validatefix}
+\subsection{Validating the Fix Across Budgets and Corpora}\label{sec:validatefix}
 At a matched analyst review budget $b\in\{5,10,20\}\%$ (benign FPR) we compare a single global threshold
 \emph{tuned} to $b$ against the classifier\,$\cup$\,abstention\,$\cup$\,novelty stack, on unknown R2L
 (NSL-KDD) and cross-corpus Infiltration (CIC-2018), over $K{=}6$ seeds. The stack beats the tuned threshold in \emph{one} of six budget$\times$corpus cells
@@ -471,26 +506,23 @@ unknown R2L ($\Delta{=}\PH{vf_nslkdd_r2l_b10_delta}$ at $b{=}10\%$, $\PH{vf_nslk
 $20\%$); at equal analyst cost the novelty stage adds no recall a
 budget-tuned threshold does not already deliver, because on a benign-mimicking family the novelty and
 classifier scores are positively dependent and the union spends extra benign review for little marginal
-recall. The comparison favours the stack rather than strawmanning it: its gates take conventional, generous
-settings and the tuned-threshold baseline is allocated the same total benign review budget, so the negative
-result is conservative.
+recall. The comparison favours the stack rather than strawmanning it: its gates take generous settings and
+the tuned-threshold baseline gets the same benign review budget, so the negative result is conservative.
 
 
 \section{Discussion and Limitations}
-Selective prediction is a cheap, model-agnostic safety layer that lowers error among accepted inputs and
-partially flags unknown attacks. But our results bound the claim. First, the value of abstention is
-inherited from the confidence signal, which is strong for the tree ensembles, still useful for the neural
-MLP, and poor for the linear model (a spectrum of confidence quality, not a linear/nonlinear dichotomy).
+Selective prediction is a cheap, model-agnostic safety layer, but our results bound the claim.
+First, the value of abstention is
+inherited from the confidence signal, a spectrum of quality across models rather than a
+linear/nonlinear dichotomy.
 Second, post-hoc calibration on source data does not survive distribution shift, so calibrated
 probabilities should not be trusted as deployment-time guarantees. The contribution is the
 \emph{diagnosis}: the much-cited ``detection collapse'' on unknown families is largely a thresholding
-artifact over a score that stays discriminable, not a new defense mechanism. The remedy it implies is
-deliberately simple (a per-family operating point plus a benign-only novelty stage), and we present it as
-such. Third, and most important operationally, a single global \emph{argmax} operating point silently
+artifact over a score that stays discriminable, not a new defense mechanism.
+Third, and most important operationally, a single global \emph{argmax} operating point silently
 under-detects minority benign-mimicking families (R2L, Infiltration) even though their score is
-discriminable; the fix is to set the operating point to the analyst budget (a per-family or budget-tuned
-threshold, not richer features) and an added abstention/novelty stack does not beat that tuned threshold at
-matched cost (Section~\ref{sec:novelty}).
+discriminable, and an added abstention/novelty stack does not beat a budget-tuned threshold at matched
+cost (Section~\ref{sec:novelty}).
 
 \subsection{Recommendations}
 The diagnosis turns into concrete guidance, in order. \emph{(1)} Pick a model whose confidence
@@ -507,17 +539,16 @@ over the evaluation distribution, not just fixed-partition seed intervals, which
 severalfold on a single fixed benchmark.
 
 \subsection{Limitations}
-We retain dated, hand-crafted NSL-KDD because it remains the most-reported IDS benchmark, giving direct
-comparability with the prior selective-prediction and ``detection-collapse'' results we revisit, and its
-train--test shift is a built-in open-set stress test; absolute numbers will differ on modern corpora, but
+We retain dated, hand-crafted NSL-KDD for comparability with the prior selective-prediction and
+``detection-collapse'' results we revisit; absolute numbers will differ on modern corpora, but
 the mechanisms we isolate (over-confidence under shift, model-dependent confidence quality, and the
 operating-point blind spot on benign-mimicking families) reproduce on CIC-IDS-2017 and 2018, so they are
 not specific to it. We study binary detection with a
 single abstention signal (maximum class probability); richer signals and the multi-class
 attack-typing setting are natural extensions. We evaluate a cross-day split and a cross-corpus transfer
 (CIC-2017$\to$2018) on shared features; a full time-ordered evaluation, the label-corrected
-CIC-2017~\cite{engelen2021troubleshooting}, and standardized NetFlow-v2 multi-network transfer (a common
-schema avoiding our 27-feature restriction) remain future work.
+CIC-2017~\cite{engelen2021troubleshooting}, and standardized NetFlow-v2 multi-network transfer remain
+future work.
 
 \section{Conclusion}
 Off-the-shelf intrusion detectors are over-confident under NSL-KDD's shift and not fixable by post-hoc
