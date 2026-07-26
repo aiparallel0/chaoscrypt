@@ -219,18 +219,23 @@ ciphers. ``Chosen PT'' is the number of chosen (or known) plaintexts; ``equiv.\ 
 decryptor is recovered; only this work recovers the full map (permutation and multiplier) rather than the
 permutation alone.}
 \label{tab:compare}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}lccc@{}}
-\toprule
-Work & Target scheme & Chosen PT & Equiv.\ key \\
-\midrule
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Work} & \textbf{Target scheme} & \textbf{Chosen PT} & \textbf{Equiv.\ key} \\
+\hline
 Li \& Lo~\cite{li2011optimal}            & permutation-only      & $\lceil\log_{L} MN\rceil$   & perm. \\
+\hline
 Jolfaei \emph{et al.}~\cite{Jolfaei2016permutation} & permutation-only & $\lceil\log_{256} MN\rceil$ & perm. \\
+\hline
 Arroyo \emph{et al.}~\cite{arroyo2009}   & total-shuffling       & few                         & yes \\
+\hline
 Wen \& Lin~\cite{wenlin2024qcmdc}        & chaos${+}$DNA (QCMDC) & 4                           & yes \\
+\hline
 Recent~\cite{Ma2020cryptanalysis,Zhao2025cryptanalysis} & 2020--2025 chaos & handful          & yes \\
+\hline
 \textbf{This work} & LLEO~\cite{jain2025lleo} & \textbf{\PH{cam_cpt}} & \textbf{full map} \\
-\bottomrule
+\hline
 \end{tabular}
 \end{table}
 
@@ -364,14 +369,17 @@ recovery entirely~\cite{Jolfaei2016permutation}.
 \centering
 \caption{Attack complexity vs.\ the optimal permutation-only bound ($n=MN$ pixels, $L=256$ levels).}
 \label{tab:complexity}
-\begin{tabular}{lcc}
-\toprule
- & This attack & Optimal perm.-only~\cite{li2011optimal} \\
-\midrule
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{} & \textbf{This attack} & \textbf{Optimal perm.-only~\cite{li2011optimal}} \\
+\hline
 Data (chosen plaintexts) & $1+\lceil\log_{256} n\rceil$ & $\lceil\log_{L} n\rceil$ \\
+\hline
 Time  & $O(n\lceil\log_{256} n\rceil)$ & $O(n\lceil\log_{L} n\rceil)$ \\
+\hline
 Memory & $O(n)$ & $O(n)$ \\
-\bottomrule
+\hline
 \end{tabular}
 \end{table}
 
@@ -414,15 +422,18 @@ uniformly (Cameraman).}
 pixel-exactly without the key.}
 \label{tab:repro}
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{lccccc}
-\toprule
-Image & $H$ plain & $H$ cipher & corr. & CP & broken \\
-\midrule
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+\textbf{Image} & \textbf{$H$ plain} & \textbf{$H$ cipher} & \textbf{corr.} & \textbf{CP} & \textbf{broken} \\
+\hline
 Cameraman & \PH{cam_ent_plain} & \PH{cam_ent_cipher} & \PH{cam_corr_cipher} & \PH{cam_cpt} & yes \\
+\hline
 Moon      & \PH{moon_ent_plain} & \PH{moon_ent_cipher} & \PH{moon_corr_cipher} & \PH{moon_cpt} & yes \\
+\hline
 Gravel    & \PH{grv_ent_plain} & \PH{grv_ent_cipher} & \PH{grv_corr_cipher} & \PH{grv_cpt} & yes \\
+\hline
 Brick     & \PH{brk_ent_plain} & \PH{brk_ent_cipher} & \PH{brk_corr_cipher} & \PH{brk_cpt} & yes \\
-\bottomrule
+\hline
 \end{tabular}
 \end{table}
 
@@ -446,15 +457,18 @@ not enter this cost.
 \caption{Cost barely grows with image size: \PH{scale1024_cpt} chosen plaintexts still suffice at
 $1024{\times}1024$, each inverted in \PH{scale1024_s}\,s (random plaintext, single core).}
 \label{tab:scale}
-\begin{tabular}{lccc}
-\toprule
-Size & chosen PT & time (s) & recovered \\
-\midrule
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Size} & \textbf{chosen PT} & \textbf{time (s)} & \textbf{recovered} \\
+\hline
 $128\times128$   & \PH{scale128_cpt}  & \PH{scale128_s}  & exact \\
+\hline
 $256\times256$   & \PH{scale256_cpt}  & \PH{scale256_s}  & exact \\
+\hline
 $512\times512$   & \PH{scale512_cpt}  & \PH{scale512_s}  & exact \\
+\hline
 $1024\times1024$ & \PH{scale1024_cpt} & \PH{scale1024_s} & exact \\
-\bottomrule
+\hline
 \end{tabular}
 \end{table}
 
@@ -486,16 +500,20 @@ both ($\chi^2$ annotated).}
 \centering
 \caption{Claimed vs.\ actual security of LLEO.}
 \label{tab:claims}
-\begin{tabular}{lcc}
-\toprule
-Property & Reported & Actual \\
-\midrule
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Property} & \textbf{Reported} & \textbf{Actual} \\
+\hline
 Entropy (Cameraman)        & $\approx$7.997 & \PH{cam_ent_cipher} (genuine) \\
+\hline
 NPCR (1-pixel change)      & $\approx$99.6\,\% & \PH{cam_npcr1px}\,\% \\
+\hline
 Differential resistance    & yes & no (no diffusion) \\
+\hline
 Chosen-plaintext security  & implied & broken in \PH{cam_cpt} queries \\
+\hline
 Key type                   & ``asymmetric'' & symmetric \\
-\bottomrule
+\hline
 \end{tabular}
 \end{table}
 
