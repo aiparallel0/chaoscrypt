@@ -15,6 +15,24 @@ import sys
 from pathlib import Path
 
 PH = re.compile(r"\\PH\{([^}]+)\}")
+SCI = re.compile(r"^(-?\d+(?:\.\d+)?)e([+-])0*(\d+)$")
+
+
+def texify(value) -> str:
+    """Render a result value for LaTeX, keeping it numerically identical.
+
+    Python prints very small/large floats as ``4e-06``, which is wrong in a paper.
+    Rewrite only that presentation into math mode; every other value is untouched.
+    """
+    s = str(value)
+    m = SCI.match(s)
+    if not m:
+        return s
+    mantissa, sign, exponent = m.groups()
+    exponent = ("-" if sign == "-" else "") + exponent
+    if mantissa == "1":
+        return f"$10^{{{exponent}}}$"
+    return f"${mantissa}{{\\times}}10^{{{exponent}}}$"
 
 
 def load_results(results_dir: Path) -> dict:
@@ -48,7 +66,7 @@ def main() -> int:
     def repl(m: re.Match) -> str:
         key = m.group(1)
         if key in vals:
-            return str(vals[key])
+            return texify(vals[key])
         missing.append(key)
         return f"[?{key}]"
 

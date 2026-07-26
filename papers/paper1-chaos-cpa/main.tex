@@ -15,8 +15,9 @@
 
 % --- UBMK official formatting (UBMK-Template-A4): geometry, spacing, captions, keyword label ---
 \usepackage{textcomp}
-\usepackage[font=footnotesize,labelsep=period]{caption} % IEEE caption format: ``Fig. 1.'' /
-\captionsetup[table]{labelsep=newline}                  % ``TABLE I'' above its title
+\usepackage[font=footnotesize,labelsep=period]{caption} % IEEE caption format: ``Fig. 1.''
+\captionsetup[table]{labelsep=newline,font={footnotesize,sc},justification=centering} % ``TABLE I''
+                                                        % above a centred small-caps title
 \captionsetup[algorithm]{labelsep=period}               % ``Algorithm 1.'' to match ``Fig. 1.''
 \usepackage{titlesec}
 \titlespacing*{\section}{0pt}{8pt}{4pt}
@@ -25,7 +26,8 @@
 \usepackage{geometry}
 \geometry{a4paper, top=2cm, bottom=2.5cm, left=1.6cm, right=1.6cm}
 \setlength{\parskip}{6pt}
-\setlength{\floatsep}{0pt}
+\setlength{\floatsep}{6pt} % template says 0pt, but that collides when two floats stack in one
+                           % column; 6pt matches the template's own \textfloatsep/\intextsep
 \setlength{\textfloatsep}{6pt}
 \setlength{\intextsep}{6pt}
 % Float packing: after the section cut the paper is short, so let floats fill pages
@@ -178,7 +180,7 @@ images and every reported statistic are grayscale.}
 \label{fig:break}
 \end{figure*}
 
-\section{Related work}
+\section{Related Work}
 The equivalent-key methodology for permutation--diffusion ciphers is well established. Arroyo
 \emph{et al.}~\cite{arroyo2009} broke a ``total shuffling'' scheme by recovering its key-only
 keystream; Li \emph{et al.}~\cite{li2018entropy} recovered an equivalent key for an entropy-based
@@ -208,16 +210,15 @@ LLEO (a monomial map over $\mathbb{Z}_{256}$), recover an equivalent key from a 
 confirm it on held-out ciphertext, and show by Proposition~\ref{prop:monomial} that the same argument
 covers any cipher whose keystream and permutations are fixed by the key. The few-query bound matches the
 Li--Lo permutation-only optimum~\cite{li2011optimal}.
-Table~\ref{tab:compare} places our break beside prior equivalent-key cryptanalyses: like them it recovers
-an equivalent key from a handful of chosen plaintexts, and here that recovery reconstructs the full map
-rather than the permutation alone.
+Table~\ref{tab:compare} places our break beside prior equivalent-key cryptanalyses. Its ``chosen PT''
+column counts the chosen (or known) plaintexts an attack consumes, and its ``equiv.\ key'' column records
+whether a key-free decryptor is recovered. Like the earlier attacks, ours recovers an equivalent key from
+a handful of chosen plaintexts; unlike them, that recovery reconstructs the full map, permutation and
+multiplier together, rather than the permutation alone.
 
 \begin{table}[t]
 \centering
-\caption{This break in the context of prior equivalent-key cryptanalyses of chaos / permutation image
-ciphers. ``Chosen PT'' is the number of chosen (or known) plaintexts; ``equiv.\ key'' means a key-free
-decryptor is recovered; only this work recovers the full map (permutation and multiplier) rather than the
-permutation alone.}
+\caption{Equivalent-key cryptanalyses of chaos and permutation image ciphers}
 \label{tab:compare}
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{|l|c|c|c|}
@@ -239,7 +240,7 @@ Recent~\cite{Ma2020cryptanalysis,Zhao2025cryptanalysis} & 2020--2025 chaos & han
 \end{tabular}
 \end{table}
 
-\section{The target cipher}\label{sec:target}
+\section{The Target Cipher}\label{sec:target}
 LLEO encrypts an $M\times N$ grayscale image $X$ in three key-driven steps.
 
 \emph{(1) Substitution.} $X$ is split into 16 horizontal strips. The eight odd strips are combined
@@ -279,8 +280,10 @@ C[j] \;=\; K[s(j)]\cdot X[s(j)] \pmod{256},\qquad s=P^{-1},
 a fixed \emph{monomial} map: every ciphertext pixel is a single plaintext pixel scaled by a fixed unit
 and relocated. Two consequences are immediate. There is no additive constant, since
 $E(\mathbf{0})=\mathbf{0}$. And there is no diffusion: $C[j]$ depends on exactly one input coordinate
-$s(j)$, so a one-pixel plaintext change alters exactly one ciphertext pixel, which we exploit in
-Section~\ref{sec:results} and visualise in Fig.~\ref{fig:diffusion}.
+$s(j)$, so a one-pixel plaintext change alters exactly one ciphertext pixel. Fig.~\ref{fig:diffusion}
+makes this visible: flipping a single plaintext pixel leaves one isolated dot in the ciphertext
+difference, whereas two unrelated images differ almost everywhere. We turn this into a quantitative
+refutation of the cipher's differential claims in Section~\ref{sec:results}.
 
 \begin{figure}[t]
 \centering
@@ -367,7 +370,7 @@ recovery entirely~\cite{Jolfaei2016permutation}.
 
 \begin{table}[t]
 \centering
-\caption{Attack complexity vs.\ the optimal permutation-only bound ($n=MN$ pixels, $L=256$ levels).}
+\caption{Attack complexity vs.\ the permutation-only optimum ($n{=}MN$ pixels, $L{=}256$ levels)}
 \label{tab:complexity}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{|l|c|c|}
@@ -389,16 +392,18 @@ A composition of fixed key-only maps is again one, so extra rounds, chaotic maps
 \emph{known}-plaintext attack whenever the available plaintexts span the index digits. The single
 property that would defeat it is a keystream that depends on $X$.
 
-\section{Experimental results}\label{sec:results}
+\section{Experimental Results}\label{sec:results}
 We reconstructed LLEO from its description (reimplemented from scratch, no code reused) and ran it on
 four standard $512\times512$ images.
 
 \subsection{Reproduction}
 Table~\ref{tab:repro} shows the reconstruction reproduces LLEO's claimed statistics: cipher entropy
 approaches the ideal 8 (Cameraman \PH{cam_ent_cipher}, up from the plaintext's \PH{cam_ent_plain}) and
-adjacent-pixel correlation drops to near zero (\PH{cam_corr_cipher}). Fig.~\ref{fig:hist} shows the
-flat cipher histogram and Fig.~\ref{fig:corr} the destroyed correlation. By the usual yardsticks the
-cipher looks strong.
+adjacent-pixel correlation drops to near zero (\PH{cam_corr_cipher}); its last two columns record the
+chosen plaintexts each break consumed and confirm that every image is recovered pixel-exactly without the
+key. Fig.~\ref{fig:hist} shows the near-uniform cipher histogram, and Fig.~\ref{fig:corr} plots every
+horizontal pixel pair as a hexbin density, in which the plaintext's tight diagonal ridge collapses into
+an unstructured cloud. By the usual yardsticks the cipher looks strong.
 
 \begin{figure}[t]
 \centering
@@ -418,8 +423,7 @@ uniformly (Cameraman).}
 
 \begin{table}[t]
 \centering
-\caption{Reconstruction statistics and attack outcome (512$\times$512). Every image is recovered
-pixel-exactly without the key.}
+\caption{Reconstruction statistics and attack outcome ($512{\times}512$)}
 \label{tab:repro}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{|l|c|c|c|c|c|}
@@ -449,13 +453,13 @@ identical to the original.
 Table~\ref{tab:scale} reports how the attack's cost scales with image size. Because it needs only
 $1+\lceil\log_{256} MN\rceil$ chosen plaintexts, the count stays nearly flat as the image grows:
 \PH{scale128_cpt} plaintexts at $128^2$, \PH{scale512_cpt} at $512^2$, and still \PH{scale1024_cpt}
-at $1024^2$, each recovered exactly in well under a second. The key length the scheme advertises does
+at $1024^2$, where a random plaintext is recovered exactly in \PH{scale1024_s}\,s on a single core. The
+key length the scheme advertises does
 not enter this cost.
 
 \begin{table}[t]
 \centering
-\caption{Cost barely grows with image size: \PH{scale1024_cpt} chosen plaintexts still suffice at
-$1024{\times}1024$, each inverted in \PH{scale1024_s}\,s (random plaintext, single core).}
+\caption{Attack cost vs.\ image size (single core)}
 \label{tab:scale}
 \begin{tabular}{|l|c|c|c|}
 \hline
@@ -499,7 +503,7 @@ both ($\chi^2$ annotated).}
 
 \begin{table}[htbp]
 \centering
-\caption{Claimed vs.\ actual security of LLEO.}
+\caption{Claimed vs.\ actual security of LLEO}
 \label{tab:claims}
 \begin{tabular}{|l|c|c|}
 \hline
