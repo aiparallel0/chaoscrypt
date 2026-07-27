@@ -73,12 +73,17 @@ for Machine-Learning Network Intrusion Detection}
 % Replace every [BRACKETED] field with the real value, then compile.
 % For more than one author, duplicate the \IEEEauthorblockN + \IEEEauthorblockA
 % pair and separate authors with \and.
+%
+% Template ``Author'' style, line by line: name 11pt upright, department and institution
+% 10pt italic, city and e-mail 10pt upright -- all of it Times, none of it monospaced.
+% The e-mail therefore takes no font command at all: \texttt set it in Courier, whose
+% wider glyphs and taller x-height read as both the wrong typeface and the wrong size.
 % ============================================================================
 \author{\IEEEauthorblockN{[AUTHOR NAME]}
 \IEEEauthorblockA{\textit{[Department / Unit]} \\
 \textit{[Institution]} \\
 {[City, Country]} \\
-\texttt{[email@domain]}}}
+{[email@domain]}}}
 
 \maketitle
 \thispagestyle{empty}
@@ -207,7 +212,7 @@ set, both in-distribution and on the shifted test set.
 
 \textbf{Per-family detection and operating points.} Besides operating-point recall we report the
 \emph{threshold-free} detection AUROC of the attack score (benign vs.\ family) per family; the binary
-target is near-balanced (46.5\% attack), so we also report recall under \texttt{class\_weight="balanced"}
+target is near-balanced (46.5\% attack), so we also report recall under \textit{class\_weight}=``balanced''
 and at a per-family 10\% benign-FPR threshold, plus a bootstrap over the \emph{test partition}
 (B${=}1000$) for an evaluation-distribution CI.
 
@@ -283,7 +288,7 @@ the global argmax cut only \PH{r2l_recall_argmax} of R2L is flagged.\footnote{R2
 argmax cut is one quantity measured in three independent experiments: \PH{r2l_recall_argmax} here,
 \PH{pf_recall_seen_R2L} in the per-family panel (Table~\ref{tab:perfam}), and \PH{det_seen_R2L} under LOFO
 (Table~\ref{tab:openset}); the ${\sim}0.01$ spread is seed and train-split variation, not a discrepancy.} Training with
-\texttt{class\_weight="balanced"} barely moves this (\PH{r2l_recall_balanced}), expected, since the
+\textit{class\_weight}=``balanced'' barely moves this (\PH{r2l_recall_balanced}), expected, since the
 binary attack/normal task is already near-balanced, whereas a per-family threshold at a 10\% benign
 false-positive rate recovers \PH{r2l_recall_fpr10}. So R2L is the hardest family, but it is
 \emph{discriminable}: the catastrophic recall is one global operating point being wrong for a minority,

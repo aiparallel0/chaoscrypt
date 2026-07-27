@@ -12,6 +12,8 @@ notice.  Word units: spacing twips = pt*20; ``w:sz`` half-points; ``w:line`` wit
     Balk2  heading 2     before 120tw = 6pt    after 60tw = 3pt          -> item  3
     GvdeMetni body       line 228/240 = 0.95   firstLine 288tw = 0.508cm -> items 5, 6
     references           line 180tw exact = 9pt   after 50tw = 2.5pt     -> items 14, 15
+    Author               name sz 22 = 11pt     affiliation sz 20 = 10pt  -> author block
+    docDefaults          Times New Roman throughout, no monospaced face
 
 Measures the RENDERED PDF, because a source-level check cannot see what a package override did:
 ``\\usepackage[font=footnotesize]{caption}`` silently discarded IEEEtran's caption format for
@@ -27,6 +29,7 @@ import statistics
 import subprocess
 import sys
 import tempfile
+import zlib
 from pathlib import Path
 
 # (target, tolerance) in points
@@ -121,6 +124,90 @@ def measure_references(pdf: Path, last_page: int):
     return w, b - w, len(within), len(between)
 
 
+def pdf_objects(raw: bytes) -> dict[int, bytes]:
+    """Every indirect object, with PDF 1.5 /ObjStm containers expanded."""
+    objs = {}
+    for m in re.finditer(rb"(\d+)\s+(\d+)\s+obj\b(.*?)endobj", raw, re.S):
+        objs[int(m.group(1))] = m.group(3)
+    for body in list(objs.values()):
+        if b"/ObjStm" not in body:
+            continue
+        data, first, n = pdf_stream(body), re.search(rb"/First\s+(\d+)", body), re.search(rb"/N\s+(\d+)", body)
+        if not (data and first and n):
+            continue
+        first, n, nums = int(first.group(1)), int(n.group(1)), data[:int(first.group(1))].split()
+        for i in range(n):
+            if 2 * i + 1 >= len(nums):
+                break
+            num, off = int(nums[2 * i]), int(nums[2 * i + 1])
+            end = int(nums[2 * i + 3]) + first if 2 * i + 3 < len(nums) else len(data)
+            objs.setdefault(num, data[first + off:end])
+    return objs
+
+
+def pdf_stream(body: bytes) -> bytes:
+    m = re.search(rb"stream\r?\n(.*?)\r?\nendstream", body, re.S)
+    if not m:
+        return b""
+    if b"FlateDecode" in body.split(b"stream")[0]:
+        try:
+            return zlib.decompress(m.group(1))
+        except zlib.error:
+            return b""
+    return m.group(1)
+
+
+def title_block(pdf: Path):
+    """Page-1 lines as [(size_pt, font_name, text)], read from the content stream.
+
+    The size a line was *set* at, not the height its glyphs happened to draw: a 10pt Courier
+    e-mail and a 10pt Times one share a nominal size but not a look, and it was the Courier
+    one -- ``\\texttt`` around the address -- that the committee returned the paper over.
+    """
+    objs = pdf_objects(pdf.read_bytes())
+    pages = [b for _, b in sorted(objs.items()) if re.search(rb"/Type\s*/Page[\s/>]", b)]
+    if not pages:
+        return []
+    page = pages[0]
+
+    def deref(body, key):
+        m = re.search(key + rb"\s+(\d+)\s+\d+\s+R", body)
+        return objs.get(int(m.group(1)), b"") if m else b""
+
+    # /Font is usually written inline inside /Resources rather than as an indirect reference,
+    # so each fallback must land on the resources dictionary -- falling back to the page
+    # instead yields an empty font map, and every name then reads as "?", which compares
+    # equal to every other "?" and turns the comparison below into a guaranteed pass.
+    resources = deref(page, rb"/Resources") or page
+    fontdict = deref(resources, rb"/Font") or resources
+    fonts = {}
+    for k, ref in re.findall(rb"/(F\d+)\s+(\d+)\s+\d+\s+R", fontdict):
+        base = re.search(rb"/BaseFont\s*/([-\w+]+)", objs.get(int(ref), b""))
+        fonts[k.decode()] = base.group(1).decode().split("+")[-1] if base else "?"
+
+    content = b"".join(pdf_stream(objs.get(int(r), b"")) for r in re.findall(rb"/Contents\s+(\d+)\s+\d+\s+R", page))
+    out, line, cur = [], [], (0.0, "?")
+    # A TJ array is matched non-greedily rather than by excluding brackets: the shown text may
+    # itself contain "[" and "]", as an unfilled "[email@domain]" author line does.
+    for m in re.finditer(rb"/(F\d+)\s+([\d.]+)\s+Tf|\[(.*?)\]\s*TJ"
+                         rb"|\(((?:\\.|[^\\()])*)\)\s*Tj|(T\*|TD|Td|ET)", content, re.S):
+        if m.group(1):
+            cur = (float(m.group(2)), fonts.get(m.group(1).decode(), "?"))
+        elif m.group(5):
+            if line:
+                out.append(line)
+                line = []
+        else:
+            chunk = m.group(3) if m.group(3) is not None else b"(" + (m.group(4) or b"") + b")"
+            raw = b"".join(re.findall(rb"\((?:\\.|[^\\()])*\)", chunk))
+            s = re.sub(rb"\\(\d{3}|.)", b"?", raw).replace(b"(", b"").replace(b")", b"").decode("latin-1")
+            if s.strip():
+                line.append((cur[0], cur[1], s))
+    if line:
+        out.append(line)
+    return [(ln[0][0], ln[0][1], "".join(t for _, _, t in ln).strip()) for ln in out if ln]
+
+
 def check(name, item, got, target, samples, unit="pt"):
     lo, hi = target[0] - target[1], target[0] + target[1]
     ok = samples > 0 and lo <= got <= hi
@@ -172,6 +259,42 @@ def main() -> int:
     results.append(ok); data.append(len(labels))
     # `data` counts only real measurements. The two checks below are pass/fail on content,
     # so they must not make an empty input look like it was measured.
+
+    # Author block. The template sets every line of it in Times: name 11pt, department and
+    # institution 10pt italic, city and e-mail 10pt upright. \texttt on the address made it
+    # Courier, which at the same nominal size is wider and taller-x -- the wrong typeface and
+    # a different apparent point size at once. Compare the e-mail line against the city line
+    # directly rather than against a hard-coded name, so it keeps working once the block is
+    # filled with a real address.
+    block = title_block(pdf)
+    lines = [ln for ln in block[:12]]
+    mail = next((i for i, (_, _, t) in enumerate(lines) if "@" in t), None)
+    if mail is None or mail == 0:
+        print("  [NO DATA] --      author block e-mail line          (not found on page 1)")
+        results.append(False)
+    else:
+        msz, mfont, mtxt = lines[mail]
+        csz, cfont, _ = lines[mail - 1]
+        # An unresolved font name is a failure, never a pass: "?" == "?" would otherwise
+        # certify a Courier address as matching its Times affiliation.
+        ok = (abs(msz - csz) < 0.2 and mfont == cfont and "?" not in (mfont, cfont))
+        print(f"  [{'PASS' if ok else 'FAIL':7}] --      e-mail matches its affiliation "
+              f"{msz:.2f}pt {mfont} vs {csz:.2f}pt {cfont}")
+        results.append(ok); data.append(1)
+
+    # No monospaced face anywhere: the template is Times throughout and has no code style,
+    # so a monospaced font in the output means some \texttt survived.
+    fonts_used = subprocess.run(["pdffonts", str(pdf)], check=True,
+                                capture_output=True, text=True).stdout.splitlines()[2:]
+    # pdffonts prints an embedded face as "ABCDEF+NimbusMonL-Regu"; the six-letter subset tag
+    # must be stripped before matching, or every name reads as the tag and nothing is ever found.
+    names = [ln.split()[0].split("+")[-1] for ln in fonts_used if ln.split()]
+    # URW's Courier clone is "NimbusMonL" -- no trailing "o", so a /Mono/ pattern misses it.
+    mono = sorted({f for f in names if re.search(r"Mono|MonL|Courier|Typewriter|CMTT", f)})
+    ok = bool(names) and not mono
+    print(f"  [{'PASS' if ok else 'FAIL':7}] --      Times only, no monospaced face   "
+          f"{mono if mono else '(clean)'}")
+    results.append(ok)
 
     # Placeholder leak: an unfilled \PH{} whose key contains "_" is a LaTeX error in text
     # mode, and the recovery silently swallows the floats that follow.

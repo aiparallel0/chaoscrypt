@@ -74,12 +74,17 @@
 % Replace every [BRACKETED] field with the real value, then compile.
 % For more than one author, duplicate the \IEEEauthorblockN + \IEEEauthorblockA
 % pair and separate authors with \and.
+%
+% Template ``Author'' style, line by line: name 11pt upright, department and institution
+% 10pt italic, city and e-mail 10pt upright -- all of it Times, none of it monospaced.
+% The e-mail therefore takes no font command at all: \texttt set it in Courier, whose
+% wider glyphs and taller x-height read as both the wrong typeface and the wrong size.
 % ============================================================================
 \author{\IEEEauthorblockN{[AUTHOR NAME]}
 \IEEEauthorblockA{\textit{[Department / Unit]} \\
 \textit{[Institution]} \\
 {[City, Country]} \\
-\texttt{[email@domain]}}}
+{[email@domain]}}}
 
 \maketitle
 \thispagestyle{empty}
