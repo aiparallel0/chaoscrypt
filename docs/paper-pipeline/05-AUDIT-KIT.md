@@ -281,3 +281,93 @@ git log -p --follow -- papers/<name>/main.tex | grep -E '^[+-].*(notif|emailed|v
 **Read it:** a progression like `will be notified` → `are notified` → `we emailed … received no
 response` is a fabrication in slow motion, even when no single commit looks like one. Only the
 human can confirm the underlying fact.
+
+---
+
+## 10. Rendered-format conformance — the committee's numbered items
+
+**Catches:** every measurable statement in the template's `word/styles.xml`, measured on the
+rendered PDF: body leading, first-line indent, reference leading and inter-entry gap, caption
+label separators, heading case, placeholder leaks, and the font the author block's e-mail is
+set in.
+
+Script: [`tools/ubmk_conformance.py`](tools/ubmk_conformance.py)
+
+```bash
+python3 docs/paper-pipeline/tools/ubmk_conformance.py papers/<name>/main.pdf papers/<name>/main.tex
+```
+
+**Read it:** exit 0 only if every line says PASS. Exit 2 means nothing could be measured, which
+is a failure and never a pass — an empty or wrong file must not score well by having no findings.
+
+Validated against the source project:
+
+| Input | Output |
+|---|---|
+| Either paper, current | 9/9 PASS, exit 0 |
+| The PDF actually submitted | 6 FAIL: 12.00pt leading, 9.90pt indent, 0.00pt reference gap, 11 colon captions, Courier e-mail, exit 1 |
+
+### The font check, and why the first two versions of it passed everything
+
+The committee returned the papers over one thing a spacing checker cannot see: the author
+block's e-mail was set in Courier by a stray `\texttt`. Measuring it needs the size and face the
+typesetter *asked for*, read out of the page content stream, not the glyph boxes `pdftotext`
+reports. Two bugs in that check each made it pass vacuously, and both are easy to write again:
+
+1. **`/Font` is written inline inside `/Resources`, not as an indirect reference.** A fallback
+   chain that lands on the page object instead of the resources dictionary yields an empty font
+   map, every name reads as `"?"`, and `"?" == "?"` certifies Courier as matching Times. An
+   unresolved font name must be a failure, never a pass.
+2. **URW's Courier clone is named `NimbusMonL`** — no trailing "o", so a `/Mono/` pattern misses
+   it, and `pdffonts` prints it behind a six-letter subset tag (`ABCDEF+NimbusMonL-Regu`) that
+   has to be stripped before matching.
+
+Both were caught only by running the check against the PDF that had actually been rejected. A
+conformance check that has never failed has not been tested.
+
+---
+
+## 11. Word-version conversion and its verification
+
+**Catches:** text silently lost while converting the paper to `.docx` for a venue that asks for
+one. The output is built over the template's own styles, so the numbering and spacing come from
+`word/styles.xml` rather than from anything the converter asserts.
+
+Scripts: [`tools/tex2docx.py`](tools/tex2docx.py), [`tools/docx_check.py`](tools/docx_check.py)
+
+```bash
+bash scripts/build_docx.sh papers/<name> docs/paper-pipeline/UBMKtemplateA4.docx
+```
+
+The gate refuses to write `main.docx` unless the LaTeX build passes, the conversion recognises
+every construct, and the verification passes. The converter aborts on any unknown control
+sequence rather than dropping it: a converter that silently skips what it cannot handle produces
+a document that looks complete and is not.
+
+**Read it:** the two directional checks are word multisets, not sliding windows. Windows are the
+obvious design and the wrong one — Word generates `Fig. 1.` and `[2]` from its own counters, a
+footnote is written inside a sentence but typeset at the foot of a column, and a compound
+hyphenates across a line. Every one of those shifts a window without losing a word, so a window
+check drowns in false positives while dropping a sentence — the failure that matters — removes
+words outright and shows up immediately.
+
+Validated by damaging a passing file three ways:
+
+| Damage | Caught by |
+|---|---|
+| one body paragraph deleted | `no word dropped from source`, `every source number present` |
+| `0.508` changed to `0.999` | `every source number present` |
+| one `<w:drawing>` removed | `figures: source 7, docx 6` |
+
+### Three traps in the conversion itself
+
+1. **`w:pPr` is a sequence, not a bag.** `w:ind` before `w:jc`, `w:framePr` before `w:numPr`.
+   Get the order wrong and the file does not open at all, with no indication of which element
+   was misplaced. The same is true of the `<w:document>` start tag: reuse the template's
+   verbatim rather than hand-writing its namespace set.
+2. **The template's `equation` style sets the Symbol font**, for Word's old equation editor.
+   Symbol maps the Latin alphabet onto Greek glyphs, so `C[j]=K[s(j)]` renders as
+   `X[φ]=K[σ(φ)]`. Equation runs need the document font restored explicitly.
+3. **A blank line ends a paragraph.** Without that split the prose between two floats arrives as
+   one block and every bold lead-in runs together — a defect that is invisible in the source and
+   obvious in the rendered page, which is the argument for rendering it and looking.
