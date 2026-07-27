@@ -76,6 +76,11 @@ def main() -> int:
     print(f"filled {n_total - len(missing)}/{n_total} placeholders from {len(vals)} result keys")
     if missing:
         print("  missing:", ", ".join(sorted(set(missing))))
+        # An unfilled placeholder is a build failure, not a visible marker: `[?key]`
+        # can only be seen if the document still typesets, and a key containing `_`
+        # puts an underscore in text mode, which makes LaTeX consume and silently
+        # drop the floats that follow.
+        return 1
     return 0
 
 

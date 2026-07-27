@@ -15,13 +15,19 @@
 \usepackage[font=footnotesize,labelsep=period]{caption} % IEEE caption format: ``Fig. 1.''
 \captionsetup[table]{labelsep=newline,font={footnotesize,sc},justification=centering} % ``TABLE I''
                                                         % above a centred small-caps title
+\captionsetup[figure]{justification=centering}          % template: figure captions are centred
 \usepackage{titlesec}
-\titlespacing*{\section}{0pt}{8pt}{4pt}
-\titlespacing*{\subsection}{0pt}{6pt}{3pt}
-\titlespacing*{\subsubsection}{0pt}{4pt}{2pt}
+% Unstarred \titlespacing (no *) keeps the first paragraph after a heading indented, which the
+% template requires of *every* paragraph. The starred form suppresses exactly that indent.
+\titlespacing{\section}{0pt}{8pt}{4pt}
+\titlespacing{\subsection}{0pt}{6pt}{3pt}
+\titlespacing{\subsubsection}{0pt}{4pt}{2pt}
 \usepackage{geometry}
 \geometry{a4paper, top=2cm, bottom=2.5cm, left=1.6cm, right=1.6cm}
-\setlength{\parskip}{6pt}
+% \parskip must be 0: LaTeX ADDS it to the heading spacing above, which turned the required
+% 8pt/4pt section gaps into 14pt/10pt. Paragraphs are separated by the indent below instead.
+\setlength{\parskip}{0pt}
+\setlength{\parindent}{0.51cm} % template Body Text: firstLine 288 twips = 0.508 cm
 \setlength{\floatsep}{6pt} % template says 0pt, but that collides when two floats stack in one
                            % column; 6pt matches the template's own \textfloatsep/\intextsep
 \setlength{\textfloatsep}{6pt}
@@ -37,7 +43,21 @@
 \setcounter{totalnumber}{6}
 \setcounter{topnumber}{4}
 \setcounter{bottomnumber}{3}
+% Robust hyphenation: never break a compound at its explicit hyphen, so extracted text stays clean
+% (the reviewer flagged ``perimage''/``differentialattack'' in the sibling paper).
+\exhyphenpenalty=10000
 \renewcommand{\IEEEkeywordsname}{Keywords}
+
+% Template style ``Keywords'': the whole line, label included, is 9pt italic and NOT bold.
+% IEEEtran's own definition sets \bfseries and leaves the terms upright, so replace it.
+% \@IEEEabskeysecsize is \small, which this class defines as 9pt -- the size the template asks for.
+\makeatletter
+\def\IEEEkeywords{\normalfont\@IEEEabskeysecsize\itshape
+  \IEEEkeywordsname---\relax\@IEEEgobbleleadPARNLSP}
+\makeatother
+
+% References: 2.5pt between entries (template ``references'' style: after = 50 twips).
+\def\IEEEbibitemsep{2.5pt}
 
 % Placeholders (PH of a key) are replaced by scripts/fill_tex.py from results/*.json.
 % The definition lets the unfilled source still compile (shows the key in red).
@@ -62,6 +82,10 @@ for Machine-Learning Network Intrusion Detection}
 
 \maketitle
 \thispagestyle{empty}
+
+% From the abstract onward the template sets line spacing to 0.95 (Body Text: line = 228 of
+% 240 twips). Applied after \maketitle so the title block keeps its own leading.
+\linespread{0.95}\selectfont
 \pagestyle{empty}
 
 \begin{abstract}
@@ -566,6 +590,10 @@ The author used a large language model (Anthropic Claude) to assist with code sc
 and literature search. All experiments, results, and claims were verified by the author; the AI
 system is not an author. Generative-AI use is disclosed per IEEE policy.
 
+% The template sets REFERENCES to an exact 9pt leading (line = 180 twips, lineRule "exact"), which
+% an exact rule takes literally rather than scaling by 0.95. IEEEtran already typesets the
+% bibliography at \footnotesize = 8pt on 9pt, so restoring unit spread here lands exactly on 9pt.
+\linespread{1}\selectfont
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 
