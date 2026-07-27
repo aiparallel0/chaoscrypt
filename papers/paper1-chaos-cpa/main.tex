@@ -124,9 +124,7 @@ security.
      $X[s(j)]=K[s(j)]^{-1}C[j]$};
   \draw[->, dashed] (c) |- (atk);
 \end{tikzpicture}
-\caption{LLEO encryption (top): key-only multiplicative substitution $\times K$, then two
-Fisher--Yates block shuffles. The equivalent-key attack (bottom) recovers the multiplier $K$ and source
-map $s$ from a few chosen plaintexts and inverts the cipher without the key.}
+\caption{LLEO encryption (top) and our equivalent-key attack (bottom).}
 \label{fig:schema}
 \end{figure}
 Chaos-based image ciphers appear in the literature at a high rate, and a recurring lesson from the
@@ -169,8 +167,10 @@ model, not a statistics table.
 
 This paper applies both lessons to a 2025 scheme~\cite{jain2025lleo} (which we abbreviate LLEO) built
 from the Lorenz~\cite{lorenz1963} and logistic maps with Fisher--Yates block shuffling;
-Fig.~\ref{fig:schema} sketches both its three-step encryption and our equivalent-key attack. Our
-contributions are:
+Fig.~\ref{fig:schema} sketches both its three-step encryption, a key-only multiplicative substitution
+$\times K$ followed by two Fisher--Yates block shuffles, and our equivalent-key attack, which recovers
+the multiplier $K$ and the source map $s$ from a few chosen plaintexts and inverts the cipher without
+the key. Our contributions are:
 \begin{itemize}
 \item We identify that LLEO is entirely key-driven and therefore a fixed monomial map over
 $\mathbb{Z}_{256}$: each output pixel is one input pixel times a fixed multiplier, with all arithmetic
@@ -186,16 +186,15 @@ Proposition~\ref{prop:monomial}, \emph{any} cipher whose keystream and permutati
 alone collapses to the same monomial or affine map, so extra rounds, chaotic maps, or block shuffles
 cannot help and only a plaintext-dependent keystream defeats the attack (Section~\ref{sec:crypt}).
 \end{itemize}
-Fig.~\ref{fig:break} previews the outcome: four standard images, their LLEO ciphertexts, and our
-key-free recoveries, each bit-identical to the original and obtained in \PH{cam_cpt} chosen plaintexts.
+Fig.~\ref{fig:break} previews the outcome: four standard $512\times512$ images, their LLEO ciphertexts,
+and our key-free recoveries, each bit-identical to the original and obtained in \PH{cam_cpt} chosen
+plaintexts in \PH{scale512_s}\,s, without the key. That grid is rendered in a perceptual colour map for
+legibility; the underlying images and every reported statistic are grayscale.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.92\textwidth]{figures/break_grid.pdf}
-\caption{The whole break in one view: four standard $512\times512$ images, their LLEO ciphertexts, and our
-key-free recoveries: each bit-identical to the original, from \PH{cam_cpt} chosen plaintexts in
-\PH{scale512_s}\,s, without the key. Rendered in a perceptual colour map for legibility; the underlying
-images and every reported statistic are grayscale.}
+\caption{Four LLEO ciphertexts and our key-free recoveries.}
 \label{fig:break}
 \end{figure*}
 
@@ -237,7 +236,7 @@ multiplier together, rather than the permutation alone.
 
 \begin{table}[t]
 \centering
-\caption{Equivalent-key cryptanalyses of chaos and permutation image ciphers}
+\caption{EQUIVALENT-KEY CRYPTANALYSES OF CHAOS AND PERMUTATION IMAGE CIPHERS}
 \label{tab:compare}
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{|l|c|c|c|}
@@ -300,21 +299,18 @@ a fixed \emph{monomial} map: every ciphertext pixel is a single plaintext pixel 
 and relocated. Two consequences are immediate. There is no additive constant, since
 $E(\mathbf{0})=\mathbf{0}$. And there is no diffusion: $C[j]$ depends on exactly one input coordinate
 $s(j)$, so a one-pixel plaintext change alters exactly one ciphertext pixel. Fig.~\ref{fig:diffusion}
-makes this visible: flipping a single plaintext pixel leaves one isolated dot in the ciphertext
-difference, whereas two unrelated images differ almost everywhere. We turn this into a quantitative
-refutation of the cipher's differential claims in Section~\ref{sec:results}.
+makes this visible, plotting the absolute ciphertext difference with dark for unchanged and bright for
+changed: flipping a single plaintext pixel leaves one isolated dot (ringed) in the ciphertext difference,
+whereas two unrelated images differ almost everywhere. Its third panel seeds the keystream from SHA-256
+of the plaintext, which diffuses that same one-pixel change into full noise, what a one-pixel NPCR
+should measure. We turn this into a quantitative refutation of the cipher's differential claims in
+Section~\ref{sec:results}.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/diffusion_diff.pdf}
-\caption{The no-diffusion property, made visible (used quantitatively in Section~\ref{sec:results}): the
-absolute ciphertext difference $|C_0-C_1|$ (dark ${=}$ unchanged, bright ${=}$ changed), under one fixed
-key. \textbf{(left)} A one-pixel plaintext change alters \emph{exactly one} ciphertext pixel
-(ringed), no diffusion, so the true one-pixel NPCR is $100/MN\approx\PH{cam_npcr1px}\,\%$, not the
-reported ${\approx}99.6\,\%$. \textbf{(centre)} That ${\approx}99.6\,\%$ is really the difference between
-two \emph{unrelated} images (here \PH{npcr_unrelated}\,\%), which any near-uniform cipher attains.
-\textbf{(right)} Seeding the keystream from SHA-256 of the plaintext diffuses the \emph{same} one-pixel
-change into full noise, what a one-pixel NPCR should measure.}
+\caption{Absolute ciphertext difference $|C_0-C_1|$ under one fixed key: one-pixel change (left),
+unrelated images (centre), plaintext-seeded keystream (right).}
 \label{fig:diffusion}
 \end{figure}
 
@@ -382,14 +378,15 @@ index feeding output $j$.
 \item Return the decryptor: $X[s(j)] \gets \hat{K}[j]^{-1} C[j] \bmod 256$ inverts any ciphertext $C$.
 \end{enumerate}
 
-Table~\ref{tab:complexity} states the complexity and compares it to the optimal permutation-only bound
+Table~\ref{tab:complexity} states the complexity for an $n{=}MN$-pixel image over $L{=}256$ intensity
+levels and compares it to the optimal permutation-only bound
 of Li and Lo~\cite{li2011optimal}: our query count is order-optimal and the cost is independent of the
 cipher's nominal key length, so the advertised keyspace is irrelevant; the equivalent key bypasses key
 recovery entirely~\cite{Jolfaei2016permutation}.
 
 \begin{table}[t]
 \centering
-\caption{Attack complexity vs.\ the permutation-only optimum ($n{=}MN$ pixels, $L{=}256$ levels)}
+\caption{ATTACK COMPLEXITY VS.\ THE PERMUTATION-ONLY OPTIMUM}
 \label{tab:complexity}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{|l|c|c|}
@@ -421,28 +418,27 @@ approaches the ideal 8 (Cameraman \PH{cam_ent_cipher}, up from the plaintext's \
 adjacent-pixel correlation drops to near zero (\PH{cam_corr_cipher}); its last two columns record the
 chosen plaintexts each break consumed and confirm that every image is recovered pixel-exactly without the
 key. Fig.~\ref{fig:hist} shows the near-uniform cipher histogram, and Fig.~\ref{fig:corr} plots every
-horizontal pixel pair as a hexbin density, in which the plaintext's tight diagonal ridge collapses into
-an unstructured cloud. By the usual yardsticks the cipher looks strong.
+horizontal pixel pair as a hexbin density, in which the plain image's tight diagonal ridge, where
+neighbours are alike, collapses into an unstructured cloud filling the plane uniformly. By the usual
+yardsticks the cipher looks strong, yet it is trivially broken.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.74\columnwidth]{figures/cipher_hist.pdf}
-\caption{Cipher histogram (Cameraman): near-uniform, yet the cipher is trivially broken.}
+\caption{Cipher histogram (Cameraman).}
 \label{fig:hist}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\columnwidth]{figures/correlation_scatter.pdf}
-\caption{Adjacent-pixel correlation as a hexbin density (every horizontal pixel pair, log counts): the
-plain image concentrates on the diagonal (neighbours are alike) while the LLEO cipher fills the plane
-uniformly (Cameraman).}
+\caption{Adjacent-pixel correlation as a hexbin density, log counts (Cameraman).}
 \label{fig:corr}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Reconstruction statistics and attack outcome ($512{\times}512$)}
+\caption{RECONSTRUCTION STATISTICS AND ATTACK OUTCOME}
 \label{tab:repro}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{|l|c|c|c|c|c|}
@@ -478,7 +474,7 @@ not enter this cost.
 
 \begin{table}[t]
 \centering
-\caption{Attack cost vs.\ image size (single core)}
+\caption{ATTACK COST VS.\ IMAGE SIZE}
 \label{tab:scale}
 \begin{tabular}{|l|c|c|c|}
 \hline
@@ -505,24 +501,23 @@ below the reported value. The 99.6\,\% figure instead measures the difference be
 images, which for LLEO is \PH{npcr_unrelated}\,\% (Fig.~\ref{fig:diffusion}, centre); this is achieved by
 any cipher with a near-uniform
 output and says nothing about chosen-plaintext security. Table~\ref{tab:claims} contrasts each claimed
-property with what the cipher actually provides. Finally, Fig.~\ref{fig:keystream} shows the chaotic keystreams are
-themselves non-uniform: a chi-square test (a standard check for whether values are
-evenly spread) rejects uniformity for the logistic keystream
-($\chi^2=\PH{chi2_logistic}$, $p<10^{-300}$, numerically zero).
+property with what the cipher actually provides. Finally, Fig.~\ref{fig:keystream} shows the chaotic
+keystreams are themselves non-uniform: the logistic keystream is sharply peaked, its invariant density
+spiking at the extremes, and even the Lorenz stream is measurably lumpy, whereas a secure stream cipher
+would match the flat uniform reference plotted alongside them. A chi-square test (a standard check for
+whether values are evenly spread) rejects uniformity for both, for the logistic keystream at
+$\chi^2=\PH{chi2_logistic}$ ($p<10^{-300}$, numerically zero).
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.86\columnwidth]{figures/keystream_ridgeline.pdf}
-\caption{Keystream byte distributions (ridgeline). The logistic keystream is sharply non-uniform (its
-invariant density spikes at the extremes) and even the Lorenz stream is measurably lumpy, whereas a
-secure stream cipher would match the flat uniform reference. A chi-square test rejects uniformity for
-both ($\chi^2$ annotated).}
+\caption{Keystream byte distributions (ridgeline).}
 \label{fig:keystream}
 \end{figure}
 
 \begin{table}[htbp]
 \centering
-\caption{Claimed vs.\ actual security of LLEO}
+\caption{CLAIMED VS.\ ACTUAL SECURITY OF LLEO}
 \label{tab:claims}
 \begin{tabular}{|l|c|c|}
 \hline

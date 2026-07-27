@@ -124,9 +124,7 @@ uncertainty severalfold.
   \draw[->] (t)--node[above,font=\scriptsize]{yes} (a);
   \draw[->] (t)--node[right,font=\scriptsize]{no} (r);
 \end{tikzpicture}
-\caption{The selective-prediction (reject-option) wrapper we evaluate: accept the detector's label when
-its confidence $p$ clears a threshold $\tau$, otherwise abstain and defer to an analyst or a benign-only
-novelty stage. We ask whether $p$ is trustworthy, and what becomes of attacks that look benign.}
+\caption{The selective-prediction (reject-option) wrapper we evaluate.}
 \label{fig:pipeline}
 \end{figure}
 A network intrusion detector that emits only ``attack'' or ``benign'' gives an operator no way to tell
@@ -135,8 +133,9 @@ analyst attention, and genuinely novel attacks are exactly what a static classif
 label. A detector that could say ``I am not sure'' on
 these inputs, and defer them to a human or a secondary control, would be more useful than one forced to
 commit. Fig.~\ref{fig:pipeline} sketches the reject-option wrapper we evaluate: the detector's label is
-accepted when its confidence clears a threshold, and otherwise routed to an analyst or a benign-only
-novelty stage.
+accepted when its confidence $p$ clears a threshold $\tau$, and otherwise routed to an analyst or a
+benign-only novelty stage. We ask whether $p$ is trustworthy, and what becomes of attacks that look
+benign.
 
 \textbf{The narrow, practical question.} Do off-the-shelf machine-learning intrusion detectors know
 when they are wrong: producing confidence scores trustworthy enough to drive an abstention policy, and
@@ -215,15 +214,13 @@ and at a per-family 10\% benign-FPR threshold, plus a bootstrap over the \emph{t
 \textbf{Selective prediction.} The confidence of a prediction is its maximum class probability. Sorting
 the test set by confidence and accepting the most-confident fraction $c$ yields the selective risk
 $r(c)$; we report the area under $r(c)$ (AURC) and $r(0.8)$. Fig.~\ref{fig:rc} plots these
-risk--coverage curves for the three detectors.
+risk--coverage curves for the three detectors, with the AURC shaded for the two extremes and a ring at
+the 80\%-coverage operating point.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.64\columnwidth]{figures/risk_coverage.pdf}
-\caption{Risk--coverage on NSL-KDD; the ring marks the 80\%-coverage operating point and the shaded
-areas are the AURC (area under the curve) for the two extremes. Accepting only the most-confident inputs
-lowers selective risk sharply for the tree ensembles but barely for logistic regression, whose confidence
-does not rank its errors (nearly flat, and worst at the very top).}
+\caption{Risk--coverage curves on NSL-KDD.}
 \label{fig:rc}
 \end{figure}
 
@@ -259,7 +256,7 @@ benchmark.
 
 \begin{table*}[tb]
 \centering
-\caption{NSL-KDD test metrics (mean $\pm$ 95\% CI, $K{=}15$ seeds)}
+\caption{NSL-KDD TEST METRICS}
 \label{tab:main}
 \setlength{\tabcolsep}{6pt}
 \begin{tabular}{|l|c|c|c|c|c|}
@@ -309,7 +306,7 @@ richer features.
 
 \begin{table}[t]
 \centering
-\caption{Threshold-free per-family detection on NSL-KDD ($K{=}6$ seeds)}
+\caption{THRESHOLD-FREE PER-FAMILY DETECTION ON NSL-KDD}
 \label{tab:perfam}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{|l|c|c|c|c|}
@@ -330,9 +327,7 @@ U2R   & \PH{pf_auroc_seen_U2R}   & \PH{pf_auroc_unk_U2R}   & \PH{pf_auroc_delta_
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.64\columnwidth]{figures/perfamily_auroc.pdf}
-\caption{Per-family detection AUROC (threshold-free), family seen vs.\ held out of training. Every family
-stays well above chance, R2L lowest but never near 0.5; the small seen$\to$unknown gaps are the honest
-size of ``detection collapse'' once the decision threshold is taken out of the picture.}
+\caption{Per-family detection AUROC, family seen vs.\ held out of training.}
 \label{fig:perfam}
 \end{figure}
 
@@ -346,9 +341,7 @@ barely ranks its errors (AURC \PH{ms_logreg_aurc}), so abstention buys little (\
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.64\columnwidth]{figures/calibration_methods.pdf}
-\caption{No post-hoc calibrator survives the shift. Per model, ECE on the shifted test set under raw,
-Platt, isotonic, and temperature scaling; all four markers cluster high. Each method reaches ECE below
-0.01 in-distribution, so the failure is the shift, not the calibrator.}
+\caption{ECE on the shifted test set, raw and after three post-hoc calibrators.}
 \label{fig:calmethods}
 \end{figure}
 
@@ -371,7 +364,7 @@ completeness only and draw no conclusions from it.}
 
 \begin{table}[t]
 \centering
-\caption{Leave-one-family-out (LOFO) argmax recall on NSL-KDD ($K{=}10$ seeds)}
+\caption{LEAVE-ONE-FAMILY-OUT ARGMAX RECALL ON NSL-KDD}
 \label{tab:openset}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{|l|c|c|c|}
@@ -392,12 +385,8 @@ U2R   & \PH{det_seen_U2R}   & \PH{det_unseen_U2R}   & \PH{reject_unseen_U2R} \\
 \begin{figure*}[tb]
 \centering
 \includegraphics[width=0.84\textwidth]{figures/benign_manifold.pdf}
-\caption{Why R2L is the blind spot. \textbf{(a)} The joint novelty space: each NSL-KDD test record placed
-by how anomalous the two benign-only detectors find it, z-scored so benign sits near the origin (dashed
-box $=$ central 95\% of benign). \textbf{(b)} A ridgeline of the per-family Isolation-Forest anomaly. Both
-panels show R2L's distribution sitting on top of benign's (overlapping support) while DoS, Probe, and
-U2R separate, so neither abstention nor a benign-only novelty detector can cleanly flag the
-benign-mimicking R2L.}
+\caption{\textbf{(a)} The joint benign-only novelty space. \textbf{(b)} Per-family Isolation-Forest
+anomaly ridgeline.}
 \label{fig:manifold}
 \end{figure*}
 
@@ -427,7 +416,7 @@ therefore a \emph{graded} dissociation, not a uniform one.
 
 \begin{table}[t]
 \centering
-\caption{CIC-IDS-2017 metrics, random split and cross-day ($K{=}5$ seeds)}
+\caption{CIC-IDS-2017 METRICS, RANDOM SPLIT AND CROSS-DAY}
 \label{tab:cic}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{|l|c|c|c|c|}
@@ -469,9 +458,11 @@ genuine zero-days.
 
 \subsection{A Benign-Only Novelty Stage Partially Closes the Blind Spot}\label{sec:novelty}
 Confidence-based abstention barely flags R2L (Section~\ref{sec:openset}) because such attacks lie on the
-benign feature manifold. Fig.~\ref{fig:manifold} shows why: in the joint novelty space of two
-benign-only detectors, and in the per-family anomaly ridgeline beside it, R2L's distribution sits on top
-of benign's while DoS, Probe, and U2R separate.
+benign feature manifold. Fig.~\ref{fig:manifold} shows why: panel (a) places each NSL-KDD test record by
+how anomalous the two benign-only detectors find it, z-scored so benign sits near the origin (the dashed
+box is the central 95\% of benign), and panel (b) is the per-family Isolation-Forest anomaly ridgeline.
+In both, R2L's distribution sits on top of benign's, an overlapping support, while DoS, Probe, and U2R
+separate, so neither abstention nor a benign-only novelty detector can cleanly flag benign-mimicking R2L.
 The apt detector for that regime is a \emph{benign-only} density model, a
 one-class novelty detector, distinct from the two-class Mahalanobis used above for error ranking. We fit
 an Isolation Forest~\cite{liu2008isolation} and a one-class SVM~\cite{scholkopf2001oneclass} on benign
@@ -480,7 +471,9 @@ records only. At a 10\% benign false-positive budget the Isolation Forest recove
 \PH{nov_ocsvm_rec_U2R_fp10} and \PH{nov_ocsvm_rec_R2L_fp10}; means over $K{=}8$ seeds, 95\% CI
 half-width $\le\PH{nov_maxhw}$), against abstention's $\approx\PH{reject_unseen_R2L}$ for unknown R2L,
 a clear if partial gain. Fig.~\ref{fig:novelty} orders the families by how cleanly a benign-only model
-separates them from benign, and its AUROC ceilings (R2L \PH{nov_if_auroc_R2L}, U2R
+separates them from benign, plotting means with 95\% CI whiskers against a dashed chance line;
+DoS and Probe are easy, while U2R and R2L, the abstention blind spot, are only partially recoverable.
+Its AUROC ceilings (R2L \PH{nov_if_auroc_R2L}, U2R
 \PH{nov_if_auroc_U2R}) show the limit is real but not absolute: R2L is hardest because its support most overlaps benign, so no benign-only detector fully
 recovers it, yet a novelty stage remains a cheap complement, since abstention and novelty catch
 different failure modes (confident errors vs.\ benign-mimicking attacks).
@@ -494,7 +487,8 @@ tuned threshold at matched cost. Two distinct resamplings agree on no gain. The 
 \PH{comb_delta_union_tuned} (over the six training seeds). Resampling the evaluation distribution of a
 fixed model gives a gap of \PH{comb_delta_boot_mid} (95\% CI
 $[\PH{comb_delta_boot_lo},\PH{comb_delta_boot_hi}]$, upper bound ${\approx}0$).
-Fig.~\ref{fig:combined} sets the three policies side by side at matched analyst cost.
+Fig.~\ref{fig:combined} sets the three policies side by side at matched analyst cost, as means over
+$K{=}6$ seeds with 95\% CIs and a dashed line at the matched review load.
 The recovery is the operating point, not the
 gates; even so, the tuned threshold still misses about half of unknown R2L (the stack about 60\%). This is
 not a single-corpus result: Section~\ref{sec:validatefix} repeats the comparison across three review
@@ -503,21 +497,14 @@ budgets on both unknown R2L and cross-corpus Infiltration, with the same conclus
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.64\columnwidth]{figures/combined_pipeline.pdf}
-\caption{\textbf{The paper's central negative result in one view.} On unknown (held-out) R2L at matched
-analyst cost, a single budget-tuned threshold recovers \PH{comb_recall_tuned} of the family, which the
-full abstention$+$novelty stack does not beat (\PH{comb_recall_union}); argmax alone is blind
-(\PH{comb_recall_argmax}). The operating point is the lever, not the gates. Means over $K{=}6$ seeds,
-95\% CIs; dashed line: the matched review load.}
+\caption{Unknown-R2L recall at matched analyst cost, for three policies.}
 \label{fig:combined}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.64\columnwidth]{figures/novelty_auroc.pdf}
-\caption{Benign-only novelty detection (one-class models trained on benign records only): AUROC
-separating each attack family from benign, ordered by difficulty. DoS/Probe are easy; U2R/R2L, the
-abstention blind spot, are only partially recoverable, R2L the hardest. Markers are means over
-$K{=}8$ seeds, whiskers 95\% CIs; the dashed line is chance.}
+\caption{Benign-only novelty detection: AUROC separating each attack family from benign.}
 \label{fig:novelty}
 \end{figure}
 
