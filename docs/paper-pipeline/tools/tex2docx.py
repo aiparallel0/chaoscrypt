@@ -915,6 +915,19 @@ def para(style: str, runs: list[dict], extra_ppr: str = "", base_props: str = ""
 
 NO_NUMBER = '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="0"/></w:numPr>'
 NO_INDENT = '<w:ind w:firstLine="0"/>'
+
+# Committee item 5 is "line spacing 0.95 from the abstract onwards". GvdeMetni carries it
+# (line 228 of 240), but the Abstract and Keywords styles set no line rule at all and so fall
+# back to single. Item 6, the 0.51cm first line, is likewise 288 twips in the body while the
+# Abstract style indents by 272. Both are applied here so the front matter matches the body.
+FRONT_SPACING = ('<w:spacing w:line="228" w:lineRule="auto"/>'
+                 '<w:ind w:firstLine="288"/>')
+
+# Item 13 asks for centred figure captions; the template's own figurecaption style is
+# justified, and numId 2 gives it a hanging indent that would centre the text inside an
+# indented block. Both are overridden, which is one of only two places where the committee's
+# list and the template's styles.xml disagree -- the other is the bold on Keywords.
+FIG_CAPTION = '<w:ind w:left="0" w:right="0" w:firstLine="0"/><w:jc w:val="center"/>'
 TIMES = ('<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" '
          'w:cs="Times New Roman"/>')
 
@@ -981,13 +994,14 @@ def build_document(paper: Paper, media: list[tuple[str, str, dict]], root: str) 
     # IEEEtran prints the "Abstract—" and "Keywords—" labels itself; in Word they are literal
     # text, so they are added here rather than left to a style that cannot supply them.
     body.append(para("Abstract", [run("Abstract—", b=True, i=True)] + paper.abstract,
-                     NO_INDENT, base_props="<w:b/><w:bCs/>"))
+                     FRONT_SPACING, base_props="<w:b/><w:bCs/>"))
     if paper.keywords:
         # The Keywords style is basedOn Abstract and so inherits its bold. The committee's
         # first correction was that the keyword line must be italic and NOT bold, which the
         # LaTeX side already honours, so bold is switched off explicitly here too.
         body.append(para("Keywords", [run("Keywords—")] + paper.keywords,
-                         NO_INDENT, base_props='<w:b w:val="0"/><w:bCs w:val="0"/><w:i/>'))
+                         FRONT_SPACING,
+                         base_props='<w:b w:val="0"/><w:bCs w:val="0"/><w:i/>'))
 
     gi = 0
     two_col = True
@@ -1037,7 +1051,7 @@ def build_document(paper: Paper, media: list[tuple[str, str, dict]], root: str) 
             # both refuse to open the file outright when its children are out of order.
             body.append(f'<w:p><w:pPr>{NO_INDENT}<w:jc w:val="center"/></w:pPr>'
                         f'{drawing(rid, name, g["emu_w"], g["emu_h"], gi)}</w:p>')
-            body.append(para("figurecaption", blk["caption"]))
+            body.append(para("figurecaption", blk["caption"], FIG_CAPTION))
 
         if kind in ("figure", "table") and wide and not two_col:
             body.append(f'<w:p><w:pPr>{sect_pr(1, True)}</w:pPr></w:p>')
