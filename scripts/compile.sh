@@ -46,15 +46,19 @@ fi
 errors=$(grep -c '^!' main_filled.log || true)
 overfull=$(grep -c 'Overfull' main_filled.log || true)
 undefined=$(grep -ci 'undefined \(control sequence\|reference\|citation\)' main_filled.log || true)
+# A glyph the font lacks is dropped with only a log line, so an identifier can lose its
+# underscore and the page still builds "clean". Nothing else in the pipeline would see it.
+missing=$(grep -c 'Missing character' main_filled.log || true)
 pages=$(pdfinfo main_filled.pdf 2>/dev/null | awk '/^Pages:/{print $2}')
 pages="${pages:-0}"
 
-echo "pages=$pages/$limit errors=$errors overfull=$overfull undefined=$undefined"
+echo "pages=$pages/$limit errors=$errors overfull=$overfull undefined=$undefined missing-glyphs=$missing"
 
 fail=0
 [ "$errors"    -gt 0 ]        && { echo "FAIL: LaTeX errors";               fail=1; }
 [ "$overfull"  -gt 0 ]        && { echo "FAIL: overfull boxes";             fail=1; }
 [ "$undefined" -gt 0 ]        && { echo "FAIL: undefined references/cites"; fail=1; }
+[ "$missing"   -gt 0 ]        && { echo "FAIL: glyphs dropped for want of a font"; fail=1; }
 [ "$pages"     -gt "$limit" ] && { echo "FAIL: over the $limit-page limit"; fail=1; }
 
 if [ "$fail" -ne 0 ]; then
