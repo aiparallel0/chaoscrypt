@@ -16,11 +16,18 @@ Word units: spacing twips = pt*20; ``w:sz`` half-points; ``w:line`` with ``lineR
 Two of the fifteen items contradict the template's styles.xml, and the committee's list wins
 because it is the later and more specific instruction:
 
-  item 1   Keywords must be italic and NOT bold, but the Keywords style is basedOn Abstract
-           and so inherits its bold.
   item 13  figure captions must be centred, but figurecaption sets jc="both".
 
-Both therefore have to be overridden on the paragraph, and this checks the effective result.
+The committee later corrected two of its own items, and the corrected reading is the one
+checked here:
+
+  item 1   "9pt and italic" was about the keyword TERMS, which were upright. The line is bold
+           italic, as the Keywords style (basedOn Abstract) and the template's compiled PDF
+           both have it. An earlier reading that stripped the bold was wrong.
+  item 5   0.95 line spacing starts AFTER the abstract. The abstract and keywords stay single.
+
+Four further items arrived with that correction: 10pt between abstract and keywords, 6pt after
+every paragraph, and a full stop after the table label ("TABLE I.").
 
 Exit status 0 if every item passes, 1 if any fails, 2 if the file cannot be read.
 """
@@ -127,11 +134,11 @@ def main() -> int:
     if kw:
         ppr, rpr = eff(*kw[0])
         size = last(rpr, "sz", "val")
-        check("1", "keywords 9pt italic, not bold",
-              has(rpr, "i") and not has(rpr, "b") and size == "18",
+        check("1", "keywords 9pt bold italic",
+              has(rpr, "i") and has(rpr, "b") and size == "18",
               f"sz={size} half-pt, i={has(rpr, 'i')}, b={has(rpr, 'b')}")
     else:
-        check("1", "keywords 9pt italic, not bold", False, "no Keywords paragraph")
+        check("1", "keywords 9pt bold italic", False, "no Keywords paragraph")
 
     # ---- items 2, 3: heading spacing, before/after in twips
     for item, style, before, after in (("2", "Balk1", "160", "80"),
@@ -162,17 +169,43 @@ def main() -> int:
                 break
     check("4", "headings in Title Case", not bad, bad[:3] if bad else "all clear")
 
-    # ---- item 5: 0.95 line spacing from the abstract onwards
-    off = []
+    # ---- item 5 (as corrected): 0.95 AFTER the abstract; abstract and keywords stay single
+    off, single = [], []
     for style, ppr, _ in paras:
-        if style not in ("GvdeMetni", "Abstract", "Keywords"):
+        e, _ = eff(style, ppr, "")
+        line, rule = last(e, "spacing", "line"), last(e, "spacing", "lineRule")
+        if style == "GvdeMetni" and (line != "228" or rule != "auto"):
+            off.append(f"{style}: line={line} rule={rule}")
+        if style in ("Abstract", "Keywords") and line is not None and line != "240":
+            single.append(f"{style}: line={line}")
+    check("5", "body 0.95, abstract/keywords single", not off and not single,
+          sorted(set(off + single))[:3] if (off or single)
+          else "body 228 auto, abstract and keywords at single")
+
+    # ---- correction item 2: 10pt between the abstract and the keywords
+    ab = [p for p in paras if p[0] == "Abstract"]
+    after = last(eff(*ab[0])[0], "spacing", "after") if ab else None
+    check("C2", "10pt between abstract and keywords", after == "200", f"after={after}tw")
+
+    # ---- correction item 3: 6pt after every paragraph
+    bad = []
+    for style, ppr, _ in paras:
+        if style != "GvdeMetni":
             continue
         e, _ = eff(style, ppr, "")
-        if last(e, "spacing", "line") != "228" or last(e, "spacing", "lineRule") != "auto":
-            off.append(f"{style}: line={last(e, 'spacing', 'line')} "
-                       f"rule={last(e, 'spacing', 'lineRule')}")
-    check("5", "line spacing 0.95 (228/240)", not off,
-          sorted(set(off))[:3] if off else "abstract, keywords and body all 228 auto")
+        if last(e, "spacing", "after") != "120":
+            bad.append(last(e, "spacing", "after"))
+    check("C3", "6pt after every paragraph", not bad,
+          sorted(set(str(b) for b in bad))[:3] if bad else "every body paragraph after=120tw")
+
+    # ---- correction item 4: a full stop after the table label
+    lvl = re.search(r'<w:abstractNumId w:val="(\d+)"', 
+                    re.search(r'<w:num w:numId="9"[^>]*>.*?</w:num>', numbering, re.S).group(0))
+    absbody = re.search(rf'<w:abstractNum w:abstractNumId="{lvl.group(1)}".*?</w:abstractNum>',
+                        numbering, re.S).group(0)
+    fmt = re.search(r'<w:lvlText w:val="([^"]*)"', absbody)
+    check("C4", "full stop after the table label",
+          bool(fmt) and "%1." in fmt.group(1), f"lvlText={fmt.group(1)!r}" if fmt else "-")
 
     # ---- item 6: 0.51cm first-line indent on every running paragraph
     off, skipped = [], 0

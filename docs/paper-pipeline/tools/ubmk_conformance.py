@@ -33,10 +33,15 @@ import zlib
 from pathlib import Path
 
 # (target, tolerance) in points
-BODY_PITCH = (11.40, 0.25)   # 0.95 * 12pt   -- item 5
-INDENT = (14.46, 0.60)       # 0.51 cm       -- item 6
-REF_PITCH = (9.00, 0.35)     # exact 9pt     -- item 14
-REF_GAP = (2.50, 0.60)       # 2.5pt         -- item 15
+BODY_PITCH = (11.40, 0.25)   # 0.95 * 12pt, after the abstract   -- item 5
+INDENT = (14.46, 0.60)       # 0.51 cm                           -- item 6
+REF_PITCH = (9.00, 0.35)     # exact 9pt                         -- item 14
+REF_GAP = (2.50, 0.60)       # 2.5pt                             -- item 15
+ABS_PITCH = (9.96, 0.30)     # single, not 0.95                  -- item 5, as corrected
+ABS_KEY_GAP = (10.00, 1.00)  # abstract to keywords              -- correction item 2
+PARA_GAP = (6.00, 1.20)      # after every paragraph             -- correction item 3
+SEC_GAP = (8.00, 1.00)       # before a section heading          -- item 2
+SUB_GAP = (6.00, 1.20)       # before a subsection heading       -- item 3
 
 COLUMN_SPLIT = 300.0         # A4 two-column: left column xMin < 300
 
@@ -208,6 +213,50 @@ def title_block(pdf: Path):
     return [(ln[0][0], ln[0][1], "".join(t for _, _, t in ln).strip()) for ln in out if ln]
 
 
+def front_matter(pdf: Path):
+    """Abstract line pitch and the extra space above the keywords line, both in points."""
+    col = [r for r in lines_on(pdf, 1) if r[0] < COLUMN_SPLIT]
+    col.sort(key=lambda r: r[1])
+    a = next((i for i, r in enumerate(col) if r[4].startswith("Abstract")), None)
+    k = next((i for i, r in enumerate(col) if r[4].startswith("Keywords")), None)
+    if a is None or k is None or k <= a + 1:
+        return 0.0, 0.0, 0
+    inner = [round(col[i + 1][1] - col[i][1], 2) for i in range(a, k - 1)]
+    inner = [d for d in inner if 5.0 < d < 20.0]
+    if not inner:
+        return 0.0, 0.0, 0
+    pitch = statistics.mode(inner)
+    return pitch, (col[k][1] - col[k - 1][1]) - pitch, len(inner)
+
+
+def gaps(pdf: Path, pages, kind: str, pitch: float):
+    """Extra vertical space above headings or above paragraph first lines.
+
+    A paragraph start is identified by its first line sitting exactly one indent to the right
+    of the column's flush edge. Anything merely further right than flush also catches centred
+    caption lines, whose own smaller leading then drags the measurement well below target.
+    """
+    out = []
+    for pg in pages:
+        for col in columns(lines_on(pdf, pg)):
+            xs = [round(r[0], 1) for r in col]
+            flush = statistics.mode(xs)
+            for a, b in zip(col, col[1:]):
+                d = b[1] - a[1]
+                if not (5.0 < d < 40.0):
+                    continue
+                is_sec = re.match(r"^[IVX]+\.\s", b[4])
+                is_sub = re.match(r"^[A-Z]\.\s", b[4])
+                if kind == "section" and is_sec:
+                    out.append(d - pitch)
+                elif kind == "subsection" and is_sub:
+                    out.append(d - pitch)
+                elif kind == "paragraph" and not (is_sec or is_sub) \
+                        and INDENT[0] - 1.0 < b[0] - flush < INDENT[0] + 1.0:
+                    out.append(d - pitch)
+    return (statistics.median(out) if out else 0.0), len(out)
+
+
 def check(name, item, got, target, samples, unit="pt"):
     lo, hi = target[0] - target[1], target[0] + target[1]
     ok = samples > 0 and lo <= got <= hi
@@ -246,16 +295,34 @@ def main() -> int:
     ok, s = check("reference line spacing", "14", rw, REF_PITCH, nw); results.append(ok); data.append(s)
     ok, s = check("space between references", "15", rgap, REF_GAP, nb); results.append(ok); data.append(s)
 
+    # The committee corrected item 5 after the first round: 0.95 starts AFTER the abstract, so
+    # the abstract and the keywords stay at single spacing.
+    apitch, akgap, na = front_matter(pdf)
+    ok, s = check("abstract line spacing (single)", "5", apitch, ABS_PITCH, na); results.append(ok); data.append(s)
+    ok, s = check("abstract to keywords", "C2", akgap, ABS_KEY_GAP, 1 if na else 0); results.append(ok); data.append(s)
+
+    for label, item, kind, target in (("space after a paragraph", "C3", "paragraph", PARA_GAP),
+                                      ("space above a section", "2", "section", SEC_GAP),
+                                      ("space above a subsection", "3", "subsection", SUB_GAP)):
+        got, k = gaps(pdf, body_pages, kind, pitch)
+        ok, s = check(label, item, got, target, k); results.append(ok); data.append(s)
+
     # Caption separators: the template's class uses a period for figures and a newline for
     # tables. A colon means a package overrode the class -- the defect the committee first
     # flagged, and one only the rendered text can reveal.
     txt = subprocess.run(["pdftotext", str(pdf), "-"], check=True,
                          capture_output=True, text=True).stdout
     colons = sorted(set(re.findall(r"Fig\. \d+:|TABLE [IVX]+:", txt)))
-    labels = sorted(set(re.findall(r"Fig\. \d+\.|TABLE [IVX]+", txt)))
-    ok = not colons and bool(labels)
-    print(f"  [{'PASS' if ok else 'FAIL':7}] item 8  caption label separators      "
-          f"{len(labels)} labels, {len(colons)} with a colon")
+    figs = sorted(set(re.findall(r"Fig\. \d+\.", txt)))
+    # The correction asks for a full stop after the table label too: "TABLE I.", not "TABLE I".
+    tabs = sorted(set(re.findall(r"TABLE [IVX]+\.", txt)))
+    # The numeral boundary is required: without it the matcher backtracks inside "TABLE III."
+    # and reports "TABLE II" as a label with no stop after it.
+    bare = sorted(set(re.findall(r"TABLE [IVX]+(?![IVX])(?![.:])", txt)))
+    ok = not colons and not bare and bool(figs) and bool(tabs)
+    print(f"  [{'PASS' if ok else 'FAIL':7}] item 8  caption labels end in a stop  "
+          f"{len(figs)} Fig., {len(tabs)} TABLE, {len(colons)} colon, {len(bare)} without a stop")
+    labels = figs + tabs
     results.append(ok); data.append(len(labels))
     # `data` counts only real measurements. The two checks below are pass/fail on content,
     # so they must not make an empty input look like it was measured.

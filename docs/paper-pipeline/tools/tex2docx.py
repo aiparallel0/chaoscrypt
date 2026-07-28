@@ -916,12 +916,12 @@ def para(style: str, runs: list[dict], extra_ppr: str = "", base_props: str = ""
 NO_NUMBER = '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="0"/></w:numPr>'
 NO_INDENT = '<w:ind w:firstLine="0"/>'
 
-# Committee item 5 is "line spacing 0.95 from the abstract onwards". GvdeMetni carries it
-# (line 228 of 240), but the Abstract and Keywords styles set no line rule at all and so fall
-# back to single. Item 6, the 0.51cm first line, is likewise 288 twips in the body while the
-# Abstract style indents by 272. Both are applied here so the front matter matches the body.
-FRONT_SPACING = ('<w:spacing w:line="228" w:lineRule="auto"/>'
-                 '<w:ind w:firstLine="288"/>')
+# The committee corrected item 5 after the first round: the abstract and the keywords stay at
+# single spacing and the 0.95 begins after them, which is what the template's own compiled PDF
+# does. Only the 0.51cm first line of item 6 is applied here; the Abstract style indents by
+# 272 twips and Keywords by 274, where the body uses 288. The 10pt gap between the two (item 2
+# of the correction) is the Abstract style's own after=200 and is deliberately left alone.
+FRONT_SPACING = '<w:ind w:firstLine="288"/>'
 
 # Item 13 asks for centred figure captions; the template's own figurecaption style is
 # justified, and numId 2 gives it a hanging indent that would centre the text inside an
@@ -996,12 +996,12 @@ def build_document(paper: Paper, media: list[tuple[str, str, dict]], root: str) 
     body.append(para("Abstract", [run("Abstract—", b=True, i=True)] + paper.abstract,
                      FRONT_SPACING, base_props="<w:b/><w:bCs/>"))
     if paper.keywords:
-        # The Keywords style is basedOn Abstract and so inherits its bold. The committee's
-        # first correction was that the keyword line must be italic and NOT bold, which the
-        # LaTeX side already honours, so bold is switched off explicitly here too.
+        # Bold italic, both label and terms. The Keywords style inherits bold from Abstract and
+        # adds the italic, which is exactly what the template's compiled PDF shows; the
+        # committee asked for "9pt and italic" because the terms were upright, not because the
+        # line was bold. The bold is therefore left inherited rather than switched off.
         body.append(para("Keywords", [run("Keywords—")] + paper.keywords,
-                         FRONT_SPACING,
-                         base_props='<w:b w:val="0"/><w:bCs w:val="0"/><w:i/>'))
+                         FRONT_SPACING, base_props="<w:b/><w:bCs/><w:i/><w:iCs/>"))
 
     gi = 0
     two_col = True

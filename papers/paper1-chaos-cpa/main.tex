@@ -14,20 +14,25 @@
 % --- UBMK official formatting (UBMK-Template-A4): geometry, spacing, captions, keyword label ---
 \usepackage{textcomp}
 \usepackage[font=footnotesize,labelsep=period]{caption} % IEEE caption format: ``Fig. 1.''
-\captionsetup[table]{labelsep=newline,font={footnotesize,sc},justification=centering} % ``TABLE I''
-                                                        % above a centred small-caps title
+% ``TABLE I.'' -- with the full stop the committee asked for -- above a centred small-caps
+% title. The label format supplies the stop; labelsep then breaks the line.
+\DeclareCaptionLabelFormat{ubmktable}{#1~#2.}
+\captionsetup[table]{labelformat=ubmktable,labelsep=newline,
+                     font={footnotesize,sc},justification=centering}
 \captionsetup[figure]{justification=centering}          % template: figure captions are centred
 \usepackage{titlesec}
 % Unstarred \titlespacing (no *) keeps the first paragraph after a heading indented, which the
 % template requires of *every* paragraph. The starred form suppresses exactly that indent.
-\titlespacing{\section}{0pt}{8pt}{4pt}
-\titlespacing{\subsection}{0pt}{6pt}{3pt}
-\titlespacing{\subsubsection}{0pt}{4pt}{2pt}
+% before-values are (target - \parskip); see the \parskip note below.
+\titlespacing{\section}{0pt}{2pt}{4pt}
+\titlespacing{\subsection}{0pt}{0pt}{3pt}
+\titlespacing{\subsubsection}{0pt}{0pt}{2pt}
 \usepackage{geometry}
 \geometry{a4paper, top=2cm, bottom=2.5cm, left=1.6cm, right=1.6cm}
-% \parskip must be 0: LaTeX ADDS it to the heading spacing above, which turned the required
-% 8pt/4pt section gaps into 14pt/10pt. Paragraphs are separated by the indent below instead.
-\setlength{\parskip}{0pt}
+% 6pt after every paragraph (template Body Text: after = 120 twips). LaTeX ADDS \parskip to
+% the skip above a heading, so the \titlespacing before-values above are pre-reduced by this
+% same 6pt; the measured gaps are what the committee specified, not the numbers written there.
+\setlength{\parskip}{6pt}
 \setlength{\parindent}{0.51cm} % template Body Text: firstLine 288 twips = 0.508 cm
 \setlength{\floatsep}{6pt} % template says 0pt, but that collides when two floats stack in one
                            % column; 6pt matches the template's own \textfloatsep/\intextsep
@@ -47,13 +52,10 @@
 \exhyphenpenalty=10000
 \renewcommand{\IEEEkeywordsname}{Keywords}
 
-% Template style ``Keywords'': the whole line, label included, is 9pt italic and NOT bold.
-% IEEEtran's own definition sets \bfseries and leaves the terms upright, so replace it.
-% \@IEEEabskeysecsize is \small, which this class defines as 9pt -- the size the template asks for.
-\makeatletter
-\def\IEEEkeywords{\normalfont\@IEEEabskeysecsize\itshape
-  \IEEEkeywordsname---\relax\@IEEEgobbleleadPARNLSP}
-\makeatother
+% Keywords: 9pt bold italic, which is what the template's own compiled PDF shows for the
+% label AND the terms. IEEEtran's stock definition already gives the bold and the italic
+% label; the \itshape inside the environment body italicises the terms. The committee's
+% ``9 punto ve italik'' asked for the italic the stock terms lack, not for the bold removed.
 
 % References: 2.5pt between entries (template ``references'' style: after = 50 twips).
 \def\IEEEbibitemsep{2.5pt}
@@ -90,9 +92,6 @@
 \thispagestyle{empty}
 \pagestyle{empty}
 
-% From the abstract onward the template sets line spacing to 0.95 (Body Text: line = 228 of
-% 240 twips). Applied after \maketitle so the title block keeps its own leading.
-\linespread{0.95}\selectfont
 
 \begin{abstract}
 \boldmath
@@ -108,9 +107,17 @@ cipher whose keystream is fixed by the key alone falls to the same recovery. Goo
 security.
 \end{abstract}
 
+% 10pt between the abstract and the keywords (template Abstract style: after = 200 twips).
+% \parskip already contributes 6pt of it, so only the remainder is added here; writing the
+% subtraction out keeps the 10pt correct if \parskip is ever changed.
+\vspace{\dimexpr 10pt-\parskip\relax}
 \begin{IEEEkeywords}
 \itshape cryptanalysis, image encryption, chaotic cipher, chosen-plaintext attack, equivalent key, NPCR
 \end{IEEEkeywords}
+
+% The abstract and the keywords keep single spacing; the 0.95 the template asks for starts
+% after them and runs to the end of the paper.
+\linespread{0.95}\selectfont
 
 \section{Introduction}
 \begin{figure}[t]

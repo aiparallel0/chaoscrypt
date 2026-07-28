@@ -147,7 +147,7 @@ def source_paragraphs(tex: str, keep_tables: bool = False) -> list[str]:
     t = re.sub(r"\\(begin|end)\{[^}]*\}(\[[a-zA-Z!]*\])?", "\n\n", t)
     t = re.sub(r"\\(label|ref|eqref|cite|includegraphics|setlength|tabcolsep|linespread|"
                r"thispagestyle|pagestyle|bibliographystyle|bibliography|setcounter|"
-               r"renewcommand|captionsetup|documentclass|usepackage)\s*"
+               r"renewcommand|captionsetup|documentclass|usepackage|vspace|hspace)\s*"
                r"(\[[^\]]*\])?\{[^}]*\}(\{[^}]*\})?", " ", t)
     # A footnote is written inside the sentence that carries it but is typeset elsewhere, so
     # it becomes its own paragraph here -- otherwise the sentence around it never matches.
@@ -245,16 +245,23 @@ def main() -> int:
     pwords = words(pdf_text(pdf))
     swords = words("\n".join(source_paragraphs(tex)))
 
+
     print(f"{docx}")
     results = []
 
-    # pdftotext renders the small-capped headings as "I. I NTRODUCTION": the small-cap glyphs
-    # are a separate font, so a space lands after the first letter. Adjacent-token joins are
-    # therefore accepted alongside the tokens themselves.
-    pwords = (pwords + [a + b for a, b in zip(pwords, pwords[1:])]
-              + [a + b + c for a, b, c in zip(pwords, pwords[1:], pwords[2:])])
-    missing, total = missing_words(prose(dwords), prose(pwords))
-    results.append(report("no word absent from the PDF", missing, total))
+    # A word in the .docx must be explainable by the PDF or by the source, and both references
+    # are needed. pdftotext renders the small-capped headings as "I. I NTRODUCTION", the
+    # small-cap glyphs being a separate font, so adjacent-token joins are accepted alongside
+    # the tokens themselves. It also mangles display maths badly enough to lose characters,
+    # emitting "P t d [j] 256" for a summation the .docx sets correctly, so the source -- with
+    # its maths kept this time -- is admitted as evidence too. Text in neither still fails.
+    def with_joins(ws):
+        return (ws + [a + b for a, b in zip(ws, ws[1:])]
+                + [a + b + c for a, b, c in zip(ws, ws[1:], ws[2:])])
+    haystack = with_joins(pwords) + with_joins(
+        words("\n".join(source_paragraphs(tex, keep_tables=True))))
+    missing, total = missing_words(prose(dwords), prose(haystack))
+    results.append(report("no word absent from PDF or source", missing, total))
     missing, total = missing_words(prose(swords), prose(dwords))
     results.append(report("no word dropped from source", missing, total))
 
