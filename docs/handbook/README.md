@@ -2,11 +2,16 @@
 
 | File | What it is |
 |---|---|
-| [RESEARCH-PUBLICATION-METHOD-UNIFIED.md](RESEARCH-PUBLICATION-METHOD-UNIFIED.md) | Field-agnostic method handbook, 26 sections. Sections 23 to 25 were added from this project. |
-| [UBMK-TEMPLATE-CONFORMANCE.md](UBMK-TEMPLATE-CONFORMANCE.md) | One venue's template at instance level: every numbered requirement, the measured value that satisfies it, and what each check must fail on. |
+| [RESEARCH-PUBLICATION-METHOD-UNIFIED.md](RESEARCH-PUBLICATION-METHOD-UNIFIED.md) | Field-agnostic method handbook, 27 sections. Sections 23 to 26 were added from this project. |
+| [CRYPTANALYSIS-AND-EVALUATION.md](CRYPTANALYSIS-AND-EVALUATION.md) | The domain companion: breaking a cipher that passed every test its designers applied, and evaluating detectors that were confident where they were wrong. |
 
-The handbook states the classes. The conformance file is the worked instance of
-its Sections 23 to 25, with the numbers left in.
+The handbook is about **method** and holds for any field. The domain file is
+about **subject matter**, and keeps its measured values so the arguments are
+checkable.
+
+Both halves of the domain file turn on one idea, which is also why Sections 23 to
+26 of the handbook exist: a system having a property, and a system scoring well on
+a measurement of that property, are different facts.
 
 Two related directories:
 

@@ -7,9 +7,9 @@ win. Examples are given in field-neutral form.
 In a hurry: start with the checklists in Section 13, or the ready-to-use prompts
 in Sections 20 and 21.
 
-This unified edition merges three sources: the comprehensive method handbook, the condensed lessons edition, and a later project whose lessons are Sections 23 to 25. The handbook is the spine; the lessons edition's publication-strategy lessons (Sections 12.11 to 12.13) and its distinctive prompts (Section 20.17) are folded in, broken source tables are repaired, and the prompt-section numbering is corrected. A crosswalk from the condensed edition is in Section 22.
+This unified edition merges three sources: the comprehensive method handbook, the condensed lessons edition, and a later project whose lessons are Sections 23 to 26. The handbook is the spine; the lessons edition's publication-strategy lessons (Sections 12.11 to 12.13) and its distinctive prompts (Section 20.17) are folded in, broken source tables are repaired, and the prompt-section numbering is corrected. A crosswalk from the condensed edition is in Section 22.
 
-Sections 23 to 25 come from a project in which every serious defect was silent: three separate checks shipped a false pass, a build reported success on failure, a correction notice was over-read and broke a property it never mentioned, and a format conversion had to be proved lossless rather than inspected. They are appended rather than interleaved so that no existing section number moves (Sections 10.8 and 18.11 explain why that matters). Where they overlap an existing lesson they cross-refer to it instead of restating it, per Section 10.15.
+Sections 23 to 26 come from a project in which every serious defect was silent: three separate checks shipped a false pass, a build reported success on failure, a correction notice was over-read and broke a property it never mentioned, and a format conversion had to be proved lossless rather than inspected. They are appended rather than interleaved so that no existing section number moves (Sections 10.8 and 18.11 explain why that matters). Where they overlap an existing lesson they cross-refer to it instead of restating it, per Section 10.15.
 
 ## Contents
 
@@ -39,7 +39,8 @@ Sections 23 to 25 come from a project in which every serious defect was silent: 
 23. THE CHECK ITSELF
 24. RECEIVING AN EXTERNAL REQUIREMENT
 25. DELIVERING THE SAME WORK IN A SECOND FORMAT
-26. SUMMARY
+26. TEMPLATE CONFORMANCE
+27. SUMMARY
 ```
 
 ---
@@ -2915,9 +2916,11 @@ The third source, a later project, maps as follows.
 | Anonymity and other "must not contain" constraints | Section 24.8 |
 | Parameter interaction and compensated constants | Section 24.9 |
 | Delivering the same work in a second format | Section 25 |
+| Meeting someone else's template | Section 26 |
 
-A venue-specific companion, applying Sections 23 to 25 to one template with all
-its numbered requirements, is in `UBMK-TEMPLATE-CONFORMANCE.md`.
+The same project's domain lessons, which are about cryptanalysis and the
+evaluation of detectors rather than about method, are in
+`CRYPTANALYSIS-AND-EVALUATION.md`.
 
 ---
 
@@ -3516,7 +3519,147 @@ as a package that builds **the same thing**.
 
 ---
 
-# 26. SUMMARY
+# 26. TEMPLATE CONFORMANCE
+
+Sections 14 and 19 give style rules that hold everywhere. This one is about the
+different job of meeting **someone else's** template: a stated set of numbered
+requirements, a reference file, and a reviewer who will check.
+
+It is written from one venue's correction cycle, and the concrete values are kept
+so the method is legible. Substitute your own.
+
+## 26.1 The reference file is a container; read the stored definitions
+
+A template's **appearance** is evidence of what that file does. Its **stored
+definitions** are the specification, and a set of numbered requirements will
+usually map one to one onto them. That mapping is the single most useful artifact
+you can build, and it takes an hour.
+
+```
+unzip the template, then read the style definitions, not the sample page
+  style store     <- the specification
+  numbering store <- where generated labels and counters come from
+  sample document <- useful, not authoritative
+```
+
+**Convert the units before believing any number.** In one common format:
+
+```
+spacing before/after   twips         pt = twips / 20
+font size              half-points   pt = size / 2
+line spacing, "auto"   240ths        ratio = value / 240
+line spacing, "exact"  twips         pt = value / 20   (does NOT scale)
+first-line indent      twips         cm = twips / 566.9
+rule weight            eighths-pt    pt = value / 8
+```
+
+The auto/exact distinction is load-bearing. An **auto** rule is a ratio against
+single spacing and moves when the font does; an **exact** rule is an absolute
+distance and ignores any global spread you set. A requirement of "0.95 line
+spacing" is the first kind, and a requirement of "9 point leading in the
+references" is the second, so a global scale applied to both breaks one of them.
+
+## 26.2 Build the item-to-property table before editing anything
+
+One row per numbered requirement: the stored property it names, the target in
+real units, the change that satisfies it, and the value you measured afterwards.
+
+```
+item  requirement                     target       measured
+----  ------------------------------  -----------  --------
+ 1    keyword line size and style     9pt          9pt
+ 2    space before/after main heading 8pt / 4pt    7.93pt
+ 3    space before/after sub heading  6pt / 3pt    6.02pt
+ 5    body line spacing               0.95         11.40pt
+ 6    first-line indent               0.51cm       14.40pt
+14    reference leading               exact 9pt    8.97pt
+15    space after each reference      2.5pt        2.49pt
+```
+
+The last column is the point of the table. An item with no measured value is an
+item you have not done, however confident the edit felt.
+
+## 26.3 Some requirements are not properties, and are checked differently
+
+```
+requirement names a STORED property  -> check the declaration
+requirement names a VISUAL outcome   -> check the rendering
+```
+
+Checking a stored property by rendering measures the renderer: the same
+conforming file reports different values under different engines, because each
+resolves the underlying unit its own way. Checking a visual outcome by reading
+the source misses anything a later layer overrode. Section 24.4 has the general
+form; the practical consequence is that a conformance suite needs both kinds of
+check and must know which item is which.
+
+## 26.4 The template will not carry every requirement
+
+**Evidence:** Of fifteen numbered items, three were satisfied in the primary
+artifact and **not** in a second-format deliverable built on the venue's own
+template, because the template's own styles did not carry them: two front-matter
+paragraphs had no line rule and the wrong indent, and one caption style was
+justified where the item required centring. Each had to be overridden explicitly.
+
+Nobody would have looked, because the primary artifact passed. This is Section
+25.5.
+
+## 26.5 Generated labels beat typed ones
+
+If the target format generates counters from the template's own definitions,
+produce the artifact in terms of those. The numbering then **cannot** drift from
+the template, and a typed label is a second source for something the template
+already owns (Section 18.3).
+
+## 26.6 Detail displaced from a caption must arrive somewhere
+
+A requirement to shorten captions is a requirement to **move** their content, not
+to delete it.
+
+```
+before cutting a caption:
+  [ ] list every fact it carries
+  [ ] locate each in the body, or ADD it there first
+  [ ] re-run the reference check: shortening must not cost an object its
+      subject-position discussion
+  [ ] diff the set of generated values before and after; none may disappear
+```
+
+**Evidence:** Shortening eleven captions displaced seed counts, interval
+half-widths, panel keys and a rendering disclosure. Three facts existed **only**
+in a caption and were written into the body before the caption was cut. A
+key-set diff confirmed nothing was lost outright, and six occurrence counts fell
+only where the value still appeared elsewhere.
+
+## 26.7 A conformance check needs the artifact it must reject
+
+Section 23.1 in general; for templates specifically, three controls are cheap and
+worth keeping:
+
+```
+the pre-fix build     rebuilt from a commit, not stored as a file (23.12)
+the bare template     a good suite fails the venue's OWN sample on the items
+                      where the sample and the written list disagree
+an empty document     must report nothing-measured, never a pass
+```
+
+The middle one is the surprise. **Evidence:** measured against a committee's own
+fifteen items, the sample document distributed with the template failed four of
+them. A suite that passes the sample is measuring the sample, not the list.
+
+> **Prompt:** Build the item-to-property table for this template: one row per
+> numbered requirement, the stored property it names, the target in real units,
+> and a column for the value I measure afterwards. Mark which items are stored
+> properties and which are visual outcomes, and say which check applies to each.
+
+> **Prompt:** Run my conformance suite against the venue's own sample document.
+> Which items does the sample fail? Those are the points where the written
+> requirements and the reference file disagree, and I need to decide and record
+> which I follow.
+
+---
+
+# 27. SUMMARY
 
 The weak point of an experimental paper is usually not the result: it is how you
 know the result measures the right thing, and whether the claim already exists in
