@@ -4,12 +4,16 @@ Field-agnostic rules for building, verifying, positioning and publishing an
 experimental or computational claim. Every rule comes from a concrete mistake or
 win. Examples are given in field-neutral form.
 
-In a hurry: start with the checklists in Section 13, or the ready-to-use prompts
-in Sections 20 and 21.
+In a hurry: start with the checklists in Section 14, or the ready-to-use prompts
+in Sections 21 and 22.
 
-This unified edition merges three sources: the comprehensive method handbook, the condensed lessons edition, and a later project whose lessons are Sections 23 to 26. The handbook is the spine; the lessons edition's publication-strategy lessons (Sections 12.11 to 12.13) and its distinctive prompts (Section 20.17) are folded in, broken source tables are repaired, and the prompt-section numbering is corrected. A crosswalk from the condensed edition is in Section 22.
+This unified edition merges four sources: the comprehensive method handbook, the condensed lessons edition, a project whose lessons are Sections 24 to 27, and a venue-paper project whose lessons are Section 28. The handbook is the spine; the lessons edition's publication-strategy lessons (Sections 13.11 to 13.13) and its distinctive prompts (Section 21.17) are folded in, broken source tables are repaired, and the prompt-section numbering is corrected. A crosswalk from the condensed edition is in Section 23.
 
-Sections 23 to 26 come from a project in which every serious defect was silent: three separate checks shipped a false pass, a build reported success on failure, a correction notice was over-read and broke a property it never mentioned, and a format conversion had to be proved lossless rather than inspected. They are appended rather than interleaved so that no existing section number moves (Sections 10.8 and 18.11 explain why that matters). Where they overlap an existing lesson they cross-refer to it instead of restating it, per Section 10.15.
+Section 6 was added later still, from a project in which a promising effect turned out to be leakage and a null was reported without the power to support it; it is interleaved rather than appended because evidence integrity belongs before debugging, and every later chapter number moved by one accordingly.
+
+Sections 24 to 27 come from a project in which every serious defect was silent: three separate checks shipped a false pass, a build reported success on failure, a correction notice was over-read and broke a property it never mentioned, and a format conversion had to be proved lossless rather than inspected. They are appended rather than interleaved so that no existing section number moves (Sections 11.8 and 19.11 explain why that matters). Where they overlap an existing lesson they cross-refer to it instead of restating it, per Section 11.15.
+
+Section 28 comes from taking a venue paper through review, revision and camera-ready. It is likewise appended rather than interleaved, and the sections it touches elsewhere are 10.11, 11.16, 12.8, 13.15, 14.7 and 14.8. It reaches Sections 24 and 26 from a different direction: those chapters ask what a check must do to be trusted, while Section 28 asks what the instrument, the rendered artifact and the repository ground each contribute to a claim. Where the two meet, in particular Sections 24.1 and 28.2, 24.4 and 28.3, and 26.3 and 28.3, both statements are kept because each carries its own evidence.
 
 ## Contents
 
@@ -19,35 +23,38 @@ Sections 23 to 26 come from a project in which every serious defect was silent: 
  3. EXPERIMENTAL DESIGN
  4. PRE-REGISTRATION AND HONESTY STRUCTURES
  5. MEASUREMENT AND REPORTING
- 6. DEBUGGING
- 7. DESIGNING A CRITERION OR CLASSIFIER
- 8. LITERATURE AND CLAIM MANAGEMENT
- 9. SELF-CORRECTION AND FRAMING
-10. TEXT AUDITING
-11. TOOLING
-12. ARTIFACTS AND PUBLICATION
-13. CHECKLISTS
-14. STYLING AND TYPOGRAPHY
-15. BACKGROUND: THE REASONING BEHIND THE RULES
-16. PREVENTION, SOURCE LEVELS AND BALANCE
-17. DEEP PRINCIPLES
-18. FINAL GLEANINGS
-19. FIGURE GENERATION ARCHITECTURE
-20. READY-TO-USE PROMPTS
-21. HOUSE RULES AND SHORT PROMPTS
-22. CROSSWALK (CONDENSED EDITION)
-23. THE CHECK ITSELF
-24. RECEIVING AN EXTERNAL REQUIREMENT
-25. DELIVERING THE SAME WORK IN A SECOND FORMAT
-26. TEMPLATE CONFORMANCE
-27. SUMMARY
+ 6. EVIDENCE INTEGRITY: LEAKAGE, POWER AND SCOPE
+ 7. DEBUGGING
+ 8. DESIGNING A CRITERION OR CLASSIFIER
+ 9. LITERATURE AND CLAIM MANAGEMENT
+10. SELF-CORRECTION AND FRAMING
+11. TEXT AUDITING
+12. TOOLING
+13. ARTIFACTS AND PUBLICATION
+14. CHECKLISTS
+15. STYLING AND TYPOGRAPHY
+16. BACKGROUND: THE REASONING BEHIND THE RULES
+17. PREVENTION, SOURCE LEVELS AND BALANCE
+18. DEEP PRINCIPLES
+19. FINAL GLEANINGS
+20. FIGURE GENERATION ARCHITECTURE
+21. READY-TO-USE PROMPTS
+22. HOUSE RULES AND SHORT PROMPTS
+23. CROSSWALK (CONDENSED EDITION)
+24. THE CHECK ITSELF
+25. RECEIVING AN EXTERNAL REQUIREMENT
+26. DELIVERING THE SAME WORK IN A SECOND FORMAT
+27. TEMPLATE CONFORMANCE
+28. THE INSTRUMENT, THE ARTIFACT AND THE GROUND
+29. SUMMARY
 ```
 
 ---
 
 ## HOUSE RULES
 
-Paste this block once at the top of a session. Every prompt in this document refers to it.
+Most prompts below say "Apply HOUSE RULES". Paste this block once at the top of
+a session, or inline it when you need it.
 
 ```
 HOUSE RULES
@@ -57,9 +64,14 @@ HOUSE RULES
 - Plain competent prose. No selling, no hype, no throat-clearing, no adjectives
   doing work that evidence should do. State the result and move on.
 - Every number traceable to a script or a source. Mark invented values TODO.
-- Figures: vector only, body font, units on axes, never colour-only encoding
-  (add hatch or texture).
+- Figures: vector only, body font, units on axes, never colour-only encoding.
 - Say what you did not do, and why, rather than leaving it implicit.
+- A check is trusted only after the defect it names has been injected and
+  the check has been seen to fail on it.
+- Verify the artifact, not only the source. Compiling clean is not evidence
+  that the content survived.
+- Fetch before claiming something does not exist. Exhaustive search of a
+  stale copy is exhaustive only of the copy.
 ```
 
 ---
@@ -406,9 +418,137 @@ truth. Errors go both ways.
 
 ---
 
-# 6. DEBUGGING
+# 6. EVIDENCE INTEGRITY: LEAKAGE, POWER AND SCOPE
 
-## 6.1 The core distinction
+Section 5 covers how to report a measurement. This section covers whether the
+measurement is contaminated, and whether the claim you attach to it matches the
+population it was taken on. Both failures produce numbers that look better than
+the truth, which is why neither announces itself.
+
+## 6.1 An improvement is the only signal leakage ever gives you
+
+Public checkpoints are fine-tuned on a named split of the same public corpus you
+are about to evaluate on. Evaluate on that split and every cell improves.
+
+There is no diagnostic here beyond suspicion, because contamination never makes
+a result worse. A change that improves everything at once deserves the question
+"what did I just start including?" before it deserves a paragraph in the results.
+
+Before any run: find which split the released model was trained on, exclude it,
+and state the exclusion and the resulting n in the setup. The same applies to
+any resource with a train and test structure that someone else prepared: a
+pretrained embedding, a cached feature set, an off-the-shelf tokenizer's
+vocabulary.
+
+## 6.2 Decontamination is not one step
+
+Removing the contaminated data changes the number. It also changes every
+artifact downstream of the number, and those move at different times:
+
+```
+[ ] the run itself, re-executed on the clean split
+[ ] any cached or intermediate artifact built from the dirty run
+[ ] every figure generated from those artifacts
+[ ] every derived statistic in secondary analyses
+[ ] THE PROSE ABOUT THE NUMBER
+```
+
+The last line is the one that escapes. A generated-value pipeline updates every
+figure automatically and cannot update a sentence that characterises the value:
+"substantially outperforms" survives a re-run that turned it into "matches".
+After any decontamination, re-read every sentence that describes a result, not
+just the results.
+
+## 6.3 A null claimed without power is not a null
+
+"No significant difference" from a design that could not have detected the
+effect is not evidence of absence. It is absence of evidence, and the two are
+opposite claims about the world.
+
+Report the minimum effect the design could have detected. If you cannot, say the
+result is uninformative about effects smaller than some size and stop there.
+This is not pedantry: a null with power is a finding, and a null without power
+is a missing experiment described as a finding.
+
+## 6.4 Pooled significance is not per-stratum significance
+
+A pooled test over a large combined n clears thresholds that no individual
+stratum clears. That is power working correctly, not a trick. It is also not a
+per-stratum claim, and stating it as one is a rung violation.
+
+When the pool passes and the strata do not, say exactly that, and then say
+**which** of the two reasons applies:
+
+- the effect is absent in those strata, or
+- the strata are underpowered and the result is consistent with the pooled
+  effect.
+
+These are different claims and the distinction is testable. Leaving it
+unresolved lets a reader choose the flattering reading.
+
+## 6.5 The pool inherits its largest stratum
+
+With unevenly sized strata, a pooled figure is a weighted statement dominated by
+the biggest one. It can be entirely honest and still mislead, because a reader
+hears "across all data" and not "mostly the largest set".
+
+Put the stratum sizes next to the pooled number and name which stratum carries
+it. Where the strata disagree with each other, make the per-stratum table the
+headline and the pool the supporting number, not the reverse.
+
+## 6.6 Small cells license consistency statements only
+
+A cell with a handful of observations can produce a perfect score with an
+interval that excludes nothing interesting. Such a cell supports "consistent
+with the overall finding" and nothing stronger.
+
+Never let a small perfect cell appear in a summary, an abstract or a heading
+without its n attached, and never let it be the sentence a reader remembers. The
+reader will not go back to the table.
+
+## 6.7 Absence of asymmetry is not evidence of independence
+
+A paired test showing that neither of two methods is systematically better than
+the other is a null on asymmetry. It is routinely presented as positive evidence
+that the two are independent, which it is not.
+
+If the independence claim is load-bearing, measure it directly: correlation of
+errors within a fixed accepted set, tested against a control that holds the
+accepted fraction constant so the result cannot be explained by having accepted
+fewer cases. Then state which test supports which claim, and keep the asymmetry
+null as what it is.
+
+## 6.8 Compare at a matched operating point
+
+Comparing a threshold-free method against a thresholded one at an arbitrary
+threshold measures the threshold, not the method. Set the comparison method's
+threshold so both select the same fraction, and compare accuracy there.
+
+Without this, any reported gain is confounded with a selectivity change, and the
+result reduces to "we kept fewer cases and were righter about them", which is
+true of almost any filter. The same applies to any pair of methods whose
+operating points can be moved: match first, then compare.
+
+## 6.9 Checklist: before believing your own number
+
+```
+[ ] Which split was the released model or resource trained on, and is it excluded
+[ ] Did anything improve across the board, and if so what started being included
+[ ] After decontamination, was the PROSE about the number re-read
+[ ] For any null: what is the minimum detectable effect
+[ ] For any pooled claim: do the strata support it, and if not, absent or
+    underpowered
+[ ] Stratum sizes reported beside the pooled figure
+[ ] Every small cell carries its n wherever it appears
+[ ] Independence claims backed by a direct correlation test, not by a null
+[ ] Methods compared at a matched operating point
+```
+
+---
+
+# 7. DEBUGGING
+
+## 7.1 The core distinction
 
 When an experiment does not give the expected result, the default reading must
 **not** be "the phenomenon is real".
@@ -426,12 +566,12 @@ degenerate baseline.
 **Evidence, real phenomenon:** The same distinction found a genuine limit
 elsewhere and quantified it (0 of 256 attempts valid).
 
-## 6.2 Verify components separately
+## 7.2 Verify components separately
 
 **Evidence:** Two components verified separately (one 16/16, one zero errors)
 localised the fault to a single unknown.
 
-## 6.3 Partial success misleads
+## 7.3 Partial success misleads
 
 **Evidence (8/9):** A fix took 0/9 to 8/9. The remaining case was a different
 kind of ambiguity and needed a second fix.
@@ -440,7 +580,7 @@ kind of ambiguity and needed a second fix.
 candidate happened to give the right answer on some inputs. **The partial rate
 carries information about the type of error.**
 
-## 6.4 Remaining candidates: equivalent or merely unseparated
+## 7.4 Remaining candidates: equivalent or merely unseparated
 
 **Equivalent case:** Two candidates were algebraically convertible into each
 other and gave the same result on every input. Which one you pick is irrelevant.
@@ -456,7 +596,7 @@ known sample resolved it.
 3. in all cases VALIDATE against a known sample; never take the first candidate
 ```
 
-## 6.5 Do not mistake a display bug for a finding
+## 7.5 Do not mistake a display bug for a finding
 
 **Evidence:** A measurement printed as "1" when "2" was expected. Cause: integer
 truncation; the real value was 1.97.
@@ -464,7 +604,7 @@ truncation; the real value was 1.97.
 Keep rounding, truncation and formatting separate from measurement. Print the raw
 value too.
 
-## 6.6 Iteration count is a diagnostic
+## 7.6 Iteration count is a diagnostic
 
 More than two iterations on the same target means you should question the
 **assumption**, not the method.
@@ -476,16 +616,16 @@ diagnostic.
 
 ---
 
-# 7. DESIGNING A CRITERION OR CLASSIFIER
+# 8. DESIGNING A CRITERION OR CLASSIFIER
 
-## 7.1 Measure, do not infer
+## 8.1 Measure, do not infer
 
 **Evidence:** "There is a strong component inside, therefore this property does
 not hold" was wrong. The same component carried the property in one usage
 (measured 1.00) and not in another (measured 0.695). The question was not "which
 component" but **"which usage"**.
 
-## 7.2 A coarse measure misses a fine distinction
+## 8.2 A coarse measure misses a fine distinction
 
 **Evidence:** A test did not distinguish a structure depending on one input from
 one depending on two; both produced the same coarse value. The separating
@@ -495,7 +635,7 @@ classification was wrong.
 **Rule:** If your test outputs a number, list **every** structure that can
 produce it. More than one means you need a second test.
 
-## 7.3 Measure which step is doing the work
+## 8.3 Measure which step is doing the work
 
 **Evidence:** Across 36 samples, the second step changed the outcome in exactly
 **one** case. Everything else was decided by the first step. The second step's
@@ -504,9 +644,9 @@ was presented.
 
 ---
 
-# 8. LITERATURE AND CLAIM MANAGEMENT
+# 9. LITERATURE AND CLAIM MANAGEMENT
 
-## 8.1 Broadening narrows, and that is normal
+## 9.1 Broadening narrows, and that is normal
 
 Showing how far a method reaches also shows its limits. As reach grows,
 originality narrows.
@@ -522,7 +662,7 @@ literature scan           | priority claim         | independent corroboration
 The left column is certain and conspicuous; the right requires measurement.
 Weigh both.
 
-## 8.2 Does your parameter have a name next door
+## 9.2 Does your parameter have a name next door
 
 Search for the **function**, not the name.
 
@@ -531,7 +671,7 @@ earlier in an adjacent field (measured ratios 0.78 to 1.01). Had a reviewer foun
 it, it would have been a missing citation. Found first, it became a bridge that
 enlarged the paper's reach.
 
-## 8.3 Distinguish full from partial overlap
+## 9.3 Distinguish full from partial overlap
 
 Same quantity, different **consequence**.
 
@@ -539,17 +679,17 @@ Same quantity, different **consequence**.
 the other it only opens an intermediate step. Without stating this, the
 connection overclaims.
 
-## 8.4 Your class may already have a name
+## 9.4 Your class may already have a name
 
 **Evidence:** The class being defined already had an established name, subtypes,
 and even a narrative of how it arose.
 
-## 8.5 The field moves fast
+## 9.5 The field moves fast
 
 Run a targeted six-month scan before submission and post a preprint without
 waiting.
 
-## 8.6 An overlapping paper is both a mine and a treasure
+## 9.6 An overlapping paper is both a mine and a treasure
 
 It narrows your claim and **strengthens your evidence**. Write both:
 
@@ -558,18 +698,18 @@ X et al. independently reached the same conclusion, which is evidence that the
 finding is not specific to our construction.
 ```
 
-## 8.7 One search is not a literature review
+## 9.7 One search is not a literature review
 
 ---
 
-# 9. SELF-CORRECTION AND FRAMING
+# 10. SELF-CORRECTION AND FRAMING
 
-## 9.1 Make retractions visible
+## 10.1 Make retractions visible
 
 State, in order: what was claimed, what was found, what survives. The reviewer
 will find it anyway; finding it yourself builds trust.
 
-## 9.2 Track the direction of corrections
+## 10.2 Track the direction of corrections
 
 ```
 change of rationale -> healthy, the process is working
@@ -580,12 +720,12 @@ change of direction -> stop, look at the foundation
 hypothesis rationale collapsed, a framing found wrong. All three changed the
 rationale; none changed the direction. The decision to continue rested on that.
 
-## 9.3 A collapsed rationale does not collapse the result
+## 10.3 A collapsed rationale does not collapse the result
 
 **Evidence:** A rationale collapsed under measurement. The result was right but
 the reason was different. The new rationale **strengthened** the main thesis.
 
-## 9.4 External feedback questions the framing; internal audit checks consistency
+## 10.4 External feedback questions the framing; internal audit checks consistency
 
 **Observation:** Consistency auditing (numbers, contradictions, missing
 citations) can be done systematically. Framing errors (wrong model assumption,
@@ -597,18 +737,18 @@ open-ended questions. None would have been caught by a checklist.
 
 **Application:** Have someone make you explain the project periodically.
 
-## 9.5 Put your evidence on axes
+## 10.5 Put your evidence on axes
 
 **Evidence:** Most of the evidence turned out to sit at the zero point of both
 axes. This turned an intuitive objection into a quantitative one (7 of 11) and
 showed which cells needed filling.
 
-## 9.6 An empty cell is a finding only after you have searched
+## 10.6 An empty cell is a finding only after you have searched
 
 Before searching it is an observation. Also state which regions you could not
 search.
 
-## 9.7 Distinguish headline from evidence
+## 10.7 Distinguish headline from evidence
 
 Countable results are the most easily preempted. Put the headline on the
 **method or framing**.
@@ -616,18 +756,18 @@ Countable results are the most easily preempted. Put the headline on the
 **Test:** If a reviewer can place your results side by side with another paper's
 in one table, your headline is in the wrong place.
 
-## 9.8 Turning an empirical result into a theorem is the highest-return move
+## 10.8 Turning an empirical result into a theorem is the highest-return move
 
 If your field has a paper saying "X was observed empirically", proving X is
 **necessary** is the strongest contribution, and it gives a natural pitch for
 that paper's venue.
 
-## 9.9 Caveats that take up space read as defensive
+## 10.9 Caveats that take up space read as defensive
 
 Write each caveat once, where it belongs. Collect them in Limitations rather than
 scattering them through the body.
 
-## 9.10 The same phenomenon with two different outcomes is a strong narrative
+## 10.10 The same phenomenon with two different outcomes is a strong narrative
 
 **Evidence:** The relevant components of two populations were measured and came
 out **equally weak**. The separating factor was shown to be a different component
@@ -636,9 +776,31 @@ stronger than a single-population narrative.
 
 ---
 
-# 10. TEXT AUDITING
+## 10.11 A review is written against a build, and framing can be conceded narrowly
 
-## 10.1 Number consistency across all surfaces
+Two habits belong with self-correction. First, a review, critique or task list
+is written against a specific build; verify each reported defect against the
+current artifact before acting, and report which were already resolved. Acting
+blind on a stale list re-introduces work and can undo the fix that resolved the
+complaint. Section 28.17 gives the procedure.
+
+Second, when a reviewer rejects the paper's framing rather than its results, the
+instinct is to defend the framing. That is usually wrong, because the framing
+was chosen before the evidence was in. Re-read what the reviewer says the work
+*is*, and where that fits the evidence better than your description, adopt it in
+their vocabulary. Separate the claim you must give up from the claim you can
+still make, and keep the narrower one intact rather than losing both. The
+results do not change; only the sentence describing them does.
+
+A repeated defence is a diagnostic. When the same disclaimer appears three or
+four times, each instance was added against a separate challenge and the
+underlying claim was never resolved. Do not merely delete the copies: decide
+whether the evidence supports the claim, resolve it, and state the resolution
+once in the section that owns it.
+
+# 11. TEXT AUDITING
+
+## 11.1 Number consistency across all surfaces
 ```
 - abstract says "ten results", body says "second result", elsewhere "the count
   stays at one"
@@ -647,21 +809,21 @@ stronger than a single-population narrative.
 - sample count appears as 18, 21, 24 and 25 in four different places
 ```
 
-## 10.2 Headings do arithmetic too
+## 11.2 Headings do arithmetic too
 
 "Eight X" plus two previously reported made ten, but the reader had to do the sum
 themselves. The correct phrasing was "eight **further** X".
 
-## 10.3 Figures go stale when results change
+## 11.3 Figures go stale when results change
 
 A contradiction between text and figure is the first thing a reviewer catches.
 
-## 10.4 Find unreferenced figures
+## 11.4 Find unreferenced figures
 
 **Evidence:** In one audit, ten of fifteen figures were unreferenced; five were
 safely removed and a full page was recovered.
 
-## 10.5 Account for escape characters when searching
+## 11.5 Account for escape characters when searching
 
 **Evidence:** Names containing underscores were written escaped in the source. A
 plain search returned **zero** and led to the conclusion "no citations exist". In
@@ -670,7 +832,7 @@ reality there were ten. A false gap report was nearly written.
 If a critical search returns zero, retry with the escaped variant and confirm one
 instance by eye in the raw file.
 
-## 10.6 Never use greedy regex on markup
+## 11.6 Never use greedy regex on markup
 
 **Evidence:** A regex written to remove five blocks deleted everything between
 two of them. The document went from 30 pages to 7 with 50 broken references.
@@ -681,12 +843,12 @@ two of them. The document went from 30 pages to 7 with 50 broken references.
 3. run a structural integrity check after every deletion
 ```
 
-## 10.7 Restore from a known-good copy
+## 11.7 Restore from a known-good copy
 
 Do not try to repair a destructive edit. Restore and redo with the correct
 method.
 
-## 10.8 Not whether a reference is valid but whether it points to the right place
+## 11.8 Not whether a reference is valid but whether it points to the right place
 
 If you have renumbered a document, internal references being **numerically
 valid** is not enough. The number can exist and still point at the wrong section.
@@ -694,7 +856,7 @@ valid** is not enough. The number can exist and still point at the wrong section
 **Measured example:** In a document renumbered three times, an automated check
 reported "no invalid references", because every reference number matched an
 existing section. A semantic check found three errors: the introduction said
-"prompts are in Section 12" but Section 12 was now something else and the prompts
+"prompts are in Section 13" but Section 13 was now something else and the prompts
 had moved to 15.
 
 ```
@@ -711,7 +873,7 @@ list to check by eye.
 > heading and compare it with the sentence containing the reference. List the
 > ones that are numerically valid but semantically wrong.
 
-## 10.9 Structural integrity check
+## 11.9 Structural integrity check
 ```
 [ ] broken references (citation exists, target does not)
 [ ] environment or tag balance
@@ -720,12 +882,12 @@ list to check by eye.
 [ ] build error and warning counts
 ```
 
-## 10.10 Clean run from the delivered package
+## 11.10 Clean run from the delivered package
 
 Building in your working directory is not enough. Unpack the **delivered
 archive** and run from scratch. Missing dependencies only show up there.
 
-## 10.11 Take the revision diary out of the body
+## 11.11 Take the revision diary out of the body
 
 "In an earlier draft", "this took three attempts", "this cost us a run" read as
 defensive. Write results in the present tense; put the history in the cover
@@ -734,17 +896,17 @@ letter.
 **Exception:** A withdrawn claim stays visible. The difference: a retraction is a
 **result**, not a process narrative.
 
-## 10.12 Remove intent-attributing language
+## 11.12 Remove intent-attributing language
 
 "Silently omits", "hides", "avoids" become the observation: "does not report".
 
-## 10.13 Count your repeated formulations
+## 11.13 Count your repeated formulations
 
 A phrase appearing three times is unnecessary in two of them.
 
 ---
 
-## 10.14 A table of contents is navigation protection
+## 11.14 A table of contents is navigation protection
 
 In a long document a table of contents is not only convenience, it is
 **protection against number drift**. Generated automatically from the file, it
@@ -762,7 +924,7 @@ principle.
 > **Prompt:** Does this document have a table of contents, is it generated from
 > the file or maintained by hand? If by hand, does it match the section headings?
 
-## 10.15 Hunting conceptual duplication
+## 11.15 Hunting conceptual duplication
 
 The same lesson may be written twice in two different sections, and because the
 headings differ a heading-level audit will not catch it.
@@ -785,13 +947,28 @@ concept-level scan: extract each lesson's key phrase,
 > document? Scan at concept level, not heading level. If you find one, do not
 > delete; separate them into "why" and "what to do" and add a cross-reference.
 
-# 11. TOOLING
+## 11.16 Audit the rendered artifact, not only the source
 
-## 11.1 Verify the environment first
+Every rule in this section operates on the source. A further class of defect
+exists only after rendering: overlapping text, a block outside its region, a
+sentence split across a column, an element silently dropped, a marker that was
+meant for the authors printing inside a reference because the bibliography style
+renders the field it was hidden in.
+
+Extract the rendered text and geometry programmatically and check it. Two
+specific traps. An unescaped metacharacter can discard the rest of a region
+while the build reports success, so verify that the *last* sentence of each
+region reached the page, not the first. And a fit measurement taken while layout
+defects are present is not a measurement of the fixed document: repair first,
+then measure. Section 28.6 to 28.9 covers the family.
+
+# 12. TOOLING
+
+## 12.1 Verify the environment first
 
 Check that a library or tool exists, and its version, before designing around it.
 
-## 11.2 Do not trust shell expansion
+## 12.2 Do not trust shell expansion
 
 **Evidence:** A multi-directory creation command produced a single literal
 directory and every subsequent copy went silently into empty folders. It was only
@@ -799,24 +976,24 @@ noticed when a file count came back zero.
 
 **Rule:** Always print a file count after copying.
 
-## 11.3 Output encoding
+## 12.3 Output encoding
 
 Content extracted from source documents can contain invalid bytes. Put a cleaning
 step in the pipeline, and validate encoding after any edit.
 
-## 11.4 Chunk long-running jobs
+## 12.4 Chunk long-running jobs
 
 **Evidence:** A matrix experiment timed out. Running a single cell first,
 verifying, then running the whole matrix worked.
 
-## 11.5 Write intermediate results to disk
+## 12.5 Write intermediate results to disk
 
 Write every experiment result to a structured file. When writing the text, read
 from the file, not from memory.
 
 ---
 
-## 11.6 Extracting structure from a source: the operation
+## 12.6 Extracting structure from a source: the operation
 
 If the primary source is a PDF, reading the structure is a search task and it has
 an order.
@@ -846,7 +1023,7 @@ reading cover to cover would have taken half a day.
 > section carrying the structure, and find which equation defines the central
 > quantity. Do not read the whole text, search it.
 
-## 11.7 A session can close: the handoff document
+## 12.7 A session can close: the handoff document
 
 Long work outlasts one session. Without a handoff document the next session
 starts from zero and repeats the same mistakes.
@@ -869,9 +1046,27 @@ corrections are not written down the same wrong model gets rebuilt.
 > dependency note, four commands, next tasks, caveats that do not close, and the
 > corrections made in this session.
 
-# 12. ARTIFACTS AND PUBLICATION
+## 12.8 The checker is code, and the ground is not stable
 
-## 12.1 Artifact rules
+Two additions to environment discipline, both expanded in Section 28.
+
+The instrument can be wrong in ways that look exactly like passing. Before
+trusting a check, inject the defect it names and confirm it fails, then confirm
+it passes on known-good input; a check only ever run on good input has been
+tested in the direction that proves nothing. Give every check three exit states,
+never two, so could-not-run is distinguishable from pass.
+
+The repository and toolchain move without announcing it. Verify tree identity
+before the first edit of a session and after any interruption, since a branch
+pointer can be reset while the branch name stays the same. Fetch before
+asserting that something does not exist anywhere, because exhaustive search of a
+stale clone is exhaustive only of the clone. Explore on disposable copies, and
+when exploration has already mutated the source, reset and reapply once rather
+than patching forward.
+
+# 13. ARTIFACTS AND PUBLICATION
+
+## 13.1 Artifact rules
 ```
 - one random seed, identical in every script
 - the result-producing path must not depend on special hardware
@@ -881,7 +1076,7 @@ corrections are not written down the same wrong model gets rebuilt.
 - clean-run test from the delivered archive
 ```
 
-## 12.2 Package layout
+## 13.2 Package layout
 ```
 FINDINGS.md          one main document
 code-<step>/         each experiment in its own folder with its result file
@@ -889,7 +1084,7 @@ reports/             interim reports, retractions, pre-registration
 README.md            which folder produced which result, quick commands
 ```
 
-## 12.3 Do not split a paper whose halves validate each other
+## 13.3 Do not split a paper whose halves validate each other
 
 ```
 "the experiments calibrate the method, the method frames the experiments" -> do not split
@@ -900,18 +1095,18 @@ README.md            which folder produced which result, quick commands
 Citing an unpublished manuscript is weak, and if one is rejected the other is
 unsupported.
 
-## 12.4 Correct splitting is sequential
+## 13.4 Correct splitting is sequential
 
 First paper published, second cites it, and the second needs **new work** (new
 data, new domain, generalisation). Otherwise it is salami.
 
-## 12.5 Venue is chosen by target audience
+## 13.5 Venue is chosen by target audience
 
 **Question:** who needs to read this? A paper criticising a practice should go
 where the community practising it reads. A higher-impact but differently-audienced
 venue reaches people who already know.
 
-## 12.6 Length is solved by cutting, not splitting
+## 13.6 Length is solved by cutting, not splitting
 ```
 - empirical demonstration of a proved result (should be short)
 - many sub-experiments from one family (three in the body, rest in an appendix)
@@ -920,11 +1115,11 @@ venue reaches people who already know.
 - unreferenced figures
 ```
 
-## 12.7 Preprint for priority, not splitting
+## 13.7 Preprint for priority, not splitting
 
 A preprint is free, fixes the date, and most journals allow it.
 
-## 12.8 The open-access decision starts with your institution
+## 13.8 The open-access decision starts with your institution
 
 Publishers now personalise the fee by country, institution and membership.
 
@@ -934,19 +1129,19 @@ Publishers now personalise the fee by country, institution and membership.
 3. but post the preprint regardless
 ```
 
-## 12.9 Declare conflicts in the cover letter
+## 13.9 Declare conflicts in the cover letter
 
 If your venue published one of the works you criticise, say so politely. It is
 not an obstacle, but the editor should know in advance.
 
-## 12.10 Check the mechanics of advice you are given
+## 13.10 Check the mechanics of advice you are given
 
 **Evidence:** One piece of advice held that two papers would strengthen each
 other by mutual citation. In simultaneous submission neither would be published
 yet, so the mechanism did not work and the advice's main benefit vanished. The
 advice was reasonable in content and broken in mechanism.
 
-## 12.11 Major revision is a conditional yes
+## 13.11 Major revision is a conditional yes
 
 | decision | meaning | action |
 |---|---|---|
@@ -962,7 +1157,7 @@ the difference from concurrent work; shorten; read a source more carefully.
 > (strengthen experiment, clarify concurrent difference, shorten, read source) can
 > be met in advance.
 
-## 12.12 Wait for the reviewer data
+## 13.12 Wait for the reviewer data
 
 Postpone irreversible decisions (splitting, changing venue) until reviewer
 feedback arrives. The reviewer gives you free information. If it says too long,
@@ -972,7 +1167,7 @@ published citation; if it says run on the authors' code, you do that in revision
 > Prompt: Check whether irreversible decisions (splitting, changing venue) are
 > postponed until reviewer data arrives. The reviewer gives free information.
 
-## 12.13 Journal metrics
+## 13.13 Journal metrics
 
 | metric | what it says |
 |---|---|
@@ -991,9 +1186,9 @@ does not happen.
 
 ---
 
-## 12.14 Shift the weight instead of rewriting
+## 13.14 Shift the weight instead of rewriting
 
-Venue selection (12.5) says pick the audience. This is the move after that:
+Venue selection (13.5) says pick the audience. This is the move after that:
 instead of rewriting the same paper for a different venue, SHIFT its weight.
 
 ```
@@ -1003,16 +1198,29 @@ Venue B: "here is our framework, calibrated by these findings" (framework headli
 
 The second framing is immune to concurrent finding work: others produce
 findings, you provide the tool. The same evidence base serves both; only the
-headline moves. This is why the split decision (12.3, 12.4) can be deferred: you
+headline moves. This is why the split decision (13.3, 13.4) can be deferred: you
 do not need two papers to reach two audiences, you need two framings of one.
 
 > **Prompt:** If this paper could go to two venue types, can its weight be shifted
 > rather than the paper rewritten: finding as headline for one, framework as
 > headline for the other? Is the framework framing immune to concurrent work?
 
-# 13. CHECKLISTS
+## 13.15 A fixed size makes every addition a trade
 
-## 13.1 Before reproducing
+A page limit, a latency ceiling, a payload cap: each converts improvement into
+exchange. Reviewers ask for additions, each reasonable, together unaffordable,
+and the reflex is to cut something the reviewers liked.
+
+Most of what reviewers ask for is often already present and merely invisible:
+the answer sits inside a sentence that does not announce it. Folding the answer
+into the sentence that already carried the point recovers most of the length at
+no cost to content. Before cutting anything, check whether the requested content
+already exists unmarked. A request is frequently a visibility defect rather than
+a content defect, and the two have entirely different prices.
+
+# 14. CHECKLISTS
+
+## 14.1 Before reproducing
 ```
 [ ] primary source in hand (not a secondary description)
 [ ] which formal statement defines the central quantity
@@ -1021,7 +1229,7 @@ do not need two papers to reach two audiences, you need two framings of one.
 [ ] which direction reversibility runs
 ```
 
-## 13.2 Before the main experiment
+## 14.2 Before the main experiment
 ```
 [ ] internal consistency test passes
 [ ] expected value of the discriminating measure DERIVED analytically
@@ -1033,7 +1241,7 @@ do not need two papers to reach two audiences, you need two framings of one.
 [ ] pre-registration written (hypothesis, threshold, falsification rule)
 ```
 
-## 13.3 When the experiment gives an unexpected result
+## 14.3 When the experiment gives an unexpected result
 ```
 [ ] core assumption isolated and measured
 [ ] saturation and boundary cases checked
@@ -1046,7 +1254,7 @@ do not need two papers to reach two audiences, you need two framings of one.
 [ ] more than two iterations means the assumption is questioned
 ```
 
-## 13.4 Before reporting
+## 14.4 Before reporting
 ```
 [ ] fidelity measurement done and its value is in the report
 [ ] effect decomposed into components
@@ -1058,7 +1266,7 @@ do not need two papers to reach two audiences, you need two framings of one.
 [ ] worst case versus average case stated
 ```
 
-## 13.5 Text audit
+## 14.5 Text audit
 ```
 [ ] all occurrences of every number counted and consistent
 [ ] numbers in headings consistent with the totals
@@ -1072,7 +1280,7 @@ do not need two papers to reach two audiences, you need two framings of one.
 [ ] intent-attributing language removed
 ```
 
-## 13.6 Before submission
+## 14.6 Before submission
 ```
 [ ] central concept searched for by name in adjacent fields
 [ ] six-month scan done, overlapping work cited
@@ -1087,9 +1295,34 @@ do not need two papers to reach two audiences, you need two framings of one.
 
 ---
 
-# 14. STYLING AND TYPOGRAPHY
+## 14.7 Before trusting a check
 
-## 14.1 Dashes
+```
+[ ] Does it assert a property, or the workaround that currently satisfies it?
+[ ] What does it print when the thing it inspects is absent?
+[ ] Has the defect been injected and the check confirmed to FAIL on it?
+[ ] Does it pass on known-good input, with no false alarms a reader would learn
+    to ignore?
+[ ] Three exit states: pass, fail, could-not-run. Is a skip recorded as
+    unverified rather than counted as a pass?
+[ ] If a decision reversed, was the check inverted rather than deleted?
+```
+
+## 14.8 Before believing the artifact is correct
+
+```
+[ ] Built from the delivered package, in a clean directory, not the working tree
+[ ] Rendered text and geometry extracted and checked, not only the source
+[ ] Last sentence of each region confirmed present on the page
+[ ] Every literal number traced to its generator; no hardcoded twins
+[ ] No author-facing marker (TODO, VERIFY, placeholder) reaches the output
+[ ] Fit measured only AFTER structural defects were repaired
+[ ] Tree identity verified: right branch, right commit, no unfetched remote work
+```
+
+# 15. STYLING AND TYPOGRAPHY
+
+## 15.1 Dashes
 
 Do not use em-dashes. Use a comma, a colon, parentheses, or split into two
 sentences. An em-dash usually hides a weak sentence structure; removing it either
@@ -1100,7 +1333,7 @@ en-dash : ranges only        7-10 units, pp. 20-30
 hyphen  : compounds only     pre-registration, worst-case
 ```
 
-## 14.2 Caption width equals object width
+## 15.2 Caption width equals object width
 
 A caption must not exceed the width of the object it belongs to. A caption
 spanning the page above a narrow table looks asymmetric and destroys the reader's
@@ -1137,7 +1370,7 @@ For figures:
 \end{figure}
 ```
 
-## 14.3 Captions must be one line
+## 15.3 Captions must be one line
 
 A caption is an **index entry**, not an explanation.
 
@@ -1156,7 +1389,7 @@ good : Table 3: Results for the two-phase design.
        [table note] n=48, seed 20260815, single core. Measure over all positions.
 ```
 
-## 14.4 Use table notes
+## 15.4 Use table notes
 
 ```latex
 \usepackage{threeparttable}
@@ -1180,7 +1413,7 @@ good : Table 3: Results for the two-phase design.
 \end{table}
 ```
 
-## 14.5 Number formatting
+## 15.5 Number formatting
 ```
 [ ] fixed number of decimals within a column
 [ ] numbers aligned on the decimal point
@@ -1205,7 +1438,7 @@ good : Table 3: Results for the two-phase design.
 Writing `0.2361` for a mean over forty trials claims a precision you did not
 measure.
 
-## 14.6 Table rules
+## 15.6 Table rules
 ```
 [ ] use booktabs: toprule, midrule, bottomrule
 [ ] NO vertical rules
@@ -1214,7 +1447,7 @@ measure.
 [ ] if a column is constant across all rows, DELETE it and say so in the caption
 ```
 
-## 14.7 Figures
+## 15.7 Figures
 ```
 [ ] same font family as body text, similar size
 [ ] units on axis labels
@@ -1225,7 +1458,7 @@ measure.
 [ ] legend does not cover the figure
 ```
 
-## 14.8 Cross-references
+## 15.8 Cross-references
 ```
 [ ] every table and figure referenced AT LEAST ONCE
 [ ] the reference comes BEFORE the object
@@ -1233,7 +1466,7 @@ measure.
 [ ] unreferenced object: add a reference or delete the object
 ```
 
-## 14.9 Symbols and notation
+## 15.9 Symbols and notation
 ```
 [ ] every symbol defined at first use
 [ ] symbol table if more than ten symbols
@@ -1242,7 +1475,7 @@ measure.
 [ ] symbols in text set in math mode
 ```
 
-## 14.10 Emphasis and lists
+## 15.10 Emphasis and lists
 ```
 [ ] do not bold a whole sentence
 [ ] emphasis sparingly, at most one phrase per sentence
@@ -1250,14 +1483,14 @@ measure.
 [ ] a list shorter than three items becomes a sentence
 ```
 
-## 14.11 Section headings
+## 15.11 Section headings
 ```
 [ ] if a heading contains a number, the arithmetic must hold
 [ ] headings are noun phrases, not sentences
 [ ] headings at the same level share a grammatical pattern
 ```
 
-## 14.12 Spacing and placement
+## 15.12 Spacing and placement
 ```
 [ ] table or figure appears at or after its first reference
 [ ] do not force float placement
@@ -1267,7 +1500,7 @@ measure.
 
 ---
 
-# 15. BACKGROUND: THE REASONING BEHIND THE RULES
+# 16. BACKGROUND: THE REASONING BEHIND THE RULES
 
 Earlier sections say what to do. This one says **why**. A rationale travels
 better than a rule: a rule may not fit a new situation, but the rationale tells
@@ -1276,7 +1509,7 @@ you what to do in it.
 These were extracted from choices **enacted but never written down**: what was
 asked for, what was corrected, what was emphasised repeatedly.
 
-## 15.1 The reader's scarce resource is working memory
+## 16.1 The reader's scarce resource is working memory
 
 | rule | rationale |
 |---|---|
@@ -1290,7 +1523,7 @@ asked for, what was corrected, what was emphasised repeatedly.
 If you forget a formatting rule, ask what it costs the reader's memory. The
 answer usually regenerates the rule.
 
-## 15.2 A table shows variation, not facts
+## 16.2 A table shows variation, not facts
 
 A column constant across all rows carries no variation; it is a fact, and facts
 belong in prose. A one-row table is a sentence.
@@ -1298,7 +1531,7 @@ belong in prose. A one-row table is a sentence.
 **Applied to figures:** A figure shows a relation text cannot. Test: delete it
 and write two sentences; if something is lost, keep it.
 
-## 15.3 Evidence comes after the claim
+## 16.3 Evidence comes after the claim
 
 Readers build their model **linearly**. Evidence before the claim forces
 re-reading.
@@ -1307,20 +1540,20 @@ re-reading.
 Presenting results validated by an instrument without first showing the
 instrument was validated is the same error.
 
-## 15.4 A precision claim is a claim
+## 16.4 A precision claim is a claim
 
 `0.2361` asserts a four-digit measurement. From forty trials that is false.
 
 **Extended:** "we showed", "we proved", "for the first time" are precision claims
 and must be audited like numbers.
 
-## 15.5 A description is a lossy compression in the describer's direction
+## 16.5 A description is a lossy compression in the describer's direction
 
 A secondary description keeps what interested the describer and discards the
 rest. The discarded part may be exactly what you need. This is the real reason
 for the primary-source rule: compression is **directed**, not careless.
 
-## 15.6 Consistency is cheaper than correctness, and your test finds consistency
+## 16.6 Consistency is cheaper than correctness, and your test finds consistency
 
 A wrong model can be internally consistent and pass every internal test.
 Correctness needs an external anchor; consistency does not.
@@ -1328,13 +1561,13 @@ Correctness needs an external anchor; consistency does not.
 **Measured consequence:** One reproduction modelled the central quantity wrongly.
 The fidelity test passed and nine runs gave exact results. The model was wrong.
 
-## 15.7 From the inside, the temptation is invisible
+## 16.7 From the inside, the temptation is invisible
 
 The urge to widen the frame after results arrive feels like **a reasonable
 reading**. You do not feel biased. That is why the decision must move to a time
 when the bias cannot form.
 
-## 15.8 Closure is provisional
+## 16.8 Closure is provisional
 
 A finding in one area can invalidate the **rationale** of a conclusion in
 another.
@@ -1343,7 +1576,7 @@ another.
 earlier in a different section. On re-examination the rationale was indeed wrong,
 and the correct rationale strengthened the main thesis.
 
-## 15.9 A claim is its artifact
+## 16.9 A claim is its artifact
 
 Prose is a pointer to a number. If the number is not producible there is no
 claim, only a sentence.
@@ -1351,7 +1584,7 @@ claim, only a sentence.
 **Why so strict:** In one measured case the hand-written value made the claim
 **weaker** than the truth. Errors go both ways.
 
-## 15.10 Epistemic verbs are load-bearing
+## 16.10 Epistemic verbs are load-bearing
 
 **Measured example:** A parameter was described as "discovered twice". The truth:
 discovered once, **rebuilt without noticing** once. You do not discover what you
@@ -1363,48 +1596,48 @@ rebuild  : produced the structure but did not see the condition
 bridge   : showed the two fields have the same quantity
 ```
 
-## 15.11 The learning sequence is part of the result
+## 16.11 The learning sequence is part of the result
 
 Readers want to know **how you learned it**. Silent restatement invites "what
 else was quietly corrected".
 
 **Keep the distinction:** a retraction is a **result**; process narration is not.
 
-## 15.12 Process narration shifts the frame
+## 16.12 Process narration shifts the frame
 
 When a text narrates its own production, the reader's question shifts from "is
 this true" to "how hard did they work". The second invites the wrong scrutiny.
 
-## 15.13 Ambition is constrained by rule, not lowered
+## 16.13 Ambition is constrained by rule, not lowered
 
 **Measured example:** The widest claim was set as a target and the opening
 condition written before data. The condition was not met, the claim was not made,
 but setting the target directed the search and produced a narrower earned claim.
 
-## 15.14 Open items are a search space, not a debt
+## 16.14 Open items are a search space, not a debt
 
 **Measured example:** Three unclosed items were scanned with "is there anything
 here" in mind. One produced a literature collision, one independent
 corroboration, one confirmed originality. All three had been filed as debt.
 
-## 15.15 Small operational failures recur
+## 16.15 Small operational failures recur
 
 Conceptual errors are project-specific. Operational errors (encoding, escape
 characters, shell expansion, display truncation) recur in **every** project,
 because the tools are the same. Recording them has a higher return.
 
-## 15.16 Consolidation comes before extension
+## 16.16 Consolidation comes before extension
 
 **Measured example:** The corrections produced late were worth more than the
 countable results produced early, because the countable results partly overlapped
 an independent paper.
 
-## 15.17 A rule applied to one artifact applies to all
+## 16.17 A rule applied to one artifact applies to all
 
 Applying a rule to only one document implies it does not hold in the second.
 Readers read the implication as inconsistency.
 
-## 15.18 A rule applies retroactively as well
+## 16.18 A rule applies retroactively as well
 
 When you introduce a new formatting rule, artifacts written **before** the rule
 are in scope too. Applying it only to new content implies the rule does not hold
@@ -1425,7 +1658,7 @@ when a rule is introduced:
 > applied to all existing artifacts, or only to new content? Scan the files
 > written before the rule.
 
-## 15.19 How to extract implicit rules
+## 16.19 How to extract implicit rules
 
 ```
 implicit rules show up in three places:
@@ -1446,7 +1679,7 @@ rationale tells you what to do there.
 
 ---
 
-## 15.20 Summary: eighteen reasons, one line each
+## 16.20 Summary: eighteen reasons, one line each
 
 The TR handbook closes this section with a one line summary of every reason. The
 EN handbook lacks it. Same table, in English.
@@ -1472,12 +1705,12 @@ a rule applies to all            -> if there is an exception, write its reason
 implicit rules can be extracted  -> scan requests, corrections, and repetition
 ```
 
-# 16. PREVENTION, SOURCE LEVELS AND BALANCE
+# 17. PREVENTION, SOURCE LEVELS AND BALANCE
 
 Earlier sections describe how to **catch** errors. This one describes how to
 **stop most of them forming**. Each lesson carries a prompt you can use directly.
 
-## 16.1 Make every repeated number a variable
+## 17.1 Make every repeated number a variable
 
 Prevent rather than audit. If a number appears in the abstract, introduction,
 a table and the conclusion, all four must feed from one source.
@@ -1493,7 +1726,7 @@ and it usually drifts in the most visible place.
 > **Prompt:** Is every repeated number in this paper a macro? Is the same number
 > hardcoded in several places, or fed from a single source?
 
-## 16.2 Assert your arithmetic relations
+## 17.2 Assert your arithmetic relations
 
 If your numbers stand in a relation (A + B + C = D), check it **automatically**
 after every change.
@@ -1509,7 +1742,7 @@ attempts" contradictions.
 > (A+B+C=D). Is it automatically verifiable after each change, and is it
 > currently consistent?
 
-## 16.3 Residue scanning with normalised search
+## 17.3 Residue scanning with normalised search
 
 After a major change, search for stale expressions. Line breaks defeat a naive
 search, so use a **whitespace-insensitive** one.
@@ -1523,7 +1756,7 @@ assert s.count("out of class") == expected
 > **Prompt:** Have stale expressions (changed verdicts, "not recovered") been
 > cleaned from this paper? Scan for residues with a normalised search.
 
-## 16.4 Table edits break in a chain
+## 17.4 Table edits break in a chain
 
 Adding a row or column breaks more than it appears to.
 
@@ -1543,7 +1776,7 @@ column.
 > count, multicolumn widths, footnote consistency, special character collision,
 > cross references.
 
-## 16.5 The level scale of a source citation
+## 17.5 The level scale of a source citation
 
 The **level** of what you took from the source sets the strength of your claim.
 This is graded, not binary.
@@ -1562,7 +1795,7 @@ it definite. Keep claim strength proportional to source level.
 > section, description). Are description-level readings marked provisional, and
 > is claim strength proportional to source level?
 
-## 16.6 Reading errors are unidirectional
+## 17.6 Reading errors are unidirectional
 
 When you misread a complex system, the error almost always runs from
 **structured to unstructured**. The reverse, reading an unstructured thing as
@@ -1578,7 +1811,7 @@ the same way, that is a bias and must be reported.
 > they all move structured to unstructured, or the reverse? If unidirectional,
 > is it reported as a bias?
 
-## 16.7 Preserve the triple
+## 17.7 Preserve the triple
 
 Your paper should contain three things at once.
 
@@ -1595,7 +1828,7 @@ With only (1) it looks like "it fits everything". With (2) and (3) it looks like
 > result, out of scope)? With only positive results it looks like it fits
 > everything; is there balance?
 
-## 16.8 Cut format before content
+## 17.8 Cut format before content
 
 The cutting order is fixed and must not be reversed.
 
@@ -1612,7 +1845,7 @@ Cutting content is irreversible; cutting format always is.
 > **Prompt:** Solve this paper's length problem with format cuts only. How many
 > pages can be recovered without touching content? List them in order.
 
-## 16.9 A length pass opens an experiment question
+## 17.9 A length pass opens an experiment question
 
 While shortening a section you discover which sentence is **load-bearing**. If
 there is no measurement behind the load-bearing sentence, there is a missing
@@ -1624,7 +1857,7 @@ A cutting pass is therefore an audit, not only a writing task.
 > the measurement behind it. Where there is none, list it as a missing
 > experiment.
 
-## 16.10 Name your ceiling
+## 17.10 Name your ceiling
 
 Every project has one caveat it cannot lift. **Name it** and state how it would
 be lifted. An unnamed limit gets named by the reviewer instead.
@@ -1638,12 +1871,46 @@ contribution remains [conceptual, partial, provisional]. The way to lift it is
 
 ---
 
-# 17. DEEP PRINCIPLES
+## 17.11 Every mechanism you add to prevent errors is a new source of errors
+
+Section 17.1 says route every repeated number through one source. Do it. But the
+routing is code, and code has failure modes the hand-typed number did not have.
+
+**Evidence:** A substitution bridge was built so that every reported value flowed
+from the result files into the document. It ended number drift, which was its
+purpose. Then two substitutions went unfilled. The unfilled marker contained a
+character that is special in running text, so the processor raised an error whose
+recovery **silently consumed what followed**: a figure, a table, a statistical
+result and the section numbering all vanished from a document that still built to
+the correct page count. The visible "unfilled" marker the bridge printed could
+only be seen if the document still typeset, which in this failure mode it did
+not.
+
+```
+for every prevention mechanism you introduce:
+  [ ] what does it do when its own input is missing or malformed
+  [ ] does that failure announce itself, or does it look like success
+  [ ] is the failure mode WORSE than the problem the mechanism prevents
+  [ ] the mechanism gets its own known-bad input (Section 24.1)
+```
+
+The third question decides whether to keep it. A mechanism that converts a
+visible inconsistency into an invisible deletion is a bad trade even though it
+works almost always. The fix here was not to remove the bridge but to make an
+unfilled value fatal, so a loud failure replaced the quiet one.
+
+> **Prompt:** For each mechanism in this project that exists to prevent an error,
+> tell me what it does when its own input is missing or malformed, and whether
+> that failure is louder or quieter than the error it prevents.
+
+---
+
+# 18. DEEP PRINCIPLES
 
 These came from individual experiment sessions, and most arose from a
 contradiction or a failure. Each carries a prompt.
 
-## 17.1 "Not found" sometimes becomes "cannot be found because it cannot exist"
+## 18.1 "Not found" sometimes becomes "cannot be found because it cannot exist"
 
 When you search and do not find, there are two possibilities:
 
@@ -1664,7 +1931,7 @@ theorem distinction strict. The difference between "not found so far" and
 > found because it cannot exist"? Is the structural constraint formalised, or
 > does it stay at observation level?
 
-## 17.2 When two costs are the same quantity there is no "make it better" option
+## 18.2 When two costs are the same quantity there is no "make it better" option
 
 Sometimes strengthening a system (increasing parameter X) makes the legitimate
 user's job harder **in the same proportion**. That is the sign that the attack
@@ -1678,7 +1945,7 @@ to **change the design**.
 > limit? If the two costs are the same quantity, is it stated that there is no
 > trade-off?
 
-## 17.3 Apply your thesis to your own method
+## 18.3 Apply your thesis to your own method
 
 Your critique of a tool or approach also applies to **your use** of that tool.
 
@@ -1690,7 +1957,7 @@ and needs an independent verification.
 > **Prompt:** Is this paper's thesis applied to its own method? If the thesis
 > binds you too, has an independent verification been added?
 
-## 17.4 A verification test also verifies the structure
+## 18.4 A verification test also verifies the structure
 
 When a round trip or consistency test passes, it may mean not just "my code
 works" but **"I understood the structure correctly"**, especially in complex or
@@ -1702,7 +1969,7 @@ working is independent evidence that the mechanism was built correctly.
 > **Prompt:** Does this paper highlight cases where a verification test proves
 > structural understanding rather than only implementation?
 
-## 17.5 A constant unknown is absorbed, not recovered
+## 18.5 A constant unknown is absorbed, not recovered
 
 If you must recover an unknown, first ask: **is it constant?** If it is, it can
 be **absorbed** into the structure you build on top (table, equation, model).
@@ -1715,7 +1982,7 @@ cost by about three hundred fold.
 > **Prompt:** Can a constant unknown in this work be absorbed into the structure
 > instead of recovered separately? If a cost reduction is possible, propose it.
 
-## 17.6 Size does not prevent controllability
+## 18.6 Size does not prevent controllability
 
 A parameter being **large** does not mean the other side cannot **adjust** it. If
 they control the input, they control any parameter that is a function of the
@@ -1727,7 +1994,7 @@ the parameter large". A criterion measuring size measures the wrong quantity.
 > **Prompt:** Are wide but controllable parameters evaluated correctly in this
 > paper? Is the criterion written as "can it be adjusted"?
 
-## 17.7 Two kinds of fidelity: structural and surface
+## 18.7 Two kinds of fidelity: structural and surface
 
 ```
 structural : is the mechanism your analysis relies on correct
@@ -1742,7 +2009,7 @@ the analysis relies on." Without that justification partial fidelity is suspect.
 > this work? Is it shown at mechanism level that the omitted step does not affect
 > the result?
 
-## 17.8 Check the ancestor before merging
+## 18.8 Check the ancestor before merging
 
 When a "better" version or contribution arrives, check **which base it descends
 from**. It may contain a good idea and still descend from an old or wrong base
@@ -1755,9 +2022,9 @@ to the current base.
 > descend from? Could a good idea have come from an old branch and lost
 > intermediate corrections?
 
-## 17.9 What passes internal consistency can still be wrong
+## 18.9 What passes internal consistency can still be wrong
 
-This is the operational form of the principle in Section 15.6. It is kept
+This is the operational form of the principle in Section 16.6. It is kept
 separate because that one says **why** this happens and this one says **what to
 do about it**.
 
@@ -1778,7 +2045,7 @@ does not count      : another test of the same model
 > verification independent of its assumptions? If not, which external anchor
 > could be added?
 
-## 17.10 The weakest component rule
+## 18.10 The weakest component rule
 
 If a quantity is composed of more than one part, the effective value is the
 **minimum** of the parts, not their sum. The other side always targets the
@@ -1794,7 +2061,7 @@ List components **separately**; do not give one aggregate number.
 > computed as the minimum rather than the sum? Is each component listed
 > separately?
 
-## 17.11 Do not impose the model on yourself, derive it from reality
+## 18.11 Do not impose the model on yourself, derive it from reality
 
 When choosing an analysis framework or set of assumptions, avoid **imposing** it.
 The framework must descend from the **reality** of the system you study.
@@ -1805,7 +2072,7 @@ approach uses the conditions the system **genuinely** offers.
 > **Prompt:** Is the analysis framework in this work imposed by the authors? Is
 > it derived from the system's reality or chosen arbitrarily?
 
-## 17.12 Acceptance criterion discipline: no marking without evidence
+## 18.12 Acceptance criterion discipline: no marking without evidence
 
 To mark a task "done" the **acceptance criterion** must be met.
 
@@ -1822,7 +2089,7 @@ does not count     : "it looks reasonable"
 > **Prompt:** For every item marked "done" in this project, is the acceptance
 > criterion met? List the markings that have no evidence.
 
-## 17.13 An error becomes a finding
+## 18.13 An error becomes a finding
 
 When you find an error, do not only fix it: ask **why it arose**. The answer is
 usually a general principle, and that principle is your finding.
@@ -1841,11 +2108,11 @@ produced this way.
 
 ---
 
-# 18. FINAL GLEANINGS
+# 19. FINAL GLEANINGS
 
 Items that did not fit the other sections but keep proving useful.
 
-## 18.1 Report the failure points
+## 19.1 Report the failure points
 
 What did not work is a result too. Hiding failed attempts costs twice: the reader
 cannot see the boundary, and someone repeats the same attempt.
@@ -1856,7 +2123,7 @@ list is useless.
 > **Prompt:** Are the approaches that were tried and failed reported in this
 > work? Does each have a "why it failed" column?
 
-## 18.2 The experiment and text loop
+## 19.2 The experiment and text loop
 
 Writing opens experiments and experiments change the writing. **Close the loop:**
 
@@ -1872,7 +2139,7 @@ them.
 > **Prompt:** Are the experiment questions opened while writing recorded in this
 > work? Are there sentences left with no measurement behind them?
 
-## 18.3 The single source principle
+## 19.3 The single source principle
 
 If the same information lives in two places, one of them eventually goes wrong.
 Every quantity, definition and verdict lives in **one place**; everything else
@@ -1888,7 +2155,7 @@ code output  -> json, the text reads from it
 > **Prompt:** Is the same information held independently in more than one place
 > in this work? List the violations of the single source principle.
 
-## 18.4 The derived file is current, the source document is stale
+## 19.4 The derived file is current, the source document is stale
 
 If you have derived other documents from one source, it is easy in later rounds
 to update **only the derived ones**. The source goes quietly stale, and one day
@@ -1910,7 +2177,7 @@ files and not in the source.
 > **Prompt:** Does this project have documents derived from a source? Is the
 > source current, or marked as an archive? Is anything going quietly stale?
 
-## 18.5 A table is a data structure, not a view
+## 19.5 A table is a data structure, not a view
 
 Design a table as a **data structure**, not as "let me show this": rows are
 records, columns are fields, every cell the same type.
@@ -1921,7 +2188,7 @@ types get separated, and the script that produces the table becomes the table.
 > **Prompt:** Are the tables in this paper designed as data structures? Are rows
 > records, columns fields, and every cell the same type?
 
-## 18.6 The accountability chain
+## 19.6 The accountability chain
 
 For every claim the chain must be unbroken:
 
@@ -1936,7 +2203,7 @@ chain end to end for **three randomly chosen claims**.
 > accountability chain end to end: claim, number, script, input, source. Any
 > broken links?
 
-## 18.7 Nothing unmeasured is claimed
+## 19.7 Nothing unmeasured is claimed
 
 Every quantitative expression needs a measurement behind it. Words like
 "approximately", "usually" and "most" are quantitative too.
@@ -1952,7 +2219,7 @@ good : the cost is 221 queries and does not change with class width
 > approximately, most, usually) with the measurement behind it. List the ones
 > with none.
 
-## 18.8 Publication tactics
+## 19.8 Publication tactics
 
 **Major revision is a conditional yes.** It is not a rejection. Answer the
 reviewer point by point in the form "what changed, and where".
@@ -1967,7 +2234,7 @@ fit usually matter more than impact factor.
 > **Prompt:** Which decisions for this submission should wait for reviewer data,
 > and which must be made now? List both.
 
-## 18.9 Remaining formatting items
+## 19.9 Remaining formatting items
 
 **Citation style:** one style per document. Do not mix author-year with numeric.
 If a citation can be the subject of a sentence, author-year fits; if not, numeric
@@ -1996,7 +2263,7 @@ does.
 
 ---
 
-## 18.10 Write the patch so it can be applied mechanically
+## 19.10 Write the patch so it can be applied mechanically
 
 If you update a document through patches applied in another environment, the
 patch's **location anchor** must occur exactly once in the document and must
@@ -2023,7 +2290,7 @@ assert open(target).read().count(locate) == 1, f"anchor not unique: {locate}"
 > its target? Does any patch anchor to text another patch will add? Verify
 > automatically.
 
-## 18.11 Verify a patch landed by content, not by label
+## 19.11 Verify a patch landed by content, not by label
 
 Searching for **the heading number you supplied** produces false negatives: the
 apply step may have shifted your number to avoid clashing with other additions.
@@ -2040,7 +2307,7 @@ search by content : a distinctive sentence -> reliable
 > **Prompt:** Verify whether my patches were applied using a distinctive sentence
 > from each patch, not the heading number.
 
-## 18.12 Two independent workers on one document: do not coordinate
+## 19.12 Two independent workers on one document: do not coordinate
 
 When two people or two sessions contribute independently to one document, trying
 to divide the work costs twice: the coordination time, and the risk that the
@@ -2060,7 +2327,7 @@ work independently: overlap happens, but overlap carries information
 > divided or did everyone report everything they knew? Are overlapping
 > contributions treated as waste or as corroboration?
 
-## 18.13 A convergence criterion: when do you say done
+## 19.13 A convergence criterion: when do you say done
 
 When an iterative process stops must be defined **in advance**, otherwise fatigue
 becomes the stopping criterion.
@@ -2081,13 +2348,100 @@ invalid done : "the headings match, done"
 > **Prompt:** Does this iterative process have a stopping criterion defined in
 > advance? Do contributors state at what level they looked when they say done?
 
-# 19. FIGURE GENERATION ARCHITECTURE
+## 19.14 Write the record at the moment of understanding
+
+The note that accompanies a fix is the only artifact that captures **why the
+defect was invisible**. The change records what was done and the diff records
+where. Neither records why every signal said fine, and that is the part with
+transfer value.
+
+Reconstructed later it is gone. You remember the fix and not the reasoning, and
+the next person meets the same masking condition with nothing to warn them.
+
+```
+worth recording at the time, in this order:
+  what was wrong
+  what the toolchain said while it was wrong
+  why the existing checks did not see it
+  what would see it now
+```
+
+**Evidence:** Most of the durable content of Sections 24 to 27 was reconstructed
+from notes written in that shape. Fixes of identical size recorded only as "fix
+the caption format" contributed nothing, because the interesting half had not
+been written down.
+
+## 19.15 A distillation ages into an instance-bound document
+
+A guide written during a project is full of the particulars that were vivid at
+the time: item numbers, proper nouns, specific values, one venue's vocabulary. It
+stops transferring long before it stops being true, and it stops **silently**,
+because every entry still reads as correct to the person who wrote it.
+
+```
+periodically:
+  [ ] re-derive the guide one level up
+  [ ] test each entry: would this help someone whose project shares NONE of the
+      particulars
+  [ ] where an entry cannot be raised, drop it rather than keep it weakened
+  [ ] keep the particular as evidence UNDER the general statement, never as the
+      statement
+```
+
+**Evidence:** A playbook written mid-project ran to fifteen hundred lines and was
+genuinely useful to its authors. Re-read later, most entries were phrased around
+one venue's numbered requirements and one document class. The rule underneath
+each was still right; the sentence carrying it was not portable. Sections 24 to
+27 of this handbook are the output of running the operation above on it.
+
+This is Section 19.4 seen from the other side. There the source goes stale while
+the derived files move on; here the derived file stays true and stops being
+portable. Both are failures of a document to age with its readers.
+
+The same test applies to this handbook. An entry that needs its example to be
+intelligible has not finished being written.
+
+## 19.16 When you cannot do the work, say so rather than producing its shape
+
+Output manufactured without access to the evidence is worse than no output. It is
+unfalsifiable downstream, it looks exactly like the real thing, and it
+contaminates the record it was meant to build.
+
+**Evidence:** A delegated task ran with its file access broken and could read none
+of the material it was asked to summarise. Rather than produce plausible findings
+from the description in its own instructions, it reported the blockage, stated
+explicitly that it had read nothing, and marked the one item it could produce as
+not derived from the corpus. The work was then done directly. The cost of the
+failed delegation was one wasted run, instead of a fabricated section nobody
+could later distinguish from evidence.
+
+```
+valid   : "I could not run this, and here is what blocked it"
+valid   : "I produced this from X, which is not the source you asked for"
+invalid : output shaped like the deliverable, sourced from the instructions
+```
+
+This is Section 18.12 applied to a whole deliverable rather than to a task, and
+it holds for collaborators, contractors and automated assistants alike.
+
+**The corollary for whoever delegates:** establish that the worker could reach the
+evidence before trusting anything it returns. A fabricated result and a real one
+are indistinguishable in the output alone, so the check has to be on the access,
+not on the answer.
+
+> **Prompt:** For every part of this work produced by someone or something other
+> than me, state what source it actually had access to. Flag anything whose
+> provenance cannot be established.
+
+---
+
+# 20. FIGURE GENERATION ARCHITECTURE
 
 Figures are not drawn one at a time, they are produced by a **system**. Without
 one, each figure invents its own colours, box style and font, and the paper looks
 assembled rather than designed.
 
-## 19.1 Colour is semantic, not decorative
+## 20.1 Colour is semantic, not decorative
 
 A single palette file (`palette.py`) is the colour source for every figure. **No
 figure defines its own colour.**
@@ -2113,7 +2467,7 @@ in greyscale print.
 > difference distinguishable under colour blindness and greyscale (hatch
 > supported)?
 
-## 19.2 Verify accessibility automatically
+## 20.2 Verify accessibility automatically
 
 Three checks are **asserted** in the palette file and their result written out:
 
@@ -2132,7 +2486,7 @@ is recorded in a file such as `COLOUR_CHECK.md`, so the check is an artifact too
 > greys, each fill meeting 4.5:1 WCAG contrast. Run a colour-blindness
 > simulation.
 
-## 19.3 Shared drawing primitives
+## 20.3 Shared drawing primitives
 
 Every diagram uses the **same** box style, line weight, arrow head and font. A
 `figtools.py` file defines the shared primitives: box (rounded corner, centred
@@ -2153,7 +2507,7 @@ ROUND       = 0.10  corner rounding
 > style, line weight, arrow head and font consistent, and are the constants
 > (STROKE, ROUND) single sourced?
 
-## 19.4 Technical requirements
+## 20.4 Technical requirements
 
 Two settings are **mandatory** for publication:
 
@@ -2172,7 +2526,7 @@ analytic) and, where one exists, a dashed chance-level line.
 > **Prompt:** Do this paper's figures use PDF font type 42, read data from a file
 > rather than hardcoded, and show confidence intervals and a chance-level line?
 
-## 19.5 A failing check must stop the palette
+## 20.5 A failing check must stop the palette
 
 Accessibility checks exist not to report but to **stop production**. The figure
 script calls the palette and does not draw if the check fails.
@@ -2207,7 +2561,7 @@ than three constraints. Turn the constraint into a target and solve it.
 > not, do not try manual fixes; choose target L* values and solve for the colours
 > that land on them.
 
-## 19.6 Verify font embedding with a tool
+## 20.6 Verify font embedding with a tool
 
 Setting `pdf.fonttype = 42` is not enough, **verify** the output. A raw byte
 search inside the PDF misleads: the string `/TrueType` may not appear at all in a
@@ -2224,7 +2578,7 @@ What you are checking is the **absence** of `Type 3` and `emb` reading `yes`.
 > **Prompt:** Verify this project's figure PDFs with `pdffonts`. Any Type 3, are
 > the fonts embedded, are they subset?
 
-## 19.7 The prompt that builds the architecture
+## 20.7 The prompt that builds the architecture
 
 ```
 Set up a figure generation architecture for this paper:
@@ -2253,11 +2607,11 @@ Output vector PDF. No em dashes. Caption one line, matched to object width.
 
 ---
 
-# 20. READY-TO-USE PROMPTS
+# 21. READY-TO-USE PROMPTS
 
 Paste these directly. Each is self-contained. Replace the bracketed parts.
 
-## 20.1 Extract method structure from a primary source
+## 21.1 Extract method structure from a primary source
 
 ```
 I am going to give you the primary source for [METHOD/SYSTEM]. Extract its
@@ -2278,7 +2632,7 @@ Finish with: "UNANCHORED ITEMS: ..." If that list is non-empty, say that any
 result is PROVISIONAL.
 ```
 
-## 20.2 Design a discriminating reproduction check
+## 21.2 Design a discriminating reproduction check
 
 ```
 I have reproduced [METHOD] and I claim it has the structural property
@@ -2298,7 +2652,7 @@ Then give me code for: the correct version, a deliberately wrong control
 version, and the measurement over both.
 ```
 
-## 20.3 Debug an unexpected experimental result
+## 21.3 Debug an unexpected experimental result
 
 ```
 My experiment on [SYSTEM] gives [UNEXPECTED RESULT].
@@ -2323,7 +2677,7 @@ Only if steps 1 and 2 are clean may you conclude the phenomenon is real, and
 then quantify it.
 ```
 
-## 20.4 Write a pre-registration
+## 21.4 Write a pre-registration
 
 ```
 I am about to run [EXPERIMENT] to test whether [CLAIM].
@@ -2344,7 +2698,7 @@ Write a pre-registration I will freeze before collecting data. It must contain:
 Flag any hypothesis whose wording could be read two ways, and rewrite it.
 ```
 
-## 20.5 Audit a manuscript for number consistency
+## 21.5 Audit a manuscript for number consistency
 
 ```
 Audit this manuscript for numerical and internal consistency. Report every
@@ -2364,7 +2718,7 @@ When searching markup source, account for escape characters. If a search returns
 zero, retry with the escaped variant before concluding absence.
 ```
 
-## 20.6 Scan for a concept's name in adjacent literature
+## 21.6 Scan for a concept's name in adjacent literature
 
 ```
 My paper defines: [DEFINITION AND FUNCTION].
@@ -2385,7 +2739,7 @@ name is a renaming and must be presented as one.
 Finish with: "This was N searches. It is not a full literature review."
 ```
 
-## 20.7 Style and typography audit
+## 21.7 Style and typography audit
 
 ```
 Audit this manuscript against these rules and report every violation with
@@ -2408,7 +2762,7 @@ location.
     attempts") for removal to the cover letter.
 ```
 
-## 20.8 Write a visible retraction
+## 21.8 Write a visible retraction
 
 ```
 I claimed [OLD CLAIM]. I have found [NEW EVIDENCE] showing it is wrong or too
@@ -2424,7 +2778,7 @@ Do not be theatrical and do not over-apologise. Do not silently restate the
 contribution. Under 150 words. Then tell me where in the paper it goes.
 ```
 
-## 20.9 Hostile reviewer simulation
+## 21.9 Hostile reviewer simulation
 
 ```
 Read this manuscript as a hostile but competent reviewer for [VENUE]. You are
@@ -2442,7 +2796,7 @@ Produce, in order:
 Do not praise anything. If you cannot find three objections, say so explicitly.
 ```
 
-## 20.10 Split decision
+## 21.10 Split decision
 
 ```
 My manuscript is [N] pages covering [PART A] and [PART B]. I am considering
@@ -2459,7 +2813,7 @@ If the answer is do not split, tell me which cuts solve the length problem,
 ranked by how much they cost the argument.
 ```
 
-## 20.11 Package the artifact
+## 21.11 Package the artifact
 
 ```
 Package this project for submission. Produce:
@@ -2478,7 +2832,7 @@ Package this project for submission. Produce:
 Random seed: [SEED]. Everything reproducible from it on a single core.
 ```
 
-## 20.12 Extract implicit rules from a project
+## 21.12 Extract implicit rules from a project
 
 ```
 Here is a record of a project: [TRANSCRIPT, CORRECTION REQUESTS, REVIEW NOTES].
@@ -2500,7 +2854,7 @@ Write rationales, not rules, because a rule may not fit an unencountered
 situation while a rationale tells me what to do there.
 ```
 
-## 20.13 Decide whether a finding is real or an artefact
+## 21.13 Decide whether a finding is real or an artefact
 
 ```
 I measured [SURPRISING RESULT]. Before I report it, stress-test it.
@@ -2520,7 +2874,7 @@ I measured [SURPRISING RESULT]. Before I report it, stress-test it.
 Verdict: REAL, ARTEFACT, or UNDECIDED with the measurement that would decide it.
 ```
 
-## 20.14 Reframe the headline
+## 21.14 Reframe the headline
 
 ```
 My paper's current headline is: [CURRENT CLAIM].
@@ -2539,7 +2893,7 @@ contribution is not directly comparable.
    corroboration rather than competition.
 ```
 
-## 20.15 Design the calibration population
+## 21.15 Design the calibration population
 
 ```
 I have a procedure that classifies [OBJECTS] and I have tested it on [N]
@@ -2558,7 +2912,7 @@ Design a calibration population:
    sensitivity).
 ```
 
-## 20.16 Decide whether to consolidate or extend
+## 21.16 Decide whether to consolidate or extend
 
 ```
 Current state: [SUMMARY OF RESULTS AND OPEN ITEMS].
@@ -2577,7 +2931,7 @@ Help me decide whether to produce more results or consolidate what I have.
    the foundation.
 ```
 
-## 20.17 Prompts from the condensed edition
+## 21.17 Prompts from the condensed edition
 
 These three are carried over from the condensed lessons edition; they complement
 the prompts above rather than repeat them.
@@ -2605,12 +2959,12 @@ the prompts above rather than repeat them.
 
 ---
 
-# 21. HOUSE RULES AND SHORT PROMPTS
+# 22. HOUSE RULES AND SHORT PROMPTS
 
 Everything below is short on purpose. Each block fits in a prompt window with
 room to spare. Paste one, not the whole section.
 
-## 21.0 HOUSE RULES
+## 22.0 HOUSE RULES
 
 Most prompts below say "Apply HOUSE RULES". Paste this block once at the top of
 a session, or inline it when you need it.
@@ -2625,11 +2979,17 @@ HOUSE RULES
 - Every number traceable to a script or a source. Mark invented values TODO.
 - Figures: vector only, body font, units on axes, never colour-only encoding.
 - Say what you did not do, and why, rather than leaving it implicit.
+- A check is trusted only after the defect it names has been injected and
+  the check has been seen to fail on it.
+- Verify the artifact, not only the source. Compiling clean is not evidence
+  that the content survived.
+- Fetch before claiming something does not exist. Exhaustive search of a
+  stale copy is exhaustive only of the copy.
 ```
 
 ---
 
-## 21.1 Micro-prompts by lesson
+## 22.1 Micro-prompts by lesson
 
 Three shapes per lesson: APPLY changes something, AUDIT only reports, FIX
 repairs one named class of problem. Keep them separate; an audit that also
@@ -2745,7 +3105,7 @@ FIX   : Add the dependency note and the clean-run instructions only.
 
 ---
 
-## 21.2 Builder prompts
+## 22.2 Builder prompts
 
 ### Build a full paper from scratch, Overleaf ready
 ```
@@ -2880,7 +3240,7 @@ Rules:
 
 ---
 
-# 22. CROSSWALK (CONDENSED EDITION)
+# 23. CROSSWALK (CONDENSED EDITION)
 
 This document is the union of the comprehensive handbook and the condensed
 lessons edition. If you learned the condensed edition, the table maps its parts
@@ -2888,35 +3248,35 @@ to the sections here.
 
 | Condensed edition (lessons) | This document |
 |---|---|
-| HOUSE RULES | HOUSE RULES (top), Section 21 |
-| Part 1 Experiment design | Sections 2, 3, 4, 5, 7 |
-| Part 2 Source reading and verification | Sections 1, 9, 16 |
-| Part 3 Macro system and consistency | Sections 10, 16 |
-| Part 4 Revision management | Sections 10, 16 |
-| Part 5 Literature positioning | Section 8 |
-| Part 6 Publication strategy | Section 12 (incl. 12.11 to 12.13) |
-| Part 7 Feedback loops | Sections 5, 9, 18 |
-| Part 8 Checklist before submission | Section 13 |
-| Part 9 Style and formatting | Sections 14, 19 |
-| Part 10 Background principles | Section 15 |
-| Part 11 Deep principles | Sections 16, 17 |
-| Part 12 Article building and editing prompts | Sections 20, 21 (incl. 20.17) |
+| HOUSE RULES | HOUSE RULES (top), Section 22 |
+| Part 1 Experiment design | Sections 2, 3, 4, 5, 8 |
+| Part 2 Source reading and verification | Sections 1, 10, 17 |
+| Part 3 Macro system and consistency | Sections 11, 17 |
+| Part 4 Revision management | Sections 11, 17 |
+| Part 5 Literature positioning | Section 9 |
+| Part 6 Publication strategy | Section 13 (incl. 13.11 to 13.13) |
+| Part 7 Feedback loops | Sections 5, 10, 19 |
+| Part 8 Checklist before submission | Section 14 |
+| Part 9 Style and formatting | Sections 15, 20 |
+| Part 10 Background principles | Section 16 |
+| Part 11 Deep principles | Sections 17, 18 |
+| Part 12 Article building and editing prompts | Sections 21, 22 (incl. 21.17) |
 
 The third source, a later project, maps as follows.
 
 | Third source (silent-failure project) | This document |
 |---|---|
-| Verification code as an object requiring verification | Section 23 |
-| Build gates, exit status, staleness, warning classes | Section 23.9 |
-| Fallbacks that publish the wrong thing | Section 23.10 |
-| Reading a correction notice without over-reading it | Sections 24.1, 24.2 |
-| Conflicting authorities, stored definition versus rendering | Sections 24.3, 24.4 |
-| Rules leaking between venues; requirements that reverse | Sections 24.5, 24.6 |
-| Acting on a review you received | Section 24.7 |
-| Anonymity and other "must not contain" constraints | Section 24.8 |
-| Parameter interaction and compensated constants | Section 24.9 |
-| Delivering the same work in a second format | Section 25 |
-| Meeting someone else's template | Section 26 |
+| Verification code as an object requiring verification | Section 24 |
+| Build gates, exit status, staleness, warning classes | Section 24.9 |
+| Fallbacks that publish the wrong thing | Section 24.10 |
+| Reading a correction notice without over-reading it | Sections 25.1, 25.2 |
+| Conflicting authorities, stored definition versus rendering | Sections 25.3, 25.4 |
+| Rules leaking between venues; requirements that reverse | Sections 25.5, 25.6 |
+| Acting on a review you received | Section 25.7 |
+| Anonymity and other "must not contain" constraints | Section 25.8 |
+| Parameter interaction and compensated constants | Section 25.9 |
+| Delivering the same work in a second format | Section 26 |
+| Meeting someone else's template | Section 27 |
 
 The same project's domain lessons, which are about cryptanalysis and the
 evaluation of detectors rather than about method, are in
@@ -2924,9 +3284,9 @@ evaluation of detectors rather than about method, are in
 
 ---
 
-# 23. THE CHECK ITSELF
+# 24. THE CHECK ITSELF
 
-Section 2 designs a measurement that discriminates. Section 17.9 says internal
+Section 2 designs a measurement that discriminates. Section 18.9 says internal
 consistency is not correctness. This section is about the **verification code as
 an object requiring verification**. It exists because in one project three
 separate checks shipped a false pass, and each was found only by pointing it at
@@ -2935,7 +3295,7 @@ an artifact a human had already rejected.
 An absent check leaves you uncertain. A **vacuous** check leaves you confident
 and wrong, and consumes the attention that would have found the defect.
 
-## 23.1 A check that has only ever passed has not been tested
+## 24.1 A check that has only ever passed has not been tested
 
 It has been **run**. The failing path is the one path never exercised, because
 checks are written while looking at correct input.
@@ -2955,7 +3315,7 @@ The middle case is the regression test; without it the check is decoration.
 > **Prompt:** For every check in this project, show me the known-bad input it
 > fails on. List the checks that have only ever passed.
 
-## 23.2 Unresolved must not compare equal to unresolved
+## 24.2 Unresolved must not compare equal to unresolved
 
 If two values both fail to resolve and your comparison reports "equal", you have
 built a check that certifies the exact condition it exists to detect.
@@ -2976,7 +3336,7 @@ three outcomes, never two:
 > fails to resolve? Show me that "could not determine" is a failure and not a
 > value that can match another.
 
-## 23.3 A matcher's silence is evidence only if it has been shown to fire
+## 24.3 A matcher's silence is evidence only if it has been shown to fire
 
 A pattern written from the **name** of the thing rather than its actual encoding
 matches nothing and reports everything as clean.
@@ -2987,15 +3347,15 @@ returned empty and the document was declared clean. Separately, every font name
 in that file was prefixed with a six-character subset tag, hiding the base name
 from a naive match.
 
-This is the same class as Section 10.5 (escape characters defeating a search) and
-Section 11.6 (a search returning empty because the term is split across a line).
+This is the same class as Section 11.5 (escape characters defeating a search) and
+Section 12.6 (a search returning empty because the term is split across a line).
 The general form: **a zero result is a claim about your search, not about the
 world**, until the search has been shown to find a known instance.
 
 > **Prompt:** Every pattern in this project's checks: show me the string it must
 > match and the string it must not. Which patterns have never matched anything?
 
-## 23.4 Empty or wrong input must not score a pass
+## 24.4 Empty or wrong input must not score a pass
 
 "No violations found" and "nothing was examined" must be different exit states.
 
@@ -3007,7 +3367,7 @@ if the count is zero -> exit with a distinct status, never success
 **Evidence:** A reference classifier gave a perfect score on an empty file. Every
 per-item check passed because there were no items.
 
-## 23.5 Know which end of a cascade wins, and test where the two ends disagree
+## 24.5 Know which end of a cascade wins, and test where the two ends disagree
 
 Where properties compose base-first and override-last, reading the wrong end
 reports the **inherited** value instead of the **effective** one. It is right in
@@ -3026,7 +3386,7 @@ deliberately corrected.
 [ ] test there, not on the common case
 ```
 
-## 23.6 A matcher over a variable-length token needs an explicit boundary
+## 24.6 A matcher over a variable-length token needs an explicit boundary
 
 Without one it finds its own quarry **inside** valid input.
 
@@ -3034,7 +3394,7 @@ Without one it finds its own quarry **inside** valid input.
 shorter label inside a longer, correct one, and reported a violation in a file
 that had none.
 
-## 23.7 The instrument must cover the region the answer lives in
+## 24.7 The instrument must cover the region the answer lives in
 
 A measurement that **confirms** your suspicion is the cheapest false positive
 available, because you stop looking when you find what you expected.
@@ -3050,14 +3410,14 @@ before believing a CONFIRMING measurement:
   [ ] does the same instrument show a known-present instance
 ```
 
-This is the operational partner of Section 6.5 (a display bug is not a finding).
+This is the operational partner of Section 7.5 (a display bug is not a finding).
 That one says a rendering artefact can look like a result; this one says a
 **truncated view** can look like a confirmation.
 
 > **Prompt:** For each measurement in this project that confirmed an expected
 > defect, show me the instrument covered the region the evidence lives in.
 
-## 23.8 Compare in both directions, and choose the comparison shape deliberately
+## 24.8 Compare in both directions, and choose the comparison shape deliberately
 
 "Everything in A appears in B" catches **loss**. "Everything in B appears in A"
 catches **invention**. Running one and believing you have covered both is common.
@@ -3089,7 +3449,7 @@ the tolerance.
 > either being wrong. Then choose the comparison shape, and justify it against
 > that list.
 
-## 23.9 A gate must refuse, and the refusal must be tested
+## 24.9 A gate must refuse, and the refusal must be tested
 
 Three failures of the same class, all found late:
 
@@ -3120,7 +3480,7 @@ ones that can. This is a one-hour task that pays for itself the first time.
 > stale artifact, and every warning class that can silently change output? Show
 > me the deliberate breakage that proves each.
 
-## 23.10 Distinguish a build that must not stop from one that must not lie
+## 24.10 Distinguish a build that must not stop from one that must not lie
 
 Tolerating a missing input is right for a draft and wrong for a deliverable. The
 same configuration cannot serve both.
@@ -3137,7 +3497,7 @@ deliverable mode: missing input is FATAL
 and in both     : a fallback is VISIBLY wrong (??), never plausibly wrong
 ```
 
-A plausible default ships as fact. This is Section 18.3 (single source) meeting
+A plausible default ships as fact. This is Section 19.3 (single source) meeting
 Section 5.7 (every hand-written number is a risk): the fallback is a second
 source for the same quantity, and it is the one nobody audits.
 
@@ -3145,7 +3505,7 @@ source for the same quantity, and it is the one nobody audits.
 > override. Where they disagree, what ships if the override is missing, and does
 > the build say so?
 
-## 23.11 A converter must abort, not skip
+## 24.11 A converter must abort, not skip
 
 Any process that transforms a deliverable, and which silently skips what it
 cannot handle, produces an artifact that **looks finished and is not**.
@@ -3164,7 +3524,7 @@ invisible content defect into a visible build failure.
 > does not recognise, or does it skip? Show me what it does with one construct it
 > has never seen.
 
-## 23.12 Record which cases fail, never the ratio
+## 24.12 Record which cases fail, never the ratio
 
 A regression control is a statement about **which** conditions an artifact
 violates. Written down as a count, it decays twice: the denominator moves as the
@@ -3181,7 +3541,7 @@ item names and their measured values would still have been true.
 [ ] never a ratio; the numerator is stable, the denominator is not
 ```
 
-This is Section 18.3 again: the count is a second source for something the check
+This is Section 19.3 again: the count is a second source for something the check
 already knows, and it is the copy nobody updates.
 
 > **Prompt:** For every regression control in this project, is it stored as a
@@ -3190,9 +3550,9 @@ already knows, and it is the copy nobody updates.
 
 ---
 
-# 24. RECEIVING AN EXTERNAL REQUIREMENT
+# 25. RECEIVING AN EXTERNAL REQUIREMENT
 
-Section 8 handles the literature, Section 12 handles the venue, Section 20.9
+Section 9 handles the literature, Section 13 handles the venue, Section 21.9
 simulates a hostile reviewer. This section is about the different task of being
 **given a list of corrections by an authority** and acting on it without
 introducing new defects.
@@ -3201,7 +3561,7 @@ The failure modes here are almost all **over-reading** and **under-scoping**, an
 they are expensive because a defect introduced inside a fix is hard to attribute
 later.
 
-## 24.1 A requirement constrains what it names, and nothing else
+## 25.1 A requirement constrains what it names, and nothing else
 
 Reading a requirement more broadly than written creates defects in the act of
 removing them.
@@ -3228,7 +3588,7 @@ requirement tells you what it should be. Neither alone is enough.
 > was when the notice was written, and the smallest change that satisfies the
 > item. Flag anything I am about to change that is outside that delta.
 
-## 24.2 Fix the class, not the flagged instance
+## 25.2 Fix the class, not the flagged instance
 
 When someone marks one thing they have shown you a rule you are violating, and
 they will not enumerate the rest.
@@ -3238,11 +3598,11 @@ must be in the proper format". The same note reappeared later on a different
 object, because only the named instance had been fixed. The reviewer's own text
 said the rule applied to all such objects, not only the one marked.
 
-This is Section 15.17 seen from the other side: that one says a rule **you**
+This is Section 16.17 seen from the other side: that one says a rule **you**
 adopt applies to all your artifacts; this one says a rule **imposed on you**
 applies to all instances in the artifact.
 
-## 24.3 Two authorities will disagree, including one authority with itself
+## 25.3 Two authorities will disagree, including one authority with itself
 
 A specification and its own worked example routinely contradict each other.
 Neither is automatically right.
@@ -3266,7 +3626,7 @@ choice itself.
 > **Prompt:** Where do this venue's written requirements and its own template
 > disagree? List each conflict, which I followed, and whether I said so.
 
-## 24.4 Ground truth is the stored definition, not the rendering
+## 25.4 Ground truth is the stored definition, not the rendering
 
 A reference artifact's **appearance** is evidence of what that artifact does, not
 a specification of what is required. Where a requirement is expressed in a
@@ -3286,13 +3646,13 @@ in doubt                             -> check both and reconcile
 ```
 
 **And the converse:** where a layer between source and output can silently
-override the source (Section 23.11), only the rendering can reveal it. The two
+override the source (Section 24.11), only the rendering can reveal it. The two
 rules are not in conflict; they apply to different classes of requirement.
 
 > **Prompt:** For each requirement here, is it a statement about a stored
 > property or about a visual outcome? Am I checking it at the right level?
 
-## 24.5 Rules carry their scope with them
+## 25.5 Rules carry their scope with them
 
 A rule acquired from one authority, for one artifact, is not portable. Carried
 into a context governed by a different authority it is simply wrong, and it
@@ -3313,7 +3673,7 @@ found.
 > from a different context? For each, does the governing specification here
 > require the same thing?
 
-## 24.6 Requirements reverse, including after you have implemented and verified them
+## 25.6 Requirements reverse, including after you have implemented and verified them
 
 Doing the work well does not protect it. Treat reversal as a normal event.
 
@@ -3329,9 +3689,9 @@ build so that reversal is cheap:
   [ ] the check points at the requirement, not at the number it currently implies
 ```
 
-See Section 24.9 for why the second line matters more than it looks.
+See Section 25.9 for why the second line matters more than it looks.
 
-## 24.7 Verify each finding of a review before acting on it
+## 25.7 Verify each finding of a review before acting on it
 
 A review is a set of **hypotheses**. Acting on all of it introduces changes for
 non-problems and can break correct work.
@@ -3357,7 +3717,7 @@ fourth, mistaken finding is what exposed a genuine hole in the build gate.
 > classify it as real, accurate-but-not-a-defect, or mistaken. Show the evidence
 > for each classification before changing anything.
 
-## 24.8 For a "must not contain X" constraint, enumerate the channels
+## 25.8 For a "must not contain X" constraint, enumerate the channels
 
 The visible channel is the **least** likely to be the leak.
 
@@ -3376,7 +3736,7 @@ acknowledgements and incidental artifacts all carry content the eye never audits
 > **Prompt:** This artifact must not contain [X]. List every channel that could
 > carry it, including metadata and file names, and check each.
 
-## 24.9 Write compensations as expressions, never as pre-computed constants
+## 25.9 Write compensations as expressions, never as pre-computed constants
 
 A constant that is correct only because of a value defined elsewhere is silently
 wrong the moment that value moves, and reads as arbitrary to the next person.
@@ -3404,14 +3764,50 @@ interaction you did not measure is the one that broke.
 
 ---
 
-# 25. DELIVERING THE SAME WORK IN A SECOND FORMAT
+## 25.10 Reviewing someone else's artifact against a specification
+
+The mirror of 25.7, with a different failure mode: not over-acting on findings,
+but reporting things that are true and not defects, while missing the ones the
+toolchain has hidden.
+
+```
+1. establish which specification governs, from the recipient's own reference
+   file, not from convention and not from a sibling project (25.5)
+2. build BOTH the reference and the artifact, and compare MEASURED properties.
+   An eyeballed comparison finds only what you already suspected
+3. read the build log, not only the output. A toolchain that recovers from an
+   error still ships, and the artifact looks clean
+4. classify every finding: must fix, should fix, judgement call
+5. separate what the specification REQUIRES from what you would do differently
+```
+
+**Evidence:** An outsider review of a third party's submission found two errors in
+the build log that the author had not seen, because the processor recovered from
+both and the output looked correct. The same review found a rule carried over
+from a different venue, still carrying that venue's item number in a comment,
+which the receiving venue's own template contradicted. Neither was visible
+without building the artifact and reading the log.
+
+**On reporting:** give the severity with the finding, and say plainly which items
+are preference rather than requirement. A review that mixes the two invites the
+recipient to discount all of it.
+
+> **Prompt:** Review this artifact against [SPECIFICATION]. Build both it and the
+> reference and compare measured properties rather than appearance, and read the
+> build log as well as the output. Classify each finding as must-fix, should-fix
+> or judgement call, and mark anything that is my preference rather than the
+> specification's requirement.
+
+---
+
+# 26. DELIVERING THE SAME WORK IN A SECOND FORMAT
 
 Venues, collaborators and archives ask for the same content in a form you did not
 author it in. The naive approach, converting and eyeballing, fails silently and
 in the direction that matters: content is **lost**, not corrupted, so the result
 reads as finished.
 
-## 25.1 Generate into the target's own definitions, not an imitation of them
+## 26.1 Generate into the target's own definitions, not an imitation of them
 
 If the target format has a notion of named styles, structure or numbering,
 produce the artifact **in terms of those**, so the formatting comes from the
@@ -3424,9 +3820,9 @@ result could not drift from the template, because nothing about the formatting
 was restated in the generated file.
 
 The alternative, reproducing the look by hand, is a second source for every
-formatting decision, and Section 18.3 says how that ends.
+formatting decision, and Section 19.3 says how that ends.
 
-## 25.2 Verify the conversion in both directions, with an independent parser
+## 26.2 Verify the conversion in both directions, with an independent parser
 
 Write the checker so that it shares **no code** with the converter. A check built
 on the converter's own parser cannot detect the converter's own bugs.
@@ -3448,9 +3844,9 @@ altered; only the exact numeric comparison caught it. Conversely a deleted
 paragraph was caught by the word comparison and by the numeric one, which is the
 kind of redundancy you want.
 
-## 25.3 Validate the verifier by damaging a good file
+## 26.3 Validate the verifier by damaging a good file
 
-This is Section 23.1 applied to conversion, and it is quick.
+This is Section 24.1 applied to conversion, and it is quick.
 
 **Evidence:** A passing output was damaged four ways and the checker re-run:
 ```
@@ -3466,7 +3862,7 @@ check would have left a class undetected, and the table is what shows that.
 > number, remove an object, substitute a word) and show me which check catches
 > each. List any damage class no check catches.
 
-## 25.4 Establish where each reference is faithful before using it to judge
+## 26.4 Establish where each reference is faithful before using it to judge
 
 Every reference has a region where it reports reality and a region where it
 degrades. Using it outside that region does not produce uncertainty, it produces
@@ -3483,7 +3879,7 @@ say so in the check's own commentary.
 > where it is faithful and the region where it degrades. Show me one input where
 > you already know the answer and the reference reproduces it.
 
-## 25.5 A second format is a second artifact, and every requirement applies to it
+## 26.5 A second format is a second artifact, and every requirement applies to it
 
 A requirement satisfied in the original is not thereby satisfied in the
 conversion.
@@ -3502,9 +3898,9 @@ would have looked, because the original passed.
 > **Prompt:** Run the full requirement list against the converted artifact, not
 > only the original. Which items does the target format fail to carry by default?
 
-## 25.6 Ship the source package and prove it builds away from your machine
+## 26.6 Ship the source package and prove it builds away from your machine
 
-Section 10.10 says run from the delivered archive. Two additions from a
+Section 11.10 says run from the delivered archive. Two additions from a
 conversion round:
 
 ```
@@ -3519,16 +3915,16 @@ as a package that builds **the same thing**.
 
 ---
 
-# 26. TEMPLATE CONFORMANCE
+# 27. TEMPLATE CONFORMANCE
 
-Sections 14 and 19 give style rules that hold everywhere. This one is about the
+Sections 15 and 20 give style rules that hold everywhere. This one is about the
 different job of meeting **someone else's** template: a stated set of numbered
 requirements, a reference file, and a reviewer who will check.
 
 It is written from one venue's correction cycle, and the concrete values are kept
 so the method is legible. Substitute your own.
 
-## 26.1 The reference file is a container; read the stored definitions
+## 27.1 The reference file is a container; read the stored definitions
 
 A template's **appearance** is evidence of what that file does. Its **stored
 definitions** are the specification, and a set of numbered requirements will
@@ -3559,7 +3955,7 @@ distance and ignores any global spread you set. A requirement of "0.95 line
 spacing" is the first kind, and a requirement of "9 point leading in the
 references" is the second, so a global scale applied to both breaks one of them.
 
-## 26.2 Build the item-to-property table before editing anything
+## 27.2 Build the item-to-property table before editing anything
 
 One row per numbered requirement: the stored property it names, the target in
 real units, the change that satisfies it, and the value you measured afterwards.
@@ -3579,7 +3975,7 @@ item  requirement                     target       measured
 The last column is the point of the table. An item with no measured value is an
 item you have not done, however confident the edit felt.
 
-## 26.3 Some requirements are not properties, and are checked differently
+## 27.3 Some requirements are not properties, and are checked differently
 
 ```
 requirement names a STORED property  -> check the declaration
@@ -3589,11 +3985,11 @@ requirement names a VISUAL outcome   -> check the rendering
 Checking a stored property by rendering measures the renderer: the same
 conforming file reports different values under different engines, because each
 resolves the underlying unit its own way. Checking a visual outcome by reading
-the source misses anything a later layer overrode. Section 24.4 has the general
+the source misses anything a later layer overrode. Section 25.4 has the general
 form; the practical consequence is that a conformance suite needs both kinds of
 check and must know which item is which.
 
-## 26.4 The template will not carry every requirement
+## 27.4 The template will not carry every requirement
 
 **Evidence:** Of fifteen numbered items, three were satisfied in the primary
 artifact and **not** in a second-format deliverable built on the venue's own
@@ -3602,16 +3998,16 @@ paragraphs had no line rule and the wrong indent, and one caption style was
 justified where the item required centring. Each had to be overridden explicitly.
 
 Nobody would have looked, because the primary artifact passed. This is Section
-25.5.
+26.5.
 
-## 26.5 Generated labels beat typed ones
+## 27.5 Generated labels beat typed ones
 
 If the target format generates counters from the template's own definitions,
 produce the artifact in terms of those. The numbering then **cannot** drift from
 the template, and a typed label is a second source for something the template
-already owns (Section 18.3).
+already owns (Section 19.3).
 
-## 26.6 Detail displaced from a caption must arrive somewhere
+## 27.6 Detail displaced from a caption must arrive somewhere
 
 A requirement to shorten captions is a requirement to **move** their content, not
 to delete it.
@@ -3631,13 +4027,13 @@ in a caption and were written into the body before the caption was cut. A
 key-set diff confirmed nothing was lost outright, and six occurrence counts fell
 only where the value still appeared elsewhere.
 
-## 26.7 A conformance check needs the artifact it must reject
+## 27.7 A conformance check needs the artifact it must reject
 
-Section 23.1 in general; for templates specifically, three controls are cheap and
+Section 24.1 in general; for templates specifically, three controls are cheap and
 worth keeping:
 
 ```
-the pre-fix build     rebuilt from a commit, not stored as a file (23.12)
+the pre-fix build     rebuilt from a commit, not stored as a file (24.12)
 the bare template     a good suite fails the venue's OWN sample on the items
                       where the sample and the written list disagree
 an empty document     must report nothing-measured, never a pass
@@ -3659,7 +4055,219 @@ them. A suite that passes the sample is measuring the sample, not the list.
 
 ---
 
-# 27. SUMMARY
+# 28. THE INSTRUMENT, THE ARTIFACT AND THE GROUND
+
+Sections 11 and 12 cover what to check and how to run things. This section
+covers three failures that sit underneath both: the checker itself can be
+wrong, the rendered artifact fails differently from its source, and the
+repository and toolchain move without announcing it. A defective check is worse
+than no check, because it converts "unverified" into "verified" without passing
+through "wrong", and nobody re-examines a green result.
+
+## 28.1 Assert the property, not the workaround
+
+A constraint gets satisfied by a hack. Someone writes a check asserting the hack
+is present. The hack is now permanent: removing it fails the audit, so the audit
+defends the workaround against its own author.
+
+The tell is a check whose assertion names an implementation rather than a
+property. "This spacing override is present" is an implementation. "The body is
+at the class default" is a property. Assert the second. Where a check must name
+an implementation, record in its comment which requirement it stands for, so a
+later reader can tell whether the requirement or the implementation changed.
+
+## 28.2 A check that cannot fail is not a check
+
+Ask of every check: what does it print when the thing it inspects is absent? If
+that is the same as when the thing is correct, it is decoration. Loaders that
+substitute a default for a missing file, patterns that match nothing and report
+nothing, searches that ran against the wrong scope: all report success.
+
+Three exit states, never two: pass, fail, and could-not-run. A skipped check is
+an unverified claim and belongs on the unverified list. It is never a pass.
+
+## 28.3 Inject the defect before trusting the check
+
+A check written from a description of a defect rather than from the defect will
+run clean on broken input. Two instruments here did exactly that. One missed its
+target twice for two unrelated reasons; another needed three calibrations before
+it separated real collisions from benign ones, and its first version raised
+eleven false alarms on known-good input, enough that a reader would have learned
+to ignore it.
+
+Before trusting a check, inject the defect and confirm it fails, then confirm it
+passes on good input. A check only ever run on good input has been tested in the
+one direction that proves nothing. Keep the injection as a self-test.
+
+## 28.4 Suspect your own instrument first
+
+Measurement code carries silent assumptions about the medium: an anchor that
+matches only at line start when content wraps, a case-sensitive match against
+text the renderer upper-cased, a font-name substring the actual font does not
+contain, a tokenizer that fuses two regions a reader sees as separate.
+
+A surprising negative from your own tooling deserves the scrutiny of a
+surprising positive. "Not found" is a claim. When an instrument reports
+something structurally implausible, confirm by a second independent path before
+reporting it.
+
+## 28.5 Invert a check when a decision reverses, do not delete it
+
+A requirement is reversed, the check that enforced it now fails, so it is
+deleted. The decision loses enforcement in both directions and can drift back
+with nothing to catch it. Invert it instead, and keep the original requirement
+in a comment with who asked and when. A deleted check takes the decision with
+it.
+
+## 28.6 Build the artifact and measure the artifact
+
+Source-level checks cannot see overlapping text, a block outside its region, an
+element split across a boundary, or a component silently dropped. These are
+produced by the renderer, exist only in the output, and pass every source check.
+Extract the artifact's geometry and text programmatically. Reserve eyes for what
+geometry cannot express.
+
+## 28.7 A defect's size is not its cost
+
+A quantity you measure to judge fit may not scale with severity. A block
+overflowing its region by a hair and one overflowing by a page can consume
+identical space in the measurement, because the renderer accounts for the block
+and not the overflow.
+
+A fit measurement taken while such defects are present is not a measurement of
+the fixed document. Repair structural defects first, then measure, and never
+report a fit number taken over a document with known layout errors.
+
+## 28.8 Compiles clean is no evidence about content
+
+An unescaped metacharacter makes the processor discard the rest of a region. The
+build succeeds, emits no warning, and produces a shorter, coherent-looking
+artifact. The damage is indistinguishable from the author having written less,
+so there is no ragged edge to notice.
+
+Verify content survives into the artifact by checking for text you know should
+be there: the last sentence of each region, not the first.
+
+## 28.9 Every value reads from its generator, in every location
+
+A value flows from a generator through a macro everywhere except one place where
+it was typed. The two agree today; the generator re-runs and one updates. Any
+literal number in a document that has a provenance system is a defect until
+shown to be outside that system.
+
+The mirror case: replacing a generated token with prose that reads better
+silently removes a live link. That is a legitimate trade, not a defect, but it
+must be recorded, because a re-run will now update every number and not the
+sentence.
+
+## 28.10 Verify tree identity before the first edit
+
+Branch pointers get reset, merges land from elsewhere, containers are
+re-provisioned from a different revision. The branch name does not change; the
+files do. Before the first edit of a session and after any interruption, check
+the current commit, the divergence from the remote, and whether the file you are
+about to edit matches what you last wrote. Prefer a positive check over the
+absence of a complaint.
+
+Anything installed during a session is environment, not repository. A
+command-not-found after a gap is an environment event, not a finding.
+
+## 28.11 Fetch before asserting that something does not exist
+
+Others commit to the same branch; your view is a snapshot from the last fetch.
+This produced the worst error of the work recorded here: a confident,
+evidence-backed statement that a defect did not exist anywhere in the
+repository, made after exhaustive local search. It existed, on the remote, in
+commits not yet fetched.
+
+Exhaustive search of a stale copy is exhaustive only of the copy. Scope every
+negative claim to what was actually searched, or fetch first.
+
+## 28.12 Explore on copies; reset rather than patch forward
+
+Pattern-based edits applied repeatedly during exploration degrade a file in ways
+that still parse: guards duplicate, offsets go stale, a replacement lands inside
+a previous one. The tell is a parameter sweep where every configuration gives
+the same answer, which means the knob is not connected.
+
+Write each candidate to a disposable copy. When exploration has already mutated
+the source, reset to the last commit and reapply the intended change once. Have
+the sweep report the configuration it actually produced, not the one it
+intended.
+
+## 28.13 A fixed size makes every addition a trade
+
+Stated at 13.15, with the publication lessons it belongs to. Repeated here
+only because the next entry is its operational half: when the budget binds,
+the choice of remedy is itself a cost (28.14).
+## 28.14 Enumerate fixes before choosing one
+
+A defect usually has more than one remedy, and their costs can differ by a whole
+unit of budget. Here one defect had two fixes: forcing a block to stay together
+cost a full page, while changing where an adjacent float was allowed to sit cost
+nothing. The expensive fix was the obvious one and was found first.
+
+When budget binds, enumerate candidates and measure each. The intuitive remedy
+often pays the renderer's price instead of working with it.
+
+## 28.15 Layout is a search, not a deduction
+
+Predicting placement from a renderer's documented rules is slow and unreliable,
+because placement depends on global state you do not hold. When a renderer is
+available, treat it as an oracle: generate candidates, render each, measure.
+Reason only about which candidates are worth trying.
+
+## 28.16 A reversal is three edits
+
+Over a long engagement the same decision is revisited as reviewers, editors and
+collaborators weigh in. A parameter is set, unset and set again; each individual
+instruction is legitimate. What goes wrong is that the artifact and its
+enforcement drift apart, because a reversal updates the artifact and forgets the
+check, the comment, or the sibling document.
+
+Treat every reversal as three edits: the artifact, the thing that enforces it,
+and the record of why. Keep a running list of decisions that have flipped, with
+who asked and when, because the next person to raise it will not know it has
+been settled twice. In the work recorded here, eight decisions reversed and two
+of them reversed twice.
+
+## 28.17 Identify which build a review was written against
+
+The framing half of this is 10.11: which parts of a review to concede, and how
+narrowly. This half is mechanical: which parts still apply at all.
+
+Reviews are written against a specific build, and by the time they arrive that
+build is history. Items already fixed sit beside items still live with nothing
+distinguishing them. Where the reviewer supplies the artifact, diff it against
+current; otherwise check each reported defect against the current build. Report
+which items were already resolved. Acting blind on a stale list re-introduces
+work and can undo the fix that resolved the complaint.
+
+## 28.18 Surface conflicting instructions instead of choosing silently
+
+A template, a venue editor, a house style guide and a collaborator can each
+specify something incompatible. Following the newest instruction silently breaks
+an older commitment someone made in writing. When a new instruction contradicts
+a standing one, surface the conflict with the evidence for both, say which you
+did not do and why, and let whoever owns both decide. When they decide, apply it
+fully and update whatever enforced the old state.
+
+Two related habits. When evidence settles a question the requester thought open,
+give the resolved answer rather than presenting a disproved option as a live
+alternative. When the sanctioned change set is insufficient, finish everything
+possible within it and report the shortfall rather than widening it.
+
+## 28.19 Correct a belief-changing error explicitly, once
+
+When you state something confidently and it turns out wrong, and the error
+changed what someone concluded, name it plainly at the point where it matters
+and say what the truth is. Do not bury it, do not over-apologise, do not
+re-litigate. A wrong statement that changed someone's belief is the one kind of
+error that must be named rather than quietly fixed.
+
+---
+
+# 29. SUMMARY
 
 The weak point of an experimental paper is usually not the result: it is how you
 know the result measures the right thing, and whether the claim already exists in
@@ -3680,6 +4288,12 @@ looked finished while being wrong.
 
 Confidence therefore has to come from comparing the delivered artifact against an
 independent authority, which makes the verification code itself an object
-requiring verification (Section 23); and an external correction is a hypothesis
+requiring verification (Section 24); and an external correction is a hypothesis
 about your artifact, to be scoped to exactly what it names and re-derived before
-it is carried anywhere else (Section 24).
+it is carried anywhere else (Section 25).
+
+A third thread, Section 28, comes at the same problem from the production side.
+A claim rests on three things that are easy to confuse: the instrument that
+checks it, the artifact a reader actually receives, and the repository state the
+work was done against. Each can be sound while the other two are stale or wrong,
+so each has to be established separately rather than inferred from the others.

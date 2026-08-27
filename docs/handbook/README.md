@@ -2,7 +2,7 @@
 
 | File | What it is |
 |---|---|
-| [RESEARCH-PUBLICATION-METHOD-UNIFIED.md](RESEARCH-PUBLICATION-METHOD-UNIFIED.md) | Field-agnostic method handbook, 28 sections. Sections 23 to 26 came from this project; Section 27 from another; 16.11, 18.14 to 18.16 and 24.10 from auditing the merge. |
+| [RESEARCH-PUBLICATION-METHOD-UNIFIED.md](RESEARCH-PUBLICATION-METHOD-UNIFIED.md) | Field-agnostic method handbook, 29 sections. Sections 24 to 27 came from this project; §6 and §28 from other engagements; 17.11, 19.14 to 19.16 and 25.10 from auditing the merges. 
 | [CRYPTANALYSIS-AND-EVALUATION.md](CRYPTANALYSIS-AND-EVALUATION.md) | The domain companion: breaking a cipher that passed every test its designers applied, and evaluating detectors that were confident where they were wrong. |
 
 The handbook is about **method** and holds for any field. The domain file is
@@ -19,3 +19,7 @@ Two related directories:
   of classes only, for reading in one sitting.
 - [`../paper-pipeline/`](../paper-pipeline/) is the earlier, longer playbook with
   the runnable checks and the verbatim correction notices.
+
+[FINAL-PASS-REVIEW.md](FINAL-PASS-REVIEW.md) records the review of the v2 merge:
+its method, its coverage limits, and the four findings, one of which was an error
+in the previous review rather than in the document.
