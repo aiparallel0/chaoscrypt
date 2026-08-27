@@ -2,7 +2,7 @@
 
 | File | What it is |
 |---|---|
-| [RESEARCH-PUBLICATION-METHOD-UNIFIED.md](RESEARCH-PUBLICATION-METHOD-UNIFIED.md) | Field-agnostic method handbook, 27 sections. Sections 23 to 26 were added from this project. |
+| [RESEARCH-PUBLICATION-METHOD-UNIFIED.md](RESEARCH-PUBLICATION-METHOD-UNIFIED.md) | Field-agnostic method handbook, 28 sections. Sections 23 to 26 came from this project; Section 27 from another; 16.11, 18.14 to 18.16 and 24.10 from auditing the merge. |
 | [CRYPTANALYSIS-AND-EVALUATION.md](CRYPTANALYSIS-AND-EVALUATION.md) | The domain companion: breaking a cipher that passed every test its designers applied, and evaluating detectors that were confident where they were wrong. |
 
 The handbook is about **method** and holds for any field. The domain file is
