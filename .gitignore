@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+
+# datasets (re-downloadable, not committed)
+papers/*/data/
+
+# LaTeX intermediates (keep main.pdf tracked)
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.synctex.gz
+papers/*/main_filled.tex

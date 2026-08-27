@@ -1,0 +1,17 @@
+LICENSE
+README.md
+pyproject.toml
+src/chaoscrypt/__init__.py
+src/chaoscrypt/attacks.py
+src/chaoscrypt/ciphers.py
+src/chaoscrypt/distinguishers.py
+src/chaoscrypt.egg-info/PKG-INFO
+src/chaoscrypt.egg-info/SOURCES.txt
+src/chaoscrypt.egg-info/dependency_links.txt
+src/chaoscrypt.egg-info/requires.txt
+src/chaoscrypt.egg-info/top_level.txt
+src/chaoscrypt/zk/__init__.py
+src/chaoscrypt/zk/fiat_shamir.py
+src/chaoscrypt/zk/sigma.py
+tests/test_attacks.py
+tests/test_zk.py

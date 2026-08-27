@@ -1,0 +1,15 @@
+{
+  "det_seen_DoS": 0.863,
+  "det_unseen_DoS": 0.603,
+  "reject_unseen_DoS": 0.406,
+  "det_seen_Probe": 0.788,
+  "det_unseen_Probe": 0.426,
+  "reject_unseen_Probe": 0.371,
+  "det_seen_R2L": 0.073,
+  "det_unseen_R2L": 0.003,
+  "reject_unseen_R2L": 0.168,
+  "det_seen_U2R": 0.175,
+  "det_unseen_U2R": 0.049,
+  "reject_unseen_U2R": 0.61,
+  "openset_maxhw": 0.064
+}

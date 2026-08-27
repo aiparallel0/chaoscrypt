@@ -1,0 +1,18 @@
+{
+  "pub_n_real": 4,
+  "pub_n_broken": 1,
+  "pub_n_resist": 3,
+  "pub_lscm_R": "1.000",
+  "pub_lscm_q": 12,
+  "pub_lscm_v": "BROKEN",
+  "pub_lscm_alg": "bitlinear",
+  "pub_lscm_R_naive": "0.005",
+  "pub_li_R": "0.004",
+  "pub_li_v": "RESISTS",
+  "pub_mile_R": "0.004",
+  "pub_mile_v": "RESISTS",
+  "pub_miea_R": "0.004",
+  "pub_miea_v": "RESISTS",
+  "pub_mile_fix_R": "0.996",
+  "pub_mile_fix_off": "1.000"
+}

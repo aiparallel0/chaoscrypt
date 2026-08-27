@@ -1,0 +1,12 @@
+{
+  "c18_n": 150000,
+  "c18_infil_rate": 0.281,
+  "c18_acc": 0.783,
+  "c18_ece": 0.006,
+  "c18_aurc": 0.14,
+  "c18_risk80": 0.189,
+  "c18_infil_auroc": 0.708,
+  "c18_infil_recall_argmax": 0.251,
+  "c18_infil_recall_fpr10": 0.394,
+  "c18_maxhw": 0.004
+}

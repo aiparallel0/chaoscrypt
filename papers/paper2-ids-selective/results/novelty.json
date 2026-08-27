@@ -1,0 +1,19 @@
+{
+  "nov_if_auroc_DoS": 0.969,
+  "nov_if_rec_DoS_fp10": 0.915,
+  "nov_if_auroc_Probe": 0.991,
+  "nov_if_rec_Probe_fp10": 0.994,
+  "nov_if_auroc_R2L": 0.824,
+  "nov_if_rec_R2L_fp10": 0.243,
+  "nov_if_auroc_U2R": 0.897,
+  "nov_if_rec_U2R_fp10": 0.513,
+  "nov_ocsvm_auroc_DoS": 0.903,
+  "nov_ocsvm_rec_DoS_fp10": 0.824,
+  "nov_ocsvm_auroc_Probe": 0.958,
+  "nov_ocsvm_rec_Probe_fp10": 0.932,
+  "nov_ocsvm_auroc_R2L": 0.732,
+  "nov_ocsvm_rec_R2L_fp10": 0.41,
+  "nov_ocsvm_auroc_U2R": 0.792,
+  "nov_ocsvm_rec_U2R_fp10": 0.657,
+  "nov_maxhw": 0.036
+}

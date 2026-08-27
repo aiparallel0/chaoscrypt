@@ -1,0 +1,24 @@
+{
+  "logreg": {
+    "acc": 0.7539,
+    "ece": 0.2142,
+    "aurc": 0.2285,
+    "full_risk": 0.2461,
+    "risk_at_80": 0.1953,
+    "detect_known": 0.713,
+    "detect_novel": 0.408,
+    "conf_known": 0.9714,
+    "conf_novel": 0.922
+  },
+  "rf": {
+    "acc": 0.7657,
+    "ece": 0.1661,
+    "aurc": 0.0621,
+    "full_risk": 0.2343,
+    "risk_at_80": 0.1302,
+    "detect_known": 0.7687,
+    "detect_novel": 0.2213,
+    "conf_known": 0.9474,
+    "conf_novel": 0.7617
+  }
+}

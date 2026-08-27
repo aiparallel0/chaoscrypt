@@ -1,0 +1,80 @@
+{
+  "n_schemes": 4,
+  "n_broken": 1,
+  "schemes": [
+    {
+      "n": 16384,
+      "deterministic": true,
+      "algebra": "bitlinear",
+      "avalanche": 6.103515625e-05,
+      "avalanche_x_n": 1.0,
+      "recoverability": 1.0,
+      "queries": 11,
+      "queries_512sq": 12,
+      "invertible_frac": 1.0,
+      "monomial": false,
+      "plaintext_independent": true,
+      "verdict": "BROKEN",
+      "scheme": "LSCM-CA (Sun 2025, Sci.Rep.)",
+      "cite": "sun2025lscm",
+      "provenance": "paper-only"
+    },
+    {
+      "n": 16384,
+      "deterministic": true,
+      "algebra": "xor",
+      "avalanche": 0.9962577819824219,
+      "avalanche_x_n": 16322.6875,
+      "recoverability": 0.00408935546875,
+      "queries": 3,
+      "queries_512sq": 4,
+      "invertible_frac": 1.0,
+      "monomial": false,
+      "plaintext_independent": false,
+      "verdict": "RESISTS",
+      "scheme": "Li dual-chaotic+DNA (2024, Sci.Rep.)",
+      "cite": "li2024dnadual",
+      "provenance": "paper-only"
+    },
+    {
+      "n": 16384,
+      "deterministic": true,
+      "algebra": "affine",
+      "avalanche": 6.103515625e-05,
+      "avalanche_x_n": 1.0,
+      "recoverability": 0.0040283203125,
+      "queries": 4,
+      "queries_512sq": 5,
+      "invertible_frac": 0.4979248046875,
+      "monomial": false,
+      "plaintext_independent": false,
+      "verdict": "RESISTS",
+      "scheme": "MILE+Q-matrix (Mansour 2025, Sci.Rep.)",
+      "cite": "mansour2025mile",
+      "provenance": "paper-only"
+    },
+    {
+      "n": 16384,
+      "deterministic": true,
+      "algebra": "bitlinear",
+      "avalanche": 1.0,
+      "avalanche_x_n": 16384.0,
+      "recoverability": 0.00423431396484375,
+      "queries": 11,
+      "queries_512sq": 12,
+      "invertible_frac": 0.0,
+      "monomial": false,
+      "plaintext_independent": false,
+      "verdict": "RESISTS",
+      "scheme": "MIEA-PRHM (Feng 2024, Mathematics)",
+      "cite": "feng2024miea",
+      "provenance": "paper-only"
+    }
+  ],
+  "fragility": {
+    "scheme": "MILE, first 8x8 block fixed (CPA sub-class)",
+    "recoverability": 0.99609375,
+    "recoverability_off_seedblock": 1.0,
+    "note": "R jumps 0.004 -> 0.996 when the 64-pixel seed block is held constant; the residual 0.4% is exactly those 64 seed pixels (known to the adversary by construction), so the rest of the image is an exactly-recovered fixed map -- MILE is broken under a fixed-seed-block chosen-plaintext adversary."
+  }
+}
