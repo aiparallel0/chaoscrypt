@@ -6,6 +6,10 @@ template, a page limit, and reviewers.
 **Start here → [00-MASTER-PROMPT.md](00-MASTER-PROMPT.md)** — hand this file to an agent as its
 standing instruction. The rest are references it links to.
 
+**Already know this material? → [../digest/](../digest/)** — the same experience re-derived one
+level up, as classes rather than instances. Shorter, not venue-specific, and useful on work that
+has nothing to do with papers.
+
 ## What this is
 
 Distilled from a real project: two 6-page IEEE papers taken through 91 commits to
